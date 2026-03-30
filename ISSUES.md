@@ -16,7 +16,7 @@ otherwise they give the impression all teh sata is there, when it isn't
 - [ ] Check that text changes match the frame of image changes, e.g. Red Giant Ramp image changes, but text 
 change is two frames later.
 
-- - [ ] Make video pausing on/off optional, with pausing off by default
+- [ ] Make video pausing on/off optional, with pausing off by default
 
 ## Housekeeping
 

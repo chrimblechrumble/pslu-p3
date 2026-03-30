@@ -55,8 +55,11 @@ something like (for code)
 
 and for console output:
 
-    <program>  Copyright (C) 2025/2026  Chris Meadows
-    This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+    Titan Habitability Pipeline  Copyright (C) 2025/2026  Chris Meadows
+    This program comes with ABSOLUTELY NO WARRANTY; for details, see the 
+    README.md at the project root.
     This is free software, and you are welcome to redistribute it
-    under certain conditions; type `show c' for details.
+    under certain conditions; see the LICENSE.md file asthe project root for 
+    details.
+
 

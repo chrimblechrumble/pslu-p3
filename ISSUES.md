@@ -33,9 +33,10 @@ to data/library patching/manipulation
 - [ ] Create file-level constants for colours expressed as hexadecimals
 - [ ] All comments, methods, class names, variable names and documentation should use British English spelling. 
 - [ ] Is it possible to convert this project to snakemake?
-- [ ] add (c) line to all files and all terminal output, something like (for code)
+- [ ] add (c) line to all files and all terminal output, 
 
-   
+something like (for code)
+ 
     Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
     Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
 

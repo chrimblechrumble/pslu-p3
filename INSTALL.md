@@ -27,7 +27,7 @@ titan_pipeline/
         │   ├── Basins.shp
         │   ├── Mountains.shp
         │   ├── Labyrinth.shp
-        │   ├── Lakes.shp                           (optional but recommended)
+        │   ├── Lakes.shp                           (optional but recommended. birch used if not present)
         │   └── global_channels.shp                 Miller+2021 channels
         └── birch_polar_mapping/                    Birch+2017 / Palermo+2022
             ├── birch_filled/        ← confirmed present-day liquid surfaces
@@ -229,9 +229,10 @@ instructions.
 ## Minimum viable run (topography only)
 
 With only the two GTDR tiles installed, the pipeline will still complete
-using synthetic CIRS temperature data and SAR/VIMS proxies, but habitability
-scores will be based primarily on topographic complexity and a global
-methane-cycle prior rather than lake or spectral data.
+using synthetic CIRS (Composite Infrared Spectrometer) temperature data 
+and SAR/VIMS proxies, but habitability scores will be based primarily 
+on topographic complexity and a global methane-cycle prior rather 
+than lake or spectral data.
 
 ---
 

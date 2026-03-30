@@ -698,13 +698,13 @@ class PolarLakeRasteriser:
                     continue
                 subdir: Path = self.birch_dir / subdir_name
                 if not subdir.exists():
-                    logger.debug(
+                    logger.warning(
                         "Birch sub-directory absent, skipping: %s", subdir
                     )
                     continue
                 shapefiles: List[Path] = sorted(subdir.glob("*.shp"))
                 if not shapefiles:
-                    logger.debug("No .shp files in %s", subdir)
+                    logger.warning("No .shp files in %s", subdir)
                     continue
                 logger.info(
                     "Rasterising Birch layer '%s' (label=%d) "

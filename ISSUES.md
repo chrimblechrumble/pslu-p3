@@ -1,37 +1,39 @@
 # Titan Habitability Pipeline - Outstanding Issues in current commit
 
 ## Video/static frames
-1. Use the same habitability scoring data for all three maps in the video. The habitability colouring of eg.g Ligeia is 
+- [ ] Use the same habitability scoring data for all three maps in the video. The habitability colouring of eg.g Ligeia is 
 different on the equirectangular map vs the North Polar map. And if the same habitability scoring 
 data can being used, why cut off at +/- 50 degrees latitude on the North/Polar maps? That is, 
 we can use all data on all maps, dio it, and all three maps should be cross-referenceable. 
 THe underlying habitability data should be the same, and the maps are just views onto that data.
 
-1. The longitude ticks/graticules for the north/south plots should be on the outside of the circumference, 
-not on inside. 
+- [ ] The longitude ticks/graticules for the north/south plots should be on the outside of the circumference, 
+not on inside.
 
-1. If we do not gave +/- 0-40 polar data North and South, declare it. N/S animations should probably shrink
+- [ ] If we do not gave +/- 0-40 polar data North and South, declare it. N/S animations should probably shrink
 otherwise they give the impression all teh sata is there, when it isn't
 
-1. Check that text changes match the frame of image changes, e.g. Red Giant Ramp image changes, but text 
+- [ ] Check that text changes match the frame of image changes, e.g. Red Giant Ramp image changes, but text 
 change is two frames later.
 
-2. Make video pausing on/off optional, with pausing off by default
+- - [ ] Make video pausing on/off optional, with pausing off by default
 
 ## Housekeeping
 
 ### Audit code for:
-* All comments and doc strings shouldn't use characters that are not available on a UK Mac keyboard. Make substitutions as necessary. For example, 
-  * the ° should be swapped to 'degrees'
-* local variables without types. I still see many across the codebase
-* Unused code. Pycharm reports a lot of declared variables that are unused
-* Comments that refer to bugs in my code that I have fixed should be removed. To be clear, keep comments that refer 
+- [ ] All comments and doc strings shouldn't use characters that are not available on a UK Mac keyboard. Make substitutions as necessary. For example, 
+  - [ ] the ° should be swapped to 'degrees'
+  - [ ] all greek letters α, β, Σ, λ in comments etc should be swaped for expanded names lambda etc. But keep the Greek
+  in all equations in thesis, obvs.
+- [ ] local variables without types. I still see many across the codebase
+- [ ] Unused code. Pycharm reports a lot of declared variables that are unused
+- [ ] Comments that refer to bugs in my code that I have fixed should be removed. To be clear, keep comments that refer 
 to data/library patching/manipulation
-* Add comments/references to any geometry processing
-* Create file-level constants for colours expressed as hexadecimals
-* All comments, methods, class names, variable names and documentation should use British English spelling. 
-* Is it possible to convert this project to snakemake?
-* add (c) line to all files and all terminal output, something like (for code)
+- [ ] Add comments/references to any geometry processing
+- [ ] Create file-level constants for colours expressed as hexadecimals
+- [ ] All comments, methods, class names, variable names and documentation should use British English spelling. 
+- [ ] Is it possible to convert this project to snakemake?
+- [ ] add (c) line to all files and all terminal output, something like (for code)
 
    
     Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time

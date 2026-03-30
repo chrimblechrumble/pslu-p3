@@ -10,6 +10,6 @@ The report write up/thesis is not presented here. Please contact me for a copy (
 
 Although this project refers to many research papers, they are not presented here for copyright reasons.
 
-The current posterior-probability maps for different epochs are presented [key_epochs_poster.png](here) 
+The current posterior-probability maps for different epochs are presented [here](key_epochs_poster.png) 
 
 Use of this code is subject to the license in [LICENSE.md](LICENSE.md). It is GPL v3.

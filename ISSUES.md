@@ -59,7 +59,7 @@ and for console output:
     This program comes with ABSOLUTELY NO WARRANTY; for details, see the 
     README.md at the project root.
     This is free software, and you are welcome to redistribute it
-    under certain conditions; see the LICENSE.md file asthe project root for 
-    details.
+    under certain conditions; see the LICENSE.md file at the project 
+    root for details.
 
 

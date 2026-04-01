@@ -1211,7 +1211,7 @@ class PipelineConfig:
     )
 
     shapefile_dir:      Optional[Path] = None
-    birch_dir:          Optional[Path] = None   # Birch+2017 / Palermo+2022 polar lake data
+    birch_dir:          Optional[Path] = None   # Birch+2017 polar lake shapefile root
     vims_parquet_path:  Optional[Path] = None
 
     def __post_init__(self) -> None:
@@ -1288,27 +1288,41 @@ class PipelineConfig:
 
     def get_birch_dir(self) -> Path:
         """
-        Return the root directory for the Birch+2017 / Palermo+2022 polar
-        lake shapefile dataset.
+        Return the root directory for the Birch+2017 polar lake shapefile dataset.
 
-        Default location: ``data/raw/birch_polar_mapping/``
+        Download the dataset from Cornell eCommons:
 
-        Override via ``PipelineConfig(birch_dir=...)`` or the
-        ``--birch-dir`` CLI flag.
+            https://data.astro.cornell.edu/titan_polar_mapping_birch/
+            titan_polar_mapping_birch.zip  (6.0 GB)
 
-        Expected sub-directory layout::
+        Inside the zip the relevant shapefiles are at::
+
+            full_dataset/Various Mapping Shapefiles/
+              Birch Polar Geomorphic (2017)/
+                north/   Fl_NORTH.shp  El_NORTH.shp  (+ geomorphic unit files)
+                south/   Fl_SOUTH.shp  El_SOUTH.shp  Em_SOUTH.shp  (+ geomorphic)
+
+        Expected pipeline sub-directory layout under the returned path::
 
             birch_polar_mapping/
-              birch_filled/      <- Birch+2017 confirmed liquid surfaces
-              birch_empty/       <- Birch+2017 empty basins (paleo-lakes)
-              palermo/           <- Palermo+2022 alternative lake mapping
+              birch_filled/   <- Fl_NORTH.shp, Fl_SOUTH.shp
+                                 (confirmed present-day liquid surfaces)
+              birch_empty/    <- El_NORTH.shp, El_SOUTH.shp, Em_SOUTH.shp
+                                 (empty lake depressions and southern paleoseas)
+              palermo/        <- reserved; no matching public shapefiles
+                                 currently exist; silently skipped if absent
 
-        The pipeline gracefully handles missing sub-directories; each one
-        that is absent is silently skipped.
+        Unit code meanings:
+          Fl = Filled lake/sea (SAR-dark, confirmed present liquid)
+          El = Empty lake depression (paleo-lake)
+          Em = Empty sea / paleo-sea (south pole only; four large paleoseas
+               documented by Birch et al. 2018 Icarus doi:10.1016/j.icarus.2017.12.016)
 
-        Download URL:
-            https://data.astro.cornell.edu/titan_polar_mapping_birch/
-            titan_polar_mapping_birch.zip
+        The other unit codes in the dataset (Lfd, Lud, Hdb, Hdd, Hud, Vdb,
+        Vmb, Vub, Af, Fm, Mtn, Fluvial_Valleys, *_LR_* variants) are
+        geomorphic terrain classes not used by this pipeline.
+
+        Override via ``PipelineConfig(birch_dir=...)`` or ``--birch-dir`` CLI flag.
 
         Returns
         -------

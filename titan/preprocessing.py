@@ -827,7 +827,7 @@ class DataPreprocessor:
         References
         ----------
         Birch et al. (2017) Icarus doi:10.1016/j.icarus.2017.01.032
-        Palermo et al. (2022) PSJ doi:10.3847/PSJ/ac4d9c
+        Birch et al. (2017) Icarus doi:10.1016/j.icarus.2017.01.032
         Mayer & Nixon (2025) Int. J. Astrobiology
             doi:10.1017/S1473550425100037
         """

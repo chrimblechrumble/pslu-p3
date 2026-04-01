@@ -25,12 +25,27 @@ Two independent shapefile catalogues are supported:
   Location: ``data/raw/geomorphology_shapefiles/``
   Classes: Craters, Dunes, Plains_3, Basins, Mountains, Labyrinth, Lakes
 
-**Birch+2017 / Palermo+2022 polar lake mapping** (polar regions, higher-
-resolution lake outlines with empty-basin distinction):
+**Birch+2017 polar lake mapping** (polar regions, higher-resolution lake
+outlines with confirmed-liquid vs empty-basin distinction):
   Source: Birch et al. (2017) Icarus doi:10.1016/j.icarus.2017.01.032
-          Palermo et al. (2022) PSJ doi:10.3847/PSJ/ac4d9c
-  Location: ``data/raw/birch_polar_mapping/``
-  Sub-dirs: ``birch_filled/``, ``birch_empty/``, ``palermo/``
+  Archive: https://data.astro.cornell.edu/titan_polar_mapping_birch/
+           titan_polar_mapping_birch.zip  (6.0 GB)
+  Path inside zip: full_dataset/Various Mapping Shapefiles/
+                     Birch Polar Geomorphic (2017)/
+                       north/   <- Fl_NORTH.shp, El_NORTH.shp, etc.
+                       south/   <- Fl_SOUTH.shp, El_SOUTH.shp, Em_SOUTH.shp, etc.
+  Pipeline directories:
+    birch_filled/ <- Fl_NORTH.shp, Fl_SOUTH.shp  (confirmed liquid surfaces)
+    birch_empty/  <- El_NORTH.shp, El_SOUTH.shp, Em_SOUTH.shp  (paleo-lakes / paleoseas)
+    palermo/      <- reserved; no matching public shapefiles currently exist
+
+  Geomorphic unit codes used by the pipeline:
+    Fl = Filled lake/sea (SAR-dark, confirmed present-day liquid)
+    El = Empty lake depression (paleo-lake; SAR-dark basin, no current liquid)
+    Em = Empty sea / paleo-sea (south pole only; the four large southern
+         paleoseas identified by Birch et al. 2018 Icarus doi:10.1016/j.icarus.2017.12.016)
+    Other units (Lfd, Lud, Hdb, Hdd, Hud, Vdb, Vmb, Vub, Af, Fm, Mtn,
+    Fluvial_Valleys) are geomorphic terrain classes not used by this pipeline.
 
 Key format facts (verified by direct inspection of real shapefiles):
 
@@ -66,14 +81,15 @@ References
 Birch et al. (2017) "Geomorphological mapping of Titan's polar terrains"
   Icarus, doi:10.1016/j.icarus.2017.01.032
 
+Birch et al. (2018) "Morphological evidence that Titan's southern hemisphere
+  basins are paleoseas"
+  Icarus, doi:10.1016/j.icarus.2017.12.016
+
 Lopes et al. (2019) "A global geomorphologic map of Saturn's moon Titan"
   Nature Astronomy, doi:10.1038/s41550-019-0917-6
 
-Malaska et al. (2025) "Global geology of Titan"
-  Titan After Cassini-Huygens Ch.9
-
-Palermo et al. (2022) "Lakes and Seas on Titan"
-  PSJ, doi:10.3847/PSJ/ac4d9c
+Miller et al. (2021) "Fluvial and karst morphology of Titan's polar regions"
+  (channel network shapefiles in same Cornell archive, separate sub-directory)
 """
 
 from __future__ import annotations
@@ -576,35 +592,52 @@ def polar_lake_class_name(label: int) -> str:
 
 class PolarLakeRasteriser:
     """
-    Rasterises Birch+2017 and Palermo+2022 polar lake shapefiles onto the
-    canonical grid, producing a dedicated polar-lake raster separate from
-    the Lopes geomorphology raster.
+    Rasterises Birch+2017 polar lake shapefiles onto the canonical grid,
+    producing a dedicated polar-lake raster separate from the Lopes
+    geomorphology raster.
+
+    Dataset source
+    --------------
+    Cornell eCommons archive:
+    https://data.astro.cornell.edu/titan_polar_mapping_birch/
+    titan_polar_mapping_birch.zip  (6.0 GB)
+
+    Inside the zip:
+      full_dataset/Various Mapping Shapefiles/Birch Polar Geomorphic (2017)/
+        north/
+          Fl_NORTH.shp  <- confirmed liquid (north)  -> birch_filled/
+          El_NORTH.shp  <- empty lake depressions     -> birch_empty/
+        south/
+          Fl_SOUTH.shp  <- confirmed liquid (south)  -> birch_filled/
+          El_SOUTH.shp  <- empty lake depressions     -> birch_empty/
+          Em_SOUTH.shp  <- empty seas / paleoseas     -> birch_empty/
 
     Output raster integer labels
     ----------------------------
     POLAR_LAKE_NODATA  (0) -- outside polar-mapping coverage
-    POLAR_LAKE_FILLED  (1) -- confirmed present-day liquid (Birch+2017 filled)
-    POLAR_LAKE_EMPTY   (2) -- empty basin / paleo-lake (Birch+2017 empty)
-    POLAR_LAKE_PALERMO (3) -- confirmed liquid, Palermo+2022 alternative mapping
+    POLAR_LAKE_FILLED  (1) -- confirmed present-day liquid (Birch+2017 Fl_*)
+    POLAR_LAKE_EMPTY   (2) -- empty basin / paleo-lake (Birch+2017 El_* and Em_*)
+    POLAR_LAKE_PALERMO (3) -- reserved; no matching public shapefiles currently
+                              exist.  The palermo/ sub-directory is silently
+                              skipped if absent.
 
-    Draw order: empty basins first, then Birch filled, then Palermo.
-    Palermo (label 3) therefore takes precedence over Birch filled (label 1)
-    where both datasets agree on liquid; Birch filled overwrites empty basins.
+    Draw order: empty basins first (label 2), then filled lakes (label 1).
+    Filled overwrites empty where both datasets coincide.
 
-    The astrobiological significance of the empty-basin class:
-        Paleo-lake basins have experienced repeated wetting/drying cycles
-        (Birch et al. 2017), which concentrate amphiphiles and organic
-        evaporites at the shoreline.  This is the environment proposed by
-        Mayer & Nixon (2025) for vesicle / protocell formation.  These pixels
-        are captured in the ``paleo_lake_indicator`` sub-component of
-        Feature 5 (surface-atmosphere interaction) and as a standalone
-        feature in the future-epoch model.
+    The astrobiological significance of the empty-basin class (label 2)
+    -------------------------------------------------------------------
+    Paleo-lake and paleo-sea basins have experienced repeated wetting / drying
+    cycles (Birch et al. 2017, 2018), concentrating amphiphiles and organic
+    evaporites at the shoreline.  This is the environment proposed by Mayer &
+    Nixon (2025) for vesicle / protocell formation.  These pixels feed the
+    ``paleo_lake_indicator`` sub-component of Feature 5 (surface-atmosphere
+    interaction).
 
     Parameters
     ----------
     birch_dir:
         Root directory of the Birch dataset.  Expected to contain
-        sub-directories ``birch_filled/``, ``birch_empty/``, and
+        sub-directories ``birch_filled/``, ``birch_empty/``, and optionally
         ``palermo/``.  Any absent sub-directory is silently skipped.
     output_shape:
         (nrows, ncols) of the canonical output raster.
@@ -618,9 +651,9 @@ class PolarLakeRasteriser:
     References
     ----------
     Birch et al. (2017) Icarus, doi:10.1016/j.icarus.2017.01.032
+    Birch et al. (2018) Icarus, doi:10.1016/j.icarus.2017.12.016
     Mayer & Nixon (2025) Int. J. Astrobiology,
         doi:10.1017/S1473550425100037
-    Palermo et al. (2022) PSJ, doi:10.3847/PSJ/ac4d9c
     """
 
     def __init__(

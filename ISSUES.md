@@ -2,7 +2,7 @@
 
 ## Improvements
 - [x] cirs_temperature is based on present day only. What can be done for modelling other epochs?
-- [ ] how to use the /palermo mappings/shapefiles. Which ones are they in the Birch dataset?
+- [x] how to use the /palermo mappings/shapefiles. Which ones are they in the Birch dataset?
 
 ## Video/static frames
 - [ ] Use the same habitability scoring data for all three maps in the video. The habitability colouring of eg.g Ligeia is 

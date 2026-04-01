@@ -22,8 +22,8 @@ Temporal modes
            NOTE: Distinct from the D2 near-future solar warming window (see
            below), which affects only the subsurface_ocean feature.
 
-Accepted design decisions (D1–D4)
------------------------------------
+Design decisions (D1–D4)
+------------------------
 D1 — Past epoch: 3.5 Gya default, configurable via --past-epoch-gya.
      SAR-bright crater annuli (D4) are interpreted as relics of impact-melt
      liquid water from this epoch.

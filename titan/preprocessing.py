@@ -911,15 +911,43 @@ class DataPreprocessor:
         Generate a canonical surface-temperature raster from the Jennings et al.
         (2019) analytical model -- no external CIRS file required.
 
-        The model is evaluated at the epoch midpoint of the pipeline's
-        temporal mode:
-          PRESENT  -> 2011.0 (mid-Cassini mission, near equinox)
-          PAST     -> equatorial value only, no seasonal variation modelled
-          FUTURE   -> 2011.0 as a proxy (red giant phase beyond model range)
+        Why the same epoch is used for all temporal modes
+        -------------------------------------------------
+        The Jennings formula is a fit to Cassini CIRS observations from 2004
+        to 2017.  It captures the *spatial pattern* of surface temperature
+        (the latitudinal gradient that drives differential evaporation and
+        therefore methane cycling), not an absolute temperature value.
 
-        The output is a 2-D float32 raster (K) on the canonical grid, where
-        each pixel receives the zonal-mean surface temperature for its
-        latitude at the selected epoch.
+        For the pipeline's purposes the CIRS raster feeds only one feature:
+        the meridional temperature gradient that contributes 25 % of the
+        methane_cycle score (normalised to [0, 1]).  What matters is whether
+        the gradient structure is physically plausible -- and the Cassini-era
+        pattern (cooler poles, warmer equatorial band, slight hemispheric
+        asymmetry driven by Titan's season) is the best available proxy for
+        all three modes:
+
+          PRESENT  -- exact fit: mid-mission near northern spring equinox.
+          PAST     -- Titan's surface temperature distribution is driven by
+                      its obliquity and distance from the Sun, neither of
+                      which changes significantly on the million-year scales
+                      of the pipeline's past mode.  The Cassini pattern is
+                      the best available proxy.
+          FUTURE   -- For the red-giant phase the absolute temperature rises
+                      dramatically (handled by titan_temp_K() in
+                      generate_temporal_maps.py), but by that point the
+                      methane cycle feature is zeroed out by the temporal
+                      scaling functions regardless of the gradient shape.
+                      Using the Cassini pattern is harmless.
+
+        Extrapolating the Jennings formula beyond its calibration window
+        (approximately Y = +/-8 yr from the 2009.61 equinox) produces
+        physically absurd results (temperatures of millions of K at 1 Gya),
+        so the nominal mid-mission year is always used.
+
+        Output
+        ------
+        2-D float32 raster (K) on the canonical grid; each pixel receives
+        the zonal-mean surface brightness temperature for its latitude.
 
         Reference
         ---------
@@ -928,22 +956,18 @@ class DataPreprocessor:
         """
         from titan.atmospheric_profiles import jennings_temperature_grid
 
-        out = self.config.processed_dir / "cirs_temperature_canonical.tif"
+        out: Path = self.config.processed_dir / "cirs_temperature_canonical.tif"
         if out.exists() and not overwrite:
             return {"cirs_temperature": out}
 
-        # Choose epoch based on temporal mode
-        mode = getattr(self.config, "temporal_mode", "present")
-        if mode == "present":
-            year_ce = 2011.0    # mid-mission, near northern spring equinox
-        elif mode == "past":
-            year_ce = 2011.0    # apply present-day profile as best approximation
-        else:
-            year_ce = 2011.0    # future epoch outside formula range; use nominal
+        # Mid-Cassini mission, near Titan's northern spring equinox.
+        # Used for all temporal modes -- see docstring for rationale.
+        year_ce: float = 2011.0
+        mode: str = getattr(self.config, "temporal_mode", "present")
 
         logger.info(
             "Synthesising CIRS surface temperature from Jennings 2019 "
-            "formula (epoch=%.1f, mode=%s) ...", year_ce, mode,
+            "formula (year_ce=%.1f, mode=%s) ...", year_ce, mode,
         )
 
         # Build a 2-D latitude grid on the canonical grid

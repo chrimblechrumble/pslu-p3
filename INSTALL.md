@@ -154,53 +154,72 @@ cp global_channels.dbf data/raw/geomorphology_shapefiles/   # (and .shx etc.)
 
 ---
 
-### 9. Birch+2017 / Palermo+2022 polar lake dataset  ★ New in v2 ★
+### 9. Birch+2017 polar lake dataset  ★ New in v2 ★
 
-Source: Cornell eCommons (Birch+2017 shapefile archive)
+Source: Cornell eCommons archive (verified 2026-04)
 
 ```bash
 wget https://data.astro.cornell.edu/titan_polar_mapping_birch/titan_polar_mapping_birch.zip
 unzip titan_polar_mapping_birch.zip -d titan_polar_mapping_birch_raw/
 ```
 
-The zip contains a `Mapping Shapefiles/` folder with two sub-folders:
-- `Birch+2017/` — filled lake, empty basin, and geomorphological unit shapefiles
-- `Palermo+2022/` — alternative sea and lake mapping
+The zip (6.0 GB) contains:
+
+```
+full_dataset/
+  Various Mapping Shapefiles/
+    Birch Polar Geomorphic (2017)/
+      north/
+        Fl_NORTH.shp   <- confirmed liquid lakes / seas (north)
+        El_NORTH.shp   <- empty lake depressions / paleo-lakes (north)
+        (+ Lfd, Lud, Hdb, Hdd, Hud, Vdb, Vmb, Vub, Af, Fm, Mtn,
+           Fluvial_Valleys and *_LR_* variants — NOT used by this pipeline)
+      south/
+        Fl_SOUTH.shp   <- confirmed liquid lakes / seas (south)
+        El_SOUTH.shp   <- empty lake depressions (south)
+        Em_SOUTH.shp   <- empty seas / four large southern paleoseas
+        (+ same geomorphic unit files as north)
+    Miller Channels (2021)/
+        (fluvial channel network — NOT used by this pipeline)
+```
+
+> **Note:** There is no `Palermo+2022/` folder in this dataset.
+> The `palermo/` pipeline sub-directory is reserved but currently unused.
 
 **Create the pipeline directory layout:**
 
 ```bash
 mkdir -p data/raw/birch_polar_mapping/birch_filled
 mkdir -p data/raw/birch_polar_mapping/birch_empty
-mkdir -p data/raw/birch_polar_mapping/palermo
+mkdir -p data/raw/birch_polar_mapping/palermo   # reserved; leave empty
 ```
 
-**Copy Birch+2017 filled lake/sea shapefiles:**
+Define a path variable for convenience:
+
 ```bash
-# Copy all filled lake/sea .shp (+ .dbf .prj .shx) files:
-cp titan_polar_mapping_birch_raw/Mapping\ Shapefiles/Birch+2017/*filled*.shp \
-   data/raw/birch_polar_mapping/birch_filled/
-cp titan_polar_mapping_birch_raw/Mapping\ Shapefiles/Birch+2017/*filled*.dbf \
-   data/raw/birch_polar_mapping/birch_filled/
-# ... repeat for .prj .shx
+BIRCH="titan_polar_mapping_birch_raw/full_dataset/Various Mapping Shapefiles/Birch Polar Geomorphic (2017)"
 ```
 
-**Copy Birch+2017 empty basin shapefiles:**
+**Copy confirmed-liquid shapefiles into `birch_filled/`:**
+
 ```bash
-cp titan_polar_mapping_birch_raw/Mapping\ Shapefiles/Birch+2017/*empty*.shp \
-   data/raw/birch_polar_mapping/birch_empty/
-# ... repeat for .dbf .prj .shx
+for ext in shp dbf shx prj; do
+  cp "$BIRCH/north/Fl_NORTH.$ext" data/raw/birch_polar_mapping/birch_filled/
+  cp "$BIRCH/south/Fl_SOUTH.$ext" data/raw/birch_polar_mapping/birch_filled/
+done
 ```
 
-**Copy Palermo+2022 shapefiles:**
+**Copy empty-basin and palaeosea shapefiles into `birch_empty/`:**
+
 ```bash
-cp titan_polar_mapping_birch_raw/Mapping\ Shapefiles/Palermo+2022/*.shp \
-   data/raw/birch_polar_mapping/palermo/
-# ... repeat for .dbf .prj .shx
+for ext in shp dbf shx prj; do
+  cp "$BIRCH/north/El_NORTH.$ext" data/raw/birch_polar_mapping/birch_empty/
+  cp "$BIRCH/south/El_SOUTH.$ext" data/raw/birch_polar_mapping/birch_empty/
+  cp "$BIRCH/south/Em_SOUTH.$ext" data/raw/birch_polar_mapping/birch_empty/
+done
 ```
 
-The exact filenames inside each sub-directory do not matter — the pipeline
-scans for all `*.shp` files in each sub-directory and merges them.
+The pipeline scans all `*.shp` files in each sub-directory; names do not matter.
 
 Override path with: `--birch-dir /path/to/birch_polar_mapping`
 
@@ -209,8 +228,8 @@ Override path with: `--birch-dir /path/to/birch_polar_mapping`
 | Feature | Without Birch | With Birch |
 |---------|---------------|------------|
 | Feature 1 (liquid_hydrocarbon) | SAR low-backscatter proxy in polar region | Expert-mapped lake outlines (binary 1.0 for confirmed liquid) |
-| Feature 5 (surface_atm_interaction) — lake margin | Zero (no Lakes.shp) | Exact Birch shoreline dilation (~13 km margin) |
-| Feature 5 — paleo_lake_indicator | Zero (absent) | Smoothed empty-basin proximity score |
+| Feature 5 (surface_atm_interaction) — lake margin | Zero (no shoreline data) | Exact Birch shoreline dilation (~13 km margin zone) |
+| Feature 5 — paleo_lake_indicator | Zero (absent) | Smoothed empty-basin proximity score (El_* + Em_SOUTH) |
 
 ---
 

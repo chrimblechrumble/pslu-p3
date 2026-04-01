@@ -448,7 +448,7 @@ class FeatureExtractor:
         Birch et al. (2017) Icarus doi:10.1016/j.icarus.2017.01.032
         Hayes et al. (2008) GRL doi:10.1029/2007GL032324
         McKay & Smith (2005) Icarus doi:10.1016/j.icarus.2005.05.018
-        Palermo et al. (2022) PSJ doi:10.3847/PSJ/ac4d9c
+        Birch et al. (2017) Icarus doi:10.1016/j.icarus.2017.01.032
         Stofan et al. (2007) Nature doi:10.1038/nature05608
         """
         from titan.io.shapefile_rasteriser import (
@@ -1085,7 +1085,7 @@ class FeatureExtractor:
         Lorenz et al. (2013) Icarus doi:10.1016/j.icarus.2013.04.002
         Mayer & Nixon (2025) Int. J. Astrobiology doi:10.1017/S1473550425100037
         Miller et al. (2021) JGR Planets doi:10.1029/2021JE006955
-        Palermo et al. (2022) PSJ doi:10.3847/PSJ/ac4d9c
+        Birch et al. (2017) Icarus doi:10.1016/j.icarus.2017.01.032
         """
         from titan.io.shapefile_rasteriser import (
             POLAR_LAKE_FILLED, POLAR_LAKE_PALERMO, POLAR_LAKE_EMPTY,

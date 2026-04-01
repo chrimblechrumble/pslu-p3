@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 tests/conftest.py
 ==================
@@ -67,10 +82,10 @@ def fixtures_gtdr_dir() -> Path:
     Path to the GTDR/GTDE fixture directory (tests/fixtures/gtdr/).
 
     Required for integration tests:
-      GTDED00N090_T126_V01.IMG[.gz] + .LBL  (GTDE east — preferred)
-      GTDED00N270_T126_V01.IMG[.gz] + .LBL  (GTDE west — preferred)
-      GT2ED00N090_T126_V01.IMG[.gz] + .LBL  (GT0E east — T126 sparse)
-      GT0EB00N090_T077_V01.IMG     + .LBL   (GT0E east — T077 legacy)
+      GTDED00N090_T126_V01.IMG[.gz] + .LBL  (GTDE east -- preferred)
+      GTDED00N270_T126_V01.IMG[.gz] + .LBL  (GTDE west -- preferred)
+      GT2ED00N090_T126_V01.IMG[.gz] + .LBL  (GT0E east -- T126 sparse)
+      GT0EB00N090_T077_V01.IMG     + .LBL   (GT0E east -- T077 legacy)
 
     See tests/fixtures/README.md for download instructions.
     """
@@ -79,7 +94,7 @@ def fixtures_gtdr_dir() -> Path:
         pytest.skip(
             f"GTDR fixtures not found at {d}. "
             "Download from https://data.astro.cornell.edu/RADAR/DATA/GTDR/ "
-            "or from USGS gtdr-data.zip — see tests/fixtures/README.md."
+            "or from USGS gtdr-data.zip -- see tests/fixtures/README.md."
         )
     return d
 
@@ -96,7 +111,7 @@ def _gtdr_find(gtdr_dir: Path, stem: str) -> Path:
 @pytest.fixture(scope="session")
 def gtde_east_img(fixtures_gtdr_dir: Path) -> Path:
     """
-    GTDE east tile — Dense interpolated DEM, lon 0–180°W.
+    GTDE east tile -- Dense interpolated DEM, lon 0-180 degW.
     File: GTDED00N090_T126_V01.IMG or .IMG.gz
     """
     p = _gtdr_find(fixtures_gtdr_dir, "GTDED00N090_T126_V01")
@@ -111,7 +126,7 @@ def gtde_east_img(fixtures_gtdr_dir: Path) -> Path:
 @pytest.fixture(scope="session")
 def gtde_west_img(fixtures_gtdr_dir: Path) -> Path:
     """
-    GTDE west tile — Dense interpolated DEM, lon 180–360°W.
+    GTDE west tile -- Dense interpolated DEM, lon 180-360 degW.
     File: GTDED00N270_T126_V01.IMG or .IMG.gz
     """
     p = _gtdr_find(fixtures_gtdr_dir, "GTDED00N270_T126_V01")
@@ -126,7 +141,7 @@ def gtde_west_img(fixtures_gtdr_dir: Path) -> Path:
 @pytest.fixture(scope="session")
 def gtdr_east_img(fixtures_gtdr_dir: Path) -> Path:
     """
-    GT0E east tile — standard sparse GTDR.
+    GT0E east tile -- standard sparse GTDR.
     Tries T126 (GT2ED00N090) first, then legacy T077 (GT0EB00N090).
     """
     p = (_gtdr_find(fixtures_gtdr_dir, "GT2ED00N090_T126_V01") or

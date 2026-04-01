@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/io/vims_reader.py
 ========================
@@ -11,8 +26,8 @@ Given a cube ID (format: ``{sclk}_{counter}``, e.g. ``1477222875_1``):
 
   Raw PDS (.qub):
     https://vims.univ-nantes.fr/cube/v{id}.qub
-    → HTTP 302 redirects to the exact file on PDS-Imaging JPL
-    → same shortcut for .lbl:
+    -> HTTP 302 redirects to the exact file on PDS-Imaging JPL
+    -> same shortcut for .lbl:
     https://vims.univ-nantes.fr/cube/v{id}.lbl
 
   ISIS3-calibrated IR cube (I/F units):
@@ -27,21 +42,21 @@ Given a cube ID (format: ``{sclk}_{counter}``, e.g. ``1477222875_1``):
     https://vims.univ-nantes.fr/data/previews/{band_combo}/{flyby_code}/{id}.jpg
 
     Where band_combo can be:
-      RGB_203_158_279      standard surface composite  (2.03; 1.58; 2.79 µm)
+      RGB_203_158_279      standard surface composite  (2.03; 1.58; 2.79 umm)
       RGBR_158_128_204_128_128_107  band-ratio RGB (1.58/1.28; 2.04/1.28; 1.28/1.07)
-      R_159_126            1.59/1.26 µm ratio  ← tholin proxy used in pipeline
-      G_203                2.03 µm surface window
-      R_203_210            2.03/2.10 µm ratio
-      G_212                2.12 µm  (atmospheric)
-      G_101                1.01 µm  (atmospheric)
-      G_501                5.0 µm   (deep surface window)
-      RGB_501_158_129      5.0; 1.58; 1.29 µm
-      RGB_501_275_203      5.0; 2.75; 2.03 µm
-      RGB_501_332_322      5.0; 3.32; 3.22 µm
-      RGB_231_269_195      strat/tropo/surface  (2.31; 2.69; 1.95 µm)
+      R_159_126            1.59/1.26 umm ratio  <- tholin proxy used in pipeline
+      G_203                2.03 umm surface window
+      R_203_210            2.03/2.10 umm ratio
+      G_212                2.12 umm  (atmospheric)
+      G_101                1.01 umm  (atmospheric)
+      G_501                5.0 umm   (deep surface window)
+      RGB_501_158_129      5.0; 1.58; 1.29 umm
+      RGB_501_275_203      5.0; 2.75; 2.03 umm
+      RGB_501_332_322      5.0; 3.32; 3.22 umm
+      RGB_231_269_195      strat/tropo/surface  (2.31; 2.69; 1.95 umm)
 
   Flyby code for each Titan flyby:
-    TA → 00ATI, TB → 01BTI, T3 → 03TI, ...
+    TA -> 00ATI, TB -> 01BTI, T3 -> 03TI, ...
     For simplicity use the flyby column from the parquet index.
 
 Cube index (parquet):
@@ -53,25 +68,25 @@ or ``N`` as described above.
 ISIS3 calibration pipeline (for reference):
 -------------------------------------------
 The Nantes-hosted C*.cub files were produced using:
-  vims2isis  → convert .qub to ISIS3 .cub (splits VIS and IR)
-  spiceinit  → inject SPICE geometry (NAIF kernels)
-  vimscal    → calibrate to I/F units (RC19 calibration, solar model)
-  campt      → extract per-pixel lat/lon/phase geometry
+  vims2isis  -> convert .qub to ISIS3 .cub (splits VIS and IR)
+  spiceinit  -> inject SPICE geometry (NAIF kernels)
+  vimscal    -> calibrate to I/F units (RC19 calibration, solar model)
+  campt      -> extract per-pixel lat/lon/phase geometry
 
 The navigation N*.cub files contain the per-pixel geometry bands:
-  Band 1: Latitude  (degrees, planetocentric, east-positive)
-  Band 2: Longitude (degrees, east-positive −180→+180)
+  Band 1: Latitude  (deg, planetocentric, east-positive)
+  Band 2: Longitude (deg, east-positive -180->+180)
   Band 3: Incidence angle
   Band 4: Emission angle
   Band 5: Phase angle
   Band 6: Pixel resolution (km/pixel)
 
 The calibrated C*.cub files contain 256 spectral bands in I/F units
-covering 0.35–5.12 µm (VIMS-VIS: 0.35–1.04 µm; VIMS-IR: 0.88–5.12 µm).
+covering 0.35-5.12 umm (VIMS-VIS: 0.35-1.04 umm; VIMS-IR: 0.88-5.12 umm).
 
 References
 ----------
-Le Mouélic et al. (2019)  doi:10.1016/j.icarus.2018.09.017
+Le Mouelic et al. (2019)  doi:10.1016/j.icarus.2018.09.017
 Brown et al. (2004)       doi:10.1007/s11214-004-1453-x
 ISIS3 VIMS tutorials:     https://isis.astrogeology.usgs.gov/
 VIMS portal:              https://vims.univ-nantes.fr/
@@ -99,18 +114,18 @@ PORTAL_BASE = "https://vims.univ-nantes.fr"
 #: Band combos available as preview JPEGs on the portal.
 #: Keys are short descriptive names; values are the URL path component.
 PREVIEW_BAND_COMBOS: Dict[str, str] = {
-    "surface_rgb":     "RGB_203_158_279",       # 2.03; 1.58; 2.79 µm  (standard)
+    "surface_rgb":     "RGB_203_158_279",       # 2.03; 1.58; 2.79 umm  (standard)
     "band_ratio_rgb":  "RGBR_158_128_204_128_128_107",  # ratio RGB
-    "tholin_ratio":    "R_159_126",             # 1.59/1.26 µm  ← tholin proxy
-    "surface_2um":     "G_203",                 # 2.03 µm window
+    "tholin_ratio":    "R_159_126",             # 1.59/1.26 umm  <- tholin proxy
+    "surface_2um":     "G_203",                 # 2.03 umm window
     "surf_atm_ratio":  "R_203_210",             # 2.03/2.10 ratio
-    "atm_212":         "G_212",                 # 2.12 µm atmosphere
-    "atm_101":         "G_101",                 # 1.01 µm atmosphere
-    "deep_surface_5um":"G_501",                 # 5.0 µm deep surface
-    "rgb_5_158_129":   "RGB_501_158_129",       # 5.0; 1.58; 1.29 µm
-    "rgb_5_275_203":   "RGB_501_275_203",       # 5.0; 2.75; 2.03 µm
-    "rgb_5_332_322":   "RGB_501_332_322",       # 5.0; 3.32; 3.22 µm
-    "strat_tropo_surf":"RGB_231_269_195",        # 2.31; 2.69; 1.95 µm
+    "atm_212":         "G_212",                 # 2.12 umm atmosphere
+    "atm_101":         "G_101",                 # 1.01 umm atmosphere
+    "deep_surface_5um":"G_501",                 # 5.0 umm deep surface
+    "rgb_5_158_129":   "RGB_501_158_129",       # 5.0; 1.58; 1.29 umm
+    "rgb_5_275_203":   "RGB_501_275_203",       # 5.0; 2.75; 2.03 umm
+    "rgb_5_332_322":   "RGB_501_332_322",       # 5.0; 3.32; 3.22 umm
+    "strat_tropo_surf":"RGB_231_269_195",        # 2.31; 2.69; 1.95 umm
 }
 
 
@@ -118,7 +133,7 @@ def cube_url_raw(cube_id: str) -> str:
     """
     Return the portal redirect URL for a raw PDS .qub file.
 
-    The portal returns HTTP 302 → PDS-Imaging JPL URL.
+    The portal returns HTTP 302 -> PDS-Imaging JPL URL.
 
     Parameters
     ----------
@@ -167,11 +182,11 @@ def cube_url_navigation(cube_id: str) -> str:
     Return direct URL for the ISIS3 navigation cube (per-pixel geometry).
 
     Navigation cube bands:
-      1: Latitude (°, east-positive)
-      2: Longitude (°, east-positive, −180→+180)
-      3: Incidence angle (°)
-      4: Emission angle (°)
-      5: Phase angle (°)
+      1: Latitude ( deg, east-positive)
+      2: Longitude ( deg, east-positive, -180->+180)
+      3: Incidence angle (deg)
+      4: Emission angle (deg)
+      5: Phase angle (deg)
       6: Pixel resolution (km/pixel)
 
     Parameters
@@ -203,7 +218,7 @@ def cube_url_preview(
         Cube ID, e.g. ``1477222875_1``.
     flyby_code:
         Internal flyby code as stored in the portal (e.g. ``00ATI`` for TA).
-        For Titan flybys TA–T126 the code is visible in the URL on the portal.
+        For Titan flybys TA-T126 the code is visible in the URL on the portal.
     band_combo:
         One of the keys in ``PREVIEW_BAND_COMBOS`` (default ``"surface_rgb"``).
 
@@ -261,17 +276,17 @@ class VIMSCubeDownloader:
             Cube identifier, e.g. ``"1477222875_1"``.
         download:
             Tuple of file types to download. Options:
-              ``"raw"``         — raw PDS .qub file (large, ~3–50 MB per cube)
-              ``"label"``       — PDS .lbl metadata
-              ``"calibrated"``  — ISIS3 calibrated .cub in I/F units
-              ``"navigation"``  — ISIS3 navigation .cub with lat/lon per pixel
+              ``"raw"``         -- raw PDS .qub file (large, ~3-50 MB per cube)
+              ``"label"``       -- PDS .lbl metadata
+              ``"calibrated"``  -- ISIS3 calibrated .cub in I/F units
+              ``"navigation"``  -- ISIS3 navigation .cub with lat/lon per pixel
         overwrite:
             Re-download even if local file already exists.
 
         Returns
         -------
         Dict[str, Path]
-            Mapping of file type → local path for successfully downloaded files.
+            Mapping of file type -> local path for successfully downloaded files.
         """
         url_map = {
             "raw":        (cube_url_raw(cube_id),        f"v{cube_id}.qub"),
@@ -283,7 +298,7 @@ class VIMSCubeDownloader:
         results: Dict[str, Path] = {}
         for ftype in download:
             if ftype not in url_map:
-                logger.warning("Unknown file type '%s' — skip.", ftype)
+                logger.warning("Unknown file type '%s' -- skip.", ftype)
                 continue
             url, filename = url_map[ftype]
             dest = self.dest_dir / filename
@@ -361,7 +376,7 @@ class VIMSCubeDownloader:
         Returns
         -------
         Dict[str, Dict[str, Path]]
-            Mapping of cube_id → {file_type → local path}.
+            Mapping of cube_id -> {file_type -> local path}.
         """
         try:
             from tqdm import tqdm
@@ -406,7 +421,7 @@ class VIMSCubeDownloader:
                         for chunk in resp.iter_content(chunk_size=1 << 16):
                             fh.write(chunk)
                 shutil.move(str(tmp), str(dest))
-                logger.debug("Downloaded %s → %s", url, dest)
+                logger.debug("Downloaded %s -> %s", url, dest)
                 return
             except Exception as exc:
                 if attempt < self.max_retries - 1:
@@ -432,11 +447,11 @@ def read_navigation_cube(nav_path: Path) -> Dict[str, np.ndarray]:
     computed from SPICE kernels during the ISIS3 calibration pipeline:
 
     Band layout (1-indexed, as produced by vims.univ-nantes.fr pipeline):
-      Band 1: Latitude      (°, east-positive, planetocentric)
-      Band 2: Longitude     (°, east-positive, −180→+180)
-      Band 3: Incidence     (°)
-      Band 4: Emission      (°)
-      Band 5: Phase         (°)
+      Band 1: Latitude      ( deg, east-positive, planetocentric)
+      Band 2: Longitude     ( deg, east-positive, -180->+180)
+      Band 3: Incidence     (deg)
+      Band 4: Emission      (deg)
+      Band 5: Phase         (deg)
       Band 6: Resolution    (km/pixel)
 
     Parameters
@@ -453,8 +468,8 @@ def read_navigation_cube(nav_path: Path) -> Dict[str, np.ndarray]:
     Notes
     -----
     Longitude in the output is provided in BOTH conventions:
-      - ``lon_east``: east-positive (as in the ISIS3 cube, −180→+180)
-      - ``lon_west``: west-positive (0→360, matching pipeline convention)
+      - ``lon_east``: east-positive (as in the ISIS3 cube, -180->+180)
+      - ``lon_west``: west-positive (0->360, matching pipeline convention)
     """
     try:
         import pvl
@@ -486,7 +501,7 @@ def read_navigation_cube(nav_path: Path) -> Dict[str, np.ndarray]:
 
     lat     = _get_band(0)
     lon_e   = _get_band(1)  # east-positive
-    lon_w   = (-lon_e) % 360.0   # convert to west-positive 0→360
+    lon_w   = (-lon_e) % 360.0   # convert to west-positive 0->360
 
     return {
         "lat":        lat,
@@ -505,12 +520,12 @@ def read_navigation_cube(nav_path: Path) -> Dict[str, np.ndarray]:
 
 VIMS_COLUMNS = {
     "id":        "Cube ID  (SCLK format '{sclk}_{counter}', e.g. '1477222875_1')",
-    "flyby":     "Cassini flyby name (TA, T001–T126)",
+    "flyby":     "Cassini flyby name (TA, T001-T126)",
     "obs_start": "Observation start date",
     "obs_end":   "Observation end date",
     "altitude":  "Cassini altitude at observation (km)",
-    "lon":       "Titan surface longitude, WEST-positive, 0→360°",
-    "lat":       "Titan surface latitude, degrees (−90 to +90)",
+    "lon":       "Titan surface longitude, WEST-positive, 0->360 deg",
+    "lat":       "Titan surface latitude, deg (-90 to +90)",
     "res":       "Spatial resolution (km/pixel)",
 }
 
@@ -541,7 +556,7 @@ class VIMSFootprintIndex:
 
     def load(self) -> None:
         """Load the parquet index into memory."""
-        logger.info("Loading VIMS footprint index from %s …", self.parquet_path)
+        logger.info("Loading VIMS footprint index from %s ...", self.parquet_path)
         df = pd.read_parquet(self.parquet_path)
 
         expected = set(VIMS_COLUMNS.keys())
@@ -556,7 +571,7 @@ class VIMSFootprintIndex:
             before = len(df)
             df = df[df["res"] <= self.max_resolution_km].copy()
             logger.info(
-                "Filtered to res ≤ %.1f km/px: %d → %d rows",
+                "Filtered to res <= %.1f km/px: %d -> %d rows",
                 self.max_resolution_km, before, len(df),
             )
 
@@ -590,9 +605,9 @@ class VIMSFootprintIndex:
         Parameters
         ----------
         lon_min, lon_max:
-            Longitude bounds, west-positive (0→360°).
+            Longitude bounds, west-positive (0->360 deg).
         lat_min, lat_max:
-            Latitude bounds (−90→+90°).
+            Latitude bounds (-90->+90 deg).
         max_resolution_km:
             Optional resolution filter in addition to the spatial filter.
 
@@ -647,19 +662,19 @@ class VIMSFootprintIndex:
         """
         Build a 2-D coverage density map (footprint count per pixel).
 
-        Returns float32 array normalised to [0, 1], north-up (row 0 = +90°).
+        Returns float32 array normalised to [0, 1], north-up (row 0 = +90 deg).
         """
         df       = self.df
         lon_bins = np.linspace(lon_range[0], lon_range[1], ncols + 1)
-        # np.histogram2d requires ASCENDING bins — use south-to-north,
-        # then flip the result so row 0 is north (+90°).
+        # np.histogram2d requires ASCENDING bins -- use south-to-north,
+        # then flip the result so row 0 is north (+90 deg).
         lat_bins = np.linspace(lat_range[0], lat_range[1], nrows + 1)
 
         counts, _, _ = np.histogram2d(
             df["lat"].values, df["lon"].values,
             bins=[lat_bins, lon_bins],
         )
-        counts = counts[::-1]   # flip south→north to north→south (row 0 = +90°)
+        counts = counts[::-1]   # flip south->north to north->south (row 0 = +90 deg)
         max_count = counts.max()
         if max_count > 0:
             counts /= max_count
@@ -675,7 +690,7 @@ class VIMSFootprintIndex:
         """
         Build a map of the best (minimum) VIMS resolution per pixel (km/px).
 
-        NaN where no coverage. North-up (row 0 = +90°).
+        NaN where no coverage. North-up (row 0 = +90 deg).
         """
         df        = self.df
         lon_edges = np.linspace(lon_range[0], lon_range[1], ncols + 1)
@@ -695,11 +710,11 @@ class VIMSFootprintIndex:
         row_idx = (nrows - 1) - south_idx
 
         # Initialise with +inf (not NaN): np.minimum(NaN, x) = NaN, which
-        # would silently leave every pixel as NaN.  Replace inf→NaN after.
+        # would silently leave every pixel as NaN.  Replace inf->NaN after.
         result   = np.full((nrows, ncols), np.inf, dtype=np.float32)
         res_vals = df["res"].values
         np.minimum.at(result, (row_idx, col_idx), res_vals)
-        result[np.isinf(result)] = np.nan   # pixels with no coverage → NaN
+        result[np.isinf(result)] = np.nan   # pixels with no coverage -> NaN
         return result
 
     def flyby_count_map(
@@ -742,5 +757,5 @@ class VIMSFootprintIndex:
         return (
             f"VIMSFootprintIndex: {len(df):,} footprints, "
             f"{df['flyby'].nunique()} flybys, "
-            f"res [{df['res'].min():.1f}–{df['res'].max():.1f}] km/px"
+            f"res [{df['res'].min():.1f}-{df['res'].max():.1f}] km/px"
         )

@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 tests/test_gtdr_reader.py
 ==========================
@@ -5,7 +20,7 @@ Unit tests for the GTDR PDS3 binary reader.
 
 Tests the critical MISSING_CONSTANT masking logic, label parser,
 and affine transform computation.  Does NOT require the actual
-GTDR files — all tests use synthetic data.
+GTDR files -- all tests use synthetic data.
 """
 
 from __future__ import annotations
@@ -99,24 +114,24 @@ def make_synthetic_img(
 
 class TestMissingConstant:
     def test_exact_hex_value(self) -> None:
-        """The MISSING_CONSTANT must decode to exactly −3.4028×10³⁸."""
+        """The MISSING_CONSTANT must decode to exactly -3.4028x10^3^8."""
         raw = bytes([0xFB, 0xFF, 0x7F, 0xFF])
         decoded = struct.unpack("<f", raw)[0]
         assert abs(decoded - GTDR_MISSING_CONSTANT) < 1e30
         assert decoded < -3e38
         assert not np.isnan(decoded), (
-            "MISSING_CONSTANT is NOT a NaN — must use exact comparison."
+            "MISSING_CONSTANT is NOT a NaN -- must use exact comparison."
         )
 
     def test_not_nan(self) -> None:
         """Verify that MISSING_CONSTANT is not NaN (common incorrect assumption).
 
-        -3.4028×10³⁸ is a FINITE extreme-negative float32 value (close to -FLT_MAX).
-        It is NOT NaN, NOT ±inf — np.isfinite() correctly returns True.
+        -3.4028x10^3^8 is a FINITE extreme-negative float32 value (close to -FLT_MAX).
+        It is NOT NaN, NOT +/-inf -- np.isfinite() correctly returns True.
         This is exactly why np.isnan() silently fails to mask it, making
         exact-value comparison mandatory (see test_masking_with_isnan_fails).
         """
-        # The value IS finite — this is the key insight
+        # The value IS finite -- this is the key insight
         assert np.isfinite(GTDR_MISSING_CONSTANT), (
             "MISSING_CONSTANT must be finite (it is close to -FLT_MAX, "
             "not NaN or inf)."
@@ -171,7 +186,7 @@ class TestParseGTDRLabel:
         assert abs(meta["center_longitude"] - 180.0) < 1e-6
 
     def test_image_offset(self, tmp_path: Path) -> None:
-        """Image data starts at record 6 = byte offset 5×1440 = 7200."""
+        """Image data starts at record 6 = byte offset 5x1440 = 7200."""
         lbl = tmp_path / "test.LBL"
         lbl.write_text(SAMPLE_LABEL)
         meta = parse_gtdr_label(lbl)
@@ -258,7 +273,7 @@ class TestReadGTDRImg:
 
 class TestAffineTransform:
     def test_global_mosaic_transform(self) -> None:
-        """Global mosaic (0→360°W, 90°→−90°) has correct metre extents."""
+        """Global mosaic (0->360 degW, 90 deg->-90 deg) has correct metre extents."""
         import math
         meta = {
             "westernmost_longitude": 0.0,
@@ -270,13 +285,13 @@ class TestAffineTransform:
         m_per_deg = r * math.pi / 180.0
 
         assert abs(west_m) < 1, "West edge should be at 0 metres"
-        assert abs(north_m - 90.0 * m_per_deg) < 1, "North edge should be +90°"
+        assert abs(north_m - 90.0 * m_per_deg) < 1, "North edge should be +90 deg"
         assert dx_m > 0, "Pixel width should be positive"
         assert dy_m < 0, "Pixel height should be negative (north-up)"
-        # 0.5°/pixel at equator
+        # 0.5 deg/pixel at equator
         expected_dx = 0.5 * m_per_deg
         assert abs(dx_m - expected_dx) < 10, (
-            f"Expected dx ≈ {expected_dx:.0f} m, got {dx_m:.0f} m"
+            f"Expected dx =~ {expected_dx:.0f} m, got {dx_m:.0f} m"
         )
 
 
@@ -285,7 +300,7 @@ class TestAffineTransform:
 # ---------------------------------------------------------------------------
 
 class TestMosaicGTDRTiles:
-    """Tests for mosaic_gtdr_tiles() — merges east + west half-globe tiles."""
+    """Tests for mosaic_gtdr_tiles() -- merges east + west half-globe tiles."""
 
     LABEL_EAST = """\
 PDS_VERSION_ID=PDS3
@@ -337,7 +352,7 @@ END
         return img, lbl
 
     def test_mosaic_shape(self) -> None:
-        """Mosaicked array has (lines, 2×line_samples) shape."""
+        """Mosaicked array has (lines, 2xline_samples) shape."""
         from titan.io.gtdr_reader import mosaic_gtdr_tiles
         with tempfile.TemporaryDirectory() as td:
             td = Path(td)
@@ -360,7 +375,7 @@ END
         np.testing.assert_allclose(right, 200.0, rtol=1e-5)
 
     def test_mosaic_meta_longitude_span(self) -> None:
-        """Merged metadata reports full 0–360° longitude span."""
+        """Merged metadata reports full 0-360 deg longitude span."""
         from titan.io.gtdr_reader import mosaic_gtdr_tiles
         with tempfile.TemporaryDirectory() as td:
             td = Path(td)
@@ -390,7 +405,7 @@ END
     def test_mosaic_shape_mismatch_pads_gracefully(self) -> None:
         """
         Mismatched tile row counts (both truncated, different amounts) must NOT
-        raise — instead the shorter tile is NaN-padded at the south end so the
+        raise -- instead the shorter tile is NaN-padded at the south end so the
         mosaic can be assembled.  This reflects real GTDE files where both
         hemispheres arrive truncated but by different byte counts.
         """
@@ -402,21 +417,21 @@ END
             eimg, elbl = self._write_tile(td, "east", label_8, 100.0)
             wlbl = td / "west.LBL"; wlbl.write_text(label_4)
             wimg = td / "west.IMG"
-            # Write a 4×8 image (west tile is shorter than east)
+            # Write a 4x8 image (west tile is shorter than east)
             wimg.write_bytes(make_synthetic_img(lines=4, line_samples=8,
                                                 fill_value=0.0, n_missing=0))
-            # Should NOT raise — should pad the shorter west tile
+            # Should NOT raise -- should pad the shorter west tile
             mosaic, meta = mosaic_gtdr_tiles(eimg, wimg, elbl, wlbl)
 
         # Mosaic rows = max(8, 4) = 8; cols = 8+8 = 16
         assert mosaic.shape == (8, 16), f"Unexpected mosaic shape: {mosaic.shape}"
 
-        # West half (columns 8–15): rows 4–7 should be NaN-padded
+        # West half (columns 8-15): rows 4-7 should be NaN-padded
         west_half = mosaic[:, 8:]
         assert np.all(np.isfinite(west_half[:4, :])), "West top rows should be valid"
         assert np.all(np.isnan(west_half[4:, :])),    "West padded rows should be NaN"
 
-        # East half (columns 0–7): all rows present, should be finite
+        # East half (columns 0-7): all rows present, should be finite
         east_half = mosaic[:, :8]
         assert np.all(np.isfinite(east_half)), "East half should be fully valid"
 
@@ -444,17 +459,17 @@ class TestAffineTransformExtended:
     """Additional affine transform tests beyond the basic case."""
 
     def test_pixel_size_matches_2ppd(self) -> None:
-        """At 2 ppd, pixel size should be 0.5° in metres."""
+        """At 2 ppd, pixel size should be 0.5 deg in metres."""
         import math
         meta = {"westernmost_longitude": 0.0,
                 "maximum_latitude": 90.0, "map_resolution": 2.0}
         _, _, dx_m, dy_m = gtdr_affine_transform(meta)
         m_per_deg = 2_575_000.0 * math.pi / 180.0
-        expected = 0.5 * m_per_deg          # 0.5°/pixel at 2 ppd
+        expected = 0.5 * m_per_deg          # 0.5 deg/pixel at 2 ppd
         assert abs(dx_m - expected) < 100   # within 100 m
 
     def test_pixel_size_scales_with_resolution(self) -> None:
-        """Higher resolution (more ppd) → smaller pixel size."""
+        """Higher resolution (more ppd) -> smaller pixel size."""
         meta_lo = {"westernmost_longitude": 0., "maximum_latitude": 90., "map_resolution": 2.0}
         meta_hi = {"westernmost_longitude": 0., "maximum_latitude": 90., "map_resolution": 4.0}
         _, _, dx_lo, _ = gtdr_affine_transform(meta_lo)
@@ -483,13 +498,13 @@ class TestAffineTransformExtended:
             assert abs(west_m - west_lon * m_per_deg) < 1.0
 
     def test_dy_is_negative(self) -> None:
-        """dy_m must be negative — rasters are stored north-to-south."""
+        """dy_m must be negative -- rasters are stored north-to-south."""
         meta = {"westernmost_longitude": 0., "maximum_latitude": 90., "map_resolution": 2.0}
         _, _, _, dy_m = gtdr_affine_transform(meta)
         assert dy_m < 0, "dy_m should be negative (north-up raster convention)"
 
     def test_dx_is_positive(self) -> None:
-        """dx_m must be positive — longitude increases left to right."""
+        """dx_m must be positive -- longitude increases left to right."""
         meta = {"westernmost_longitude": 0., "maximum_latitude": 90., "map_resolution": 2.0}
         _, _, dx_m, _ = gtdr_affine_transform(meta)
         assert dx_m > 0
@@ -506,9 +521,9 @@ class TestAffineTransformExtended:
 # Integration tests using real GTDR/GTDE files from tests/fixtures/gtdr/
 #
 # Fixture availability (all auto-skip if absent):
-#   gtde_east_img — GTDED00N090_T126_V01  (interpolated, ~90% coverage)
-#   gtde_west_img — GTDED00N270_T126_V01  (interpolated, ~90% coverage)
-#   gtdr_east_img — GT2ED00N090_T126_V01  (sparse) or GT0EB00N090_T077_V01 (legacy)
+#   gtde_east_img -- GTDED00N090_T126_V01  (interpolated, ~90% coverage)
+#   gtde_west_img -- GTDED00N270_T126_V01  (interpolated, ~90% coverage)
+#   gtdr_east_img -- GT2ED00N090_T126_V01  (sparse) or GT0EB00N090_T077_V01 (legacy)
 #
 # Cornell archive: https://data.astro.cornell.edu/RADAR/DATA/GTDR/
 # Files distributed as .IMG.gz; reader decompresses transparently.
@@ -520,15 +535,15 @@ class TestGTDRIntegration:
     See tests/fixtures/README.md for setup instructions.
     """
 
-    # ── Single-tile tests ─────────────────────────────────────────────────
+    # -- Single-tile tests -------------------------------------------------
 
     def test_real_gt0e_east_reads_correctly(self, gtdr_east_img: Any) -> None:
         """
         Read a real GT0E east tile (sparse GTDR) and verify:
           - shape is (360, 360) at 2 ppd
           - MISSING_CONSTANT pixels are correctly NaN-masked
-          - sparse coverage: typically 5–40% valid pixels
-          - elevation values in plausible range (−1700 m to +520 m)
+          - sparse coverage: typically 5-40% valid pixels
+          - elevation values in plausible range (-1700 m to +520 m)
         """
         lbl = None
         base = gtdr_east_img.with_suffix("") if str(gtdr_east_img).endswith(".gz")                else gtdr_east_img
@@ -539,7 +554,7 @@ class TestGTDRIntegration:
 
         data, meta = read_gtdr_img(gtdr_east_img, lbl)
 
-        # GT0E sparse GTDR is always 2 ppd → (360 rows, 360 cols) per half-globe tile
+        # GT0E sparse GTDR is always 2 ppd -> (360 rows, 360 cols) per half-globe tile
         assert data.shape == (360, 360), (
             f"Expected (360,360) at 2 ppd, got {data.shape}. "
             f"If using a 4/8 ppd variant, update this assertion."
@@ -547,11 +562,11 @@ class TestGTDRIntegration:
         assert data.dtype == np.float32
 
         finite = data[np.isfinite(data)]
-        assert len(finite) > 0, "All pixels are NaN — check MISSING_CONSTANT masking"
+        assert len(finite) > 0, "All pixels are NaN -- check MISSING_CONSTANT masking"
         valid_frac = len(finite) / data.size
         # Coverage check: must have at least some valid pixels.
         # Note: some GTDR releases (e.g. T077) are fully populated with
-        # no MISSING_CONSTANT pixels — the sparsity shows up as very low
+        # no MISSING_CONSTANT pixels -- the sparsity shows up as very low
         # elevation values, not as NaN gaps.
         assert valid_frac > 0.01, f"Fewer than 1% valid pixels: {valid_frac:.1%}"
 
@@ -573,12 +588,12 @@ class TestGTDRIntegration:
         assert meta["line_samples"] == 360
         assert abs(meta.get("map_resolution", 0) - 2.0) < 0.1
         # East tile (GT0EB00N090) in west-positive PDS3 convention:
-        #   westernmost_longitude = 180°W (the western boundary)
-        #   easternmost_longitude =   0°W (the eastern boundary = prime meridian)
+        #   westernmost_longitude = 180 degW (the western boundary)
+        #   easternmost_longitude =   0 degW (the eastern boundary = prime meridian)
         west = meta.get("westernmost_longitude", -999)
         east = meta.get("easternmost_longitude", -999)
         assert abs(west - 180.0) < 1.0 or abs(east - 180.0) < 1.0, (
-            f"Expected east tile longitude span near 0-180°W, "
+            f"Expected east tile longitude span near 0-180 degW, "
             f"got westernmost={west}, easternmost={east}"
         )
 
@@ -605,7 +620,7 @@ class TestGTDRIntegration:
         valid = np.isfinite(d_plain)
         np.testing.assert_array_equal(d_plain[valid], d_gz[valid])
 
-    # ── GTDE interpolated DEM tests ───────────────────────────────────────
+    # -- GTDE interpolated DEM tests ---------------------------------------
 
     def test_real_gtde_east_has_global_coverage(self, gtde_east_img: Any) -> None:
         """
@@ -623,7 +638,7 @@ class TestGTDRIntegration:
         data, meta = read_gtdr_img(gtde_east_img, lbl)
 
         # GTDE tiles may be at any resolution (2, 4, or 8 ppd depending on the
-        # specific Cornell file).  GTDED00N090_T126_V01 is 8 ppd → 1440×1440.
+        # specific Cornell file).  GTDED00N090_T126_V01 is 8 ppd -> 1440x1440.
         # Don't hardcode (360,360); derive from map_resolution instead.
         ppd = meta.get("map_resolution", 2.0)
         expected_cols = round(180.0 * ppd)
@@ -649,7 +664,7 @@ class TestGTDRIntegration:
     def test_real_gtde_mosaic_near_global(self, gtde_east_img: Any, gtde_west_img: Any) -> None:
         """
         Mosaic both GTDE tiles and verify near-global coverage:
-          - shape (360, 720), full 0–360° longitude span
+          - shape (360, 720), full 0-360 deg longitude span
           - >90% valid pixels (confirms interpolated fill)
           - east and west hemispheres have different mean elevations
             (guards against accidental tile duplication)
@@ -666,9 +681,9 @@ class TestGTDRIntegration:
             _lbl(gtde_east_img), _lbl(gtde_west_img),
         )
 
-        # Shape depends on ppd: GTDE T126 is 8 ppd → 1440 cols per tile → 2880 mosaic
+        # Shape depends on ppd: GTDE T126 is 8 ppd -> 1440 cols per tile -> 2880 mosaic
         ppd = meta.get("map_resolution", 2.0)
-        expected_ncols = round(360.0 * ppd)  # full 360° at this resolution
+        expected_ncols = round(360.0 * ppd)  # full 360 deg at this resolution
         assert mosaic.shape[1] == expected_ncols, (
             f"Expected {expected_ncols} columns ({ppd} ppd), got {mosaic.shape[1]}"
         )
@@ -686,9 +701,9 @@ class TestGTDRIntegration:
         left  = mosaic[:, :half][np.isfinite(mosaic[:, :half])]
         right = mosaic[:, half:][np.isfinite(mosaic[:, half:])]
         assert len(left) > 0 and len(right) > 0
-        assert abs(float(left.mean()) - float(right.mean())) > 0.1,             "East/west hemisphere means identical — possible tile duplication"
+        assert abs(float(left.mean()) - float(right.mean())) > 0.1,             "East/west hemisphere means identical -- possible tile duplication"
 
-    # ── Preprocessing pipeline integration ───────────────────────────────
+    # -- Preprocessing pipeline integration -------------------------------
 
     def test_preprocess_uses_gtde_when_available(self, gtde_east_img: Path,
                                                    gtde_west_img: Path, tmp_path: Path) -> None:

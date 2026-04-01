@@ -1,14 +1,29 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 tests/test_vims_urls.py
 ========================
 Unit tests for the VIMS Nantes portal URL helpers.
 
 All URLs verified by direct inspection of https://vims.univ-nantes.fr.
-Tests do NOT make network requests — they verify URL construction only.
+Tests do NOT make network requests -- they verify URL construction only.
 
 Key facts confirmed from the portal:
   - cube ID format: {sclk}_{counter}, e.g. 1477222875_1
-  - raw PDS:    https://vims.univ-nantes.fr/cube/v{id}.qub  (302 → PDS JPL)
+  - raw PDS:    https://vims.univ-nantes.fr/cube/v{id}.qub  (302 -> PDS JPL)
   - calibrated: https://vims.univ-nantes.fr/cube/C{id}_ir.cub
   - navigation: https://vims.univ-nantes.fr/cube/N{id}_ir.cub
   - previews:   https://vims.univ-nantes.fr/data/previews/{band}/{flyby}/{id}.jpg
@@ -31,7 +46,7 @@ from titan.io.vims_reader import (
     cube_url_raw,
 )
 
-# The first cube ID from flyby TA — verified against the portal
+# The first cube ID from flyby TA -- verified against the portal
 SAMPLE_ID = "1477222875_1"
 SAMPLE_FLYBY_CODE = "00ATI"
 

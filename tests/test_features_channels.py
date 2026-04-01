@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 tests/test_features_channels.py
 ================================
@@ -147,7 +162,7 @@ class TestSurfaceAtmInteraction:
         stack  = _make_stack(include_topo=False, include_geo=False,
                               include_channels=False)
         result = self._compute(stack)
-        assert np.all(~np.isfinite(result)), "No inputs → result should be NaN"
+        assert np.all(~np.isfinite(result)), "No inputs -> result should be NaN"
 
     def test_weight_sum_implies_correct_blend(self) -> None:
         """
@@ -179,7 +194,7 @@ class TestSurfaceAtmInteraction:
                               include_channels=False)
         result = self._compute(stack)
         assert np.sum(np.isfinite(result)) > 0
-        # Flat DEM → near-zero result
+        # Flat DEM -> near-zero result
         flat_dem = np.zeros((16, 32), dtype=np.float32)
         stack2   = xr.Dataset({
             "topography": xr.DataArray(
@@ -189,7 +204,7 @@ class TestSurfaceAtmInteraction:
             )
         })
         result2 = self._compute(stack2)
-        # Flat DEM → slope = 0 everywhere → normalise_to_0_1 gives 0
+        # Flat DEM -> slope = 0 everywhere -> normalise_to_0_1 gives 0
         finite2 = result2[np.isfinite(result2)]
         assert float(finite2.mean()) < 0.1
 
@@ -273,7 +288,7 @@ class TestRasteriseChannels:
                                                    tmp_path: Path) -> None:
         """
         After Gaussian blur the channel influence should spread beyond the
-        immediate channel line — more non-zero pixels than the raw burn.
+        immediate channel line -- more non-zero pixels than the raw burn.
         """
         rasterio = pytest.importorskip("rasterio")
         from titan.preprocessing import _rasterise_channels, CanonicalGrid

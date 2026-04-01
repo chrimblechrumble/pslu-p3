@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/temporal_features.py
 ===========================
@@ -5,23 +20,23 @@ Feature extraction for PAST and FUTURE temporal habitability modes.
 
 These supplement the core 8 features in titan/features.py with:
 
-  PAST mode — two new features derived from existing Cassini data:
-    impact_melt_proxy   — SAR-bright annuli around impact craters
+  PAST mode -- two new features derived from existing Cassini data:
+    impact_melt_proxy   -- SAR-bright annuli around impact craters
                           proxy for past liquid water exposure
                           Source: SAR + Hedgepeth et al. (2020) crater catalog
-    cryovolcanic_flux   — proximity to cryovolcanic candidate features
+    cryovolcanic_flux   -- proximity to cryovolcanic candidate features
                           proxy for past subsurface heat/ocean pathway
                           Source: SAR + Lopes et al. (2007/2013) catalog
 
-  FUTURE mode — 8 transformed features:
-    water_ammonia_solvent  — liquid water-ammonia proxy (global ocean)
-    organic_stockpile      — accumulated organic inventory
-    dissolved_energy       — chemical energy from organics in warm water
-    water_ammonia_cycle    — analog to methane cycle under 200K conditions
+  FUTURE mode -- 8 transformed features:
+    water_ammonia_solvent  -- liquid water-ammonia proxy (global ocean)
+    organic_stockpile      -- accumulated organic inventory
+    dissolved_energy       -- chemical energy from organics in warm water
+    water_ammonia_cycle    -- analog to methane cycle under 200K conditions
     (plus 4 retained/adapted features from PRESENT)
 
 All features are normalised to [0, 1].
-All datasets used are from existing Cassini observations — NO future-state
+All datasets used are from existing Cassini observations -- NO future-state
 data exists.  FUTURE features are derived from present-day observations
 used as proxies for future conditions.
 
@@ -55,8 +70,8 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 # Coordinates of major cryovolcanic candidate features from:
-#   Lopes et al. (2007) Icarus 186:395 — Table 1
-#   Lopes et al. (2013) JGR-Planets 118:416 — Table 2
+#   Lopes et al. (2007) Icarus 186:395 -- Table 1
+#   Lopes et al. (2013) JGR-Planets 118:416 -- Table 2
 # (lon_west_deg, lat_deg)
 CRYOVOLCANIC_CANDIDATES = [
     (144.5,  9.8,  "Sotra Facula"),      # most convincing (Lopes 2013)
@@ -72,8 +87,8 @@ CRYOVOLCANIC_CANDIDATES = [
 ]
 
 # Known large impact craters (fresh, with melt signatures) from
-#   Hedgepeth et al. (2020) Icarus 344:113664 — Table 1 selected entries
-#   Neish et al. (2018) — best-candidate craters for prebiotic chemistry
+#   Hedgepeth et al. (2020) Icarus 344:113664 -- Table 1 selected entries
+#   Neish et al. (2018) -- best-candidate craters for prebiotic chemistry
 # (lon_west_deg, lat_deg, diameter_km)
 IMPACT_MELT_CRATERS = [
     (199.0,  5.0,  82.0,  "Selk"),      # Dragonfly target; fresh, melt signatures
@@ -110,7 +125,7 @@ def _gaussian_proximity_map(
     grid:
         Canonical grid.
     sigma_deg:
-        Gaussian width in degrees.
+        Gaussian width in deg.
     use_diameter:
         If True, expects sites to be (lon, lat, diameter_km, ...).
         Gaussian width scales with sqrt(diameter_km).
@@ -131,13 +146,13 @@ def _gaussian_proximity_map(
         lat_s   = float(site[1])
         # Wrap-safe longitude difference
         dlon = lon_grid - lon_w
-        dlon = ((dlon + 180) % 360) - 180   # wrap to ±180
+        dlon = ((dlon + 180) % 360) - 180   # wrap to +/-180
         dlat = lat_grid - lat_s
 
         if use_diameter and len(site) > 2:
             diam_km = float(site[2])
             # Scale sigma by sqrt(diameter_km / reference_km)
-            # Reference: 100 km crater → sigma_deg
+            # Reference: 100 km crater -> sigma_deg
             sigma_eff = sigma_deg * np.sqrt(max(diam_km, 10.0) / 100.0)
         else:
             sigma_eff = sigma_deg
@@ -157,15 +172,15 @@ def extract_impact_melt_proxy(
 
     Combines two signals:
     1. SAR-bright annuli around known crater locations (fresh water-ice exposure)
-       → Gaussian proximity to crater locations, scaled by crater diameter
+       -> Gaussian proximity to crater locations, scaled by crater diameter
     2. SAR backscatter elevated at crater margins relative to surroundings
-       → identifies water-ice-like bright spots near craters
+       -> identifies water-ice-like bright spots near craters
 
     Scientific basis
     ----------------
     Fresh craters on Titan show SAR-bright annuli interpreted as water-ice
     exposed by impact melting (Neish et al. 2018 Astrobiology).
-    This ice was in liquid form (water or water-ammonia) for 10²–10⁴ years
+    This ice was in liquid form (water or water-ammonia) for 10^2-10^4 years
     after impact (O'Brien et al. 2005; Hedgepeth et al. 2022).
     Larger, fresher craters = longer liquid water duration = more habitability.
 
@@ -192,7 +207,7 @@ def extract_impact_melt_proxy(
         sar  = stack["sar_mosaic"].values.astype(np.float32)
         sar_norm = normalise_to_0_1(sar, percentile_lo=2, percentile_hi=98)
         # High SAR backscatter near crater sites = water-ice exposure
-        # Use combined: proximity × SAR brightness
+        # Use combined: proximity x SAR brightness
         boosted = np.where(
             np.isfinite(sar_norm),
             np.clip(proximity * 0.5 + sar_norm * proximity * 0.5, 0, 1),
@@ -272,8 +287,8 @@ def extract_water_ammonia_solvent(
     depends on topography: lower terrain accumulates deeper oceans.
 
     Derived from PRESENT topography (GTDR) as a future bathymetry proxy:
-      - Low terrain → deeper future ocean → higher habitability proxy
-      - High terrain → shallower or absent ocean → lower proxy
+      - Low terrain -> deeper future ocean -> higher habitability proxy
+      - High terrain -> shallower or absent ocean -> lower proxy
 
     Scientific basis
     ----------------
@@ -282,7 +297,7 @@ def extract_water_ammonia_solvent(
     liquid.  The surface is not uniformly covered; topography determines
     ocean depth.  This analogy maps directly to current DEM.
 
-    ⚠️ ASSUMPTION: Current topography approximates future ocean bathymetry.
+    WARNING ASSUMPTION: Current topography approximates future ocean bathymetry.
 
     Parameters
     ----------
@@ -294,10 +309,10 @@ def extract_water_ammonia_solvent(
     """
     if "topography" in stack:
         dem = stack["topography"].values.astype(np.float64)
-        # Low terrain → likely future ocean (invert DEM)
-        # Clip to reasonable elevation range: −2000 to +1000 m
+        # Low terrain -> likely future ocean (invert DEM)
+        # Clip to reasonable elevation range: -2000 to +1000 m
         dem_clipped = np.clip(dem, -2000, 1000)
-        # Invert: low elevation → high future solvent availability
+        # Invert: low elevation -> high future solvent availability
         inverted = normalise_to_0_1(-dem_clipped, percentile_lo=2, percentile_hi=98)
         return inverted.astype(np.float32)
 
@@ -321,16 +336,16 @@ def extract_organic_stockpile(
 
     Data sources and priority (mirrors :meth:`~titan.features.FeatureExtractor._organic_abundance`)
     -------------------------------------------------------------------------------------------------
-    1. **VIMS+ISS mosaic — primary (where available).**
-       1.59/1.27 µm band ratio; the spectroscopically established tholin
-       proxy.  Coverage ~50% (0–180°W).
+    1. **VIMS+ISS mosaic -- primary (where available).**
+       1.59/1.27 umm band ratio; the spectroscopically established tholin
+       proxy.  Coverage ~50% (0-180 degW).
 
-    2. **Geomorphology-class scores — gap-fill (global, 100% coverage).**
+    2. **Geomorphology-class scores -- gap-fill (global, 100% coverage).**
        Uses :data:`~titan.features.TERRAIN_ORGANIC_SCORES`: each Lopes 2019
        terrain class carries a published VIMS-derived organic abundance value.
        Provides seamless global coverage without any radiometric seam.
 
-       ISS 938nm broadband is intentionally NOT used — raw values differ from
+       ISS 938nm broadband is intentionally NOT used -- raw values differ from
        VIMS by a factor ~3000 (different physical quantities), producing an
        irremovable seam at the coverage boundary regardless of normalisation.
 
@@ -342,7 +357,7 @@ def extract_organic_stockpile(
     entire surface.  The present distribution (dominated by dune fields at
     ~0.82 and plains at ~0.68) is a lower bound on the future stockpile.
 
-    ⚠️ ASSUMPTION: Present organic distribution → future chemical substrate.
+    WARNING ASSUMPTION: Present organic distribution -> future chemical substrate.
 
     Parameters
     ----------
@@ -359,7 +374,7 @@ def extract_organic_stockpile(
     """
     from titan.features import TERRAIN_ORGANIC_SCORES, _geo_class_to_organic
 
-    # ── Step 1: build geomorphology-based organic map (global, 100% cov) ──
+    # -- Step 1: build geomorphology-based organic map (global, 100% cov) --
     # Same approach as Option B in _organic_abundance: each terrain class
     # maps to a cited VIMS-derived organic abundance score.
     geo_organic: Optional[np.ndarray] = None
@@ -374,13 +389,13 @@ def extract_organic_stockpile(
             100.0 * np.isfinite(geo_organic).mean(),
         )
 
-    # ── Step 2: VIMS primary (where available) ────────────────────────────
+    # -- Step 2: VIMS primary (where available) ----------------------------
     vims_norm: Optional[np.ndarray] = None
     if "vims_mosaic" in stack:
         vims_raw: np.ndarray = stack["vims_mosaic"].values.astype(np.float32)
         vims_norm = normalise_to_0_1(vims_raw, percentile_lo=2, percentile_hi=98)
 
-    # ── Step 3: combine — VIMS primary, geo gap-fill ──────────────────────
+    # -- Step 3: combine -- VIMS primary, geo gap-fill ----------------------
     if vims_norm is not None and geo_organic is not None:
         from titan.features import TERRAIN_ORGANIC_SCORES, _geo_class_to_organic
         geo_raw2: np.ndarray = stack["geomorphology"].values
@@ -451,7 +466,7 @@ def extract_organic_stockpile(
         )
         return geo_organic
 
-    # ── ISS gap-fill fallback (no geomorphology available) ──────────────────
+    # -- ISS gap-fill fallback (no geomorphology available) ------------------
     # Mirrors the same fallback logic in FeatureExtractor._organic_abundance().
     if "iss_mosaic_450m" in stack:
         iss_raw: np.ndarray = stack["iss_mosaic_450m"].values.astype(np.float64)
@@ -505,11 +520,11 @@ def extract_dissolved_energy(
 
     This is the FUTURE analog of acetylene_energy (PRESENT mode).
     The spatial distribution is proportional to:
-    - Organic stockpile (more organics → more energy on dissolution)
-    - Low terrain (ocean forms first in depressions → more dissolution)
+    - Organic stockpile (more organics -> more energy on dissolution)
+    - Low terrain (ocean forms first in depressions -> more dissolution)
 
-    ⚠️ ASSUMPTION: Organic dissolution rate is proportional to current
-    organic abundance × ocean depth proxy.
+    WARNING ASSUMPTION: Organic dissolution rate is proportional to current
+    organic abundance x ocean depth proxy.
 
     Parameters
     ----------
@@ -539,15 +554,15 @@ def extract_water_ammonia_cycle(
     Water-ammonia meteorological cycle proxy for FUTURE habitability.
 
     Lorenz et al. (1997) predict that once the surface warms to ~200 K,
-    a water-ammonia evaporation/precipitation cycle begins — analogous to
+    a water-ammonia evaporation/precipitation cycle begins -- analogous to
     Titan's current methane cycle.  This would transport dissolved organics,
     maintain chemical gradients, and provide energy flux.
 
-    Derived from topographic slope: steep terrain → stronger runoff →
+    Derived from topographic slope: steep terrain -> stronger runoff ->
     more vigorous evaporation/condensation cycle (same logic as
     surface_atm_interaction in PRESENT mode, but for water-ammonia).
 
-    ⚠️ ASSUMPTION: Topographic slope drives the future water-ammonia cycle
+    WARNING ASSUMPTION: Topographic slope drives the future water-ammonia cycle
     analogously to how it drives the current methane cycle.
 
     Parameters
@@ -588,7 +603,7 @@ def extract_global_ocean_habitability(
 
     Key factors:
     - Ocean chemical energy (from Affholder 2025 glycine fermentation)
-    - Water-rock interaction at seafloor → redox gradients
+    - Water-rock interaction at seafloor -> redox gradients
     - Organic availability (from billions of years of surface accumulation)
 
     Derived from:
@@ -596,8 +611,8 @@ def extract_global_ocean_habitability(
     - Future ocean depth proxy (inverse DEM)
     - Topographic complexity (seafloor habitat diversity)
 
-    ⚠️ ASSUMPTION: Surface ocean habitability scales with organic availability
-    × ocean depth × topographic complexity of seafloor.
+    WARNING ASSUMPTION: Surface ocean habitability scales with organic availability
+    x ocean depth x topographic complexity of seafloor.
 
     Parameters
     ----------
@@ -644,7 +659,7 @@ class TemporalFeatureStack:
     mode:
         Temporal mode used to compute these features.
     features:
-        Dict mapping feature name → 2-D float32 array.
+        Dict mapping feature name -> 2-D float32 array.
     grid:
         Canonical grid.
     """
@@ -709,7 +724,7 @@ class TemporalFeatureExtractor:
         Temporal habitability window parameters (D1: past epoch,
         D2: future window + uniform warming assumption).
         If None, uses HabitabilityWindowConfig defaults
-        (3.5 Gya past epoch, 100–400 Myr near-future window).
+        (3.5 Gya past epoch, 100-400 Myr near-future window).
     subsurface_ocean_base_prior:
         Base prior probability for the subsurface_ocean feature (D3).
         Default 0.03 (Neish et al. 2024: organic flux ~1 elephant/yr).

@@ -1,7 +1,22 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/features.py
 ==================
-Stage 3 — Feature Extraction.
+Stage 3 -- Feature Extraction.
 
 Converts the canonical multi-layer data stack into eight normalised [0,1]
 feature maps that feed the Bayesian habitability model.
@@ -12,14 +27,14 @@ reference cited in the docstrings.
 
 Features
 --------
-1. liquid_hydrocarbon     — surface liquid HC solvent availability
-2. organic_abundance      — surface organic / tholin coverage
-3. acetylene_energy       — chemical energy gradient (C2H2 + H2)
-4. methane_cycle          — active methane-cycle intensity
-5. surface_atm_interaction — surface–atmosphere chemical exchange
-6. topographic_complexity — local terrain roughness
-7. geomorphologic_diversity — Shannon diversity of terrain classes
-8. subsurface_ocean       — cryovolcanic/ocean proximity proxy
+1. liquid_hydrocarbon     -- surface liquid HC solvent availability
+2. organic_abundance      -- surface organic / tholin coverage
+3. acetylene_energy       -- chemical energy gradient (C2H2 + H2)
+4. methane_cycle          -- active methane-cycle intensity
+5. surface_atm_interaction -- surface-atmosphere chemical exchange
+6. topographic_complexity -- local terrain roughness
+7. geomorphologic_diversity -- Shannon diversity of terrain classes
+8. subsurface_ocean       -- cryovolcanic/ocean proximity proxy
 
 References
 ----------
@@ -32,7 +47,7 @@ Lopes et al. (2019)       doi:10.1038/s41550-019-0917-6
 Lorenz et al. (2013)      doi:10.1016/j.icarus.2013.04.002
 Iess et al. (2012)        doi:10.1126/science.1219631
 Neish et al. (2018)       doi:10.1089/ast.2017.1758
-Le Mouélic et al. (2019)  doi:10.1016/j.icarus.2018.09.017
+Le Mouelic et al. (2019)  doi:10.1016/j.icarus.2018.09.017
 Malaska et al. (2025)     Titan After Cassini-Huygens Ch.9
 Meyer-Dombard et al.(2025) Titan After Cassini-Huygens Ch.14
 """
@@ -77,41 +92,41 @@ FEATURE_NAMES: List[str] = [
 #:
 #: Values are grounded in published VIMS spectral studies:
 #:
-#: Class 1 — Craters:
+#: Class 1 -- Craters:
 #:   Impact craters expose water ice but mix in surface organics.
 #:   Fresh craters show water-ice floors; ejecta has moderate organic content.
-#:   Value 0.35 — Neish et al. (2018) Astrobiology 18, 571; Hedgepeth et al. (2020)
+#:   Value 0.35 -- Neish et al. (2018) Astrobiology 18, 571; Hedgepeth et al. (2020)
 #:
-#: Class 2 — Dunes:
+#: Class 2 -- Dunes:
 #:   Equatorial dune fields are the most organic-rich terrain on Titan.
 #:   Composed of complex tholin sand grains (Lorenz et al. 2006).
-#:   High 1.59/1.27 µm ratio confirmed by VIMS (Le Mouélic et al. 2019).
-#:   Value 0.82 — Lorenz et al. (2006) Science 312, 724; Malaska et al. (2025)
+#:   High 1.59/1.27 umm ratio confirmed by VIMS (Le Mouelic et al. 2019).
+#:   Value 0.82 -- Lorenz et al. (2006) Science 312, 724; Malaska et al. (2025)
 #:
-#: Class 3 — Plains (undifferentiated):
+#: Class 3 -- Plains (undifferentiated):
 #:   Organic sediment blanket covering ~65 % of Titan's surface.
 #:   Moderate-high tholin content; VIMS shows elevated red ratio.
-#:   Value 0.68 — Lopes et al. (2016) Icarus 270; Janssen et al. (2016)
+#:   Value 0.68 -- Lopes et al. (2016) Icarus 270; Janssen et al. (2016)
 #:
-#: Class 4 — Basins:
+#: Class 4 -- Basins:
 #:   Topographic lows that accumulate organic fallout.
-#:   Moderate organic content — less uniform than plains.
-#:   Value 0.58 — Lopes et al. (2020) Nature Astronomy 4, 228
+#:   Moderate organic content -- less uniform than plains.
+#:   Value 0.58 -- Lopes et al. (2020) Nature Astronomy 4, 228
 #:
-#: Class 5 — Mountains / Hummocky terrain:
+#: Class 5 -- Mountains / Hummocky terrain:
 #:   Geologically old, water-ice-rich crust; organics present but diluted.
 #:   VIMS indicates lower tholin ratio than plains.
-#:   Value 0.25 — Solomonidou et al. (2018) JGR Planets 123; Mitri et al. (2010)
+#:   Value 0.25 -- Solomonidou et al. (2018) JGR Planets 123; Mitri et al. (2010)
 #:
-#: Class 6 — Labyrinth terrain:
+#: Class 6 -- Labyrinth terrain:
 #:   Spectral composition similar to plains; moderate organic content.
-#:   Malaska et al. (2020) Icarus 344 — same material source as plains.
-#:   Value 0.55 — Malaska et al. (2020); Lopes et al. (2020)
+#:   Malaska et al. (2020) Icarus 344 -- same material source as plains.
+#:   Value 0.55 -- Malaska et al. (2020); Lopes et al. (2020)
 #:
-#: Class 7 — Lakes / Seas:
-#:   Liquid hydrocarbon bodies — not solid organics.
+#: Class 7 -- Lakes / Seas:
+#:   Liquid hydrocarbon bodies -- not solid organics.
 #:   Low tholin band ratio (Brown et al. 2008 confirmed liquid ethane/methane).
-#:   Value 0.05 — Brown et al. (2008) Nature 454; Hayes et al. (2008)
+#:   Value 0.05 -- Brown et al. (2008) Nature 454; Hayes et al. (2008)
 #:
 #: References
 #: ----------
@@ -121,21 +136,21 @@ FEATURE_NAMES: List[str] = [
 #: Mitri et al. (2010)        doi:10.1029/2010JE003592
 #: Lopes et al. (2016)        doi:10.1016/j.icarus.2016.02.022
 #: Janssen et al. (2016)      doi:10.1016/j.icarus.2015.09.027
-#: Le Mouélic et al. (2019)   doi:10.1016/j.icarus.2018.09.017
+#: Le Mouelic et al. (2019)   doi:10.1016/j.icarus.2018.09.017
 #: Lopes et al. (2020)        doi:10.1038/s41550-019-0917-6
 #: Malaska et al. (2020)      doi:10.1016/j.icarus.2019.113764
 #: Neish et al. (2018)        doi:10.1089/ast.2017.1758
 #: Hedgepeth et al. (2020)    doi:10.1016/j.icarus.2019.113422
 #: Malaska et al. (2025)      Titan After Cassini-Huygens Ch.9
 TERRAIN_ORGANIC_SCORES: Dict[int, float] = {
-    0: float("nan"),  # nodata — no information
-    1: 0.35,          # Craters — moderate; mixed water ice + ejecta organics
-    2: 0.82,          # Dunes — highest; tholin-dominated organic sand
-    3: 0.68,          # Plains — high; organic sediment blanket
-    4: 0.58,          # Basins — moderate-high; organic accumulation zones
-    5: 0.25,          # Mountains — low; water-ice-rich crustal material
-    6: 0.55,          # Labyrinth — moderate; spectral affinity with plains
-    7: 0.05,          # Lakes/Seas — very low; liquid HC, not solid organics
+    0: float("nan"),  # nodata -- no information
+    1: 0.35,          # Craters -- moderate; mixed water ice + ejecta organics
+    2: 0.82,          # Dunes -- highest; tholin-dominated organic sand
+    3: 0.68,          # Plains -- high; organic sediment blanket
+    4: 0.58,          # Basins -- moderate-high; organic accumulation zones
+    5: 0.25,          # Mountains -- low; water-ice-rich crustal material
+    6: 0.55,          # Labyrinth -- moderate; spectral affinity with plains
+    7: 0.05,          # Lakes/Seas -- very low; liquid HC, not solid organics
 }
 
 
@@ -149,7 +164,7 @@ def _geo_class_to_organic(geo_int32: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     geo_int32:
-        2-D integer array of terrain class labels (0=nodata, 1–7=classes)
+        2-D integer array of terrain class labels (0=nodata, 1-7=classes)
         as produced by :class:`titan.io.shapefile_rasteriser.GeomorphologyRasteriser`.
 
     Returns
@@ -160,7 +175,7 @@ def _geo_class_to_organic(geo_int32: np.ndarray) -> np.ndarray:
 
     Notes
     -----
-    Class labels outside 0–7 are also mapped to NaN with a warning.
+    Class labels outside 0-7 are also mapped to NaN with a warning.
     """
     result: np.ndarray = np.full(geo_int32.shape, np.nan, dtype=np.float32)
     unknown_classes: list[int] = []
@@ -168,7 +183,7 @@ def _geo_class_to_organic(geo_int32: np.ndarray) -> np.ndarray:
     for cls_id, score in TERRAIN_ORGANIC_SCORES.items():
         mask = geo_int32 == cls_id
         if np.isnan(score):
-            result[mask] = np.nan   # nodata class — leave as NaN
+            result[mask] = np.nan   # nodata class -- leave as NaN
         else:
             result[mask] = float(score)
 
@@ -180,7 +195,7 @@ def _geo_class_to_organic(geo_int32: np.ndarray) -> np.ndarray:
 
     if unknown_classes:
         logger.warning(
-            "_geo_class_to_organic: unknown terrain class IDs %s — "
+            "_geo_class_to_organic: unknown terrain class IDs %s -- "
             "those pixels will be NaN.",
             unknown_classes,
         )
@@ -227,7 +242,7 @@ class FeatureStack:
         Parameters
         ----------
         weights:
-            Dict mapping feature name → weight (must sum to ~1.0).
+            Dict mapping feature name -> weight (must sum to ~1.0).
 
         Returns
         -------
@@ -370,13 +385,13 @@ class FeatureExtractor:
 
         return FeatureStack(**feats)
 
-    # ── Feature 1 ─────────────────────────────────────────────────────────────
+    # -- Feature 1 -------------------------------------------------------------
 
     def _liquid_hydrocarbon(
         self, stack: xr.Dataset, nan: np.ndarray
     ) -> np.ndarray:
         """
-        Surface liquid hydrocarbon availability — Feature 1 (weight 0.25).
+        Surface liquid hydrocarbon availability -- Feature 1 (weight 0.25).
 
         Data source priority
         --------------------
@@ -401,7 +416,7 @@ class FeatureExtractor:
         Note on empty basins
         --------------------
         Birch empty-basin pixels (label 2 = ``POLAR_LAKE_EMPTY``) are NOT
-        included here — they are paleo-lakes without confirmed present liquid
+        included here -- they are paleo-lakes without confirmed present liquid
         and are handled instead as a sub-component of Feature 5
         (surface_atm_interaction) as a wetting/drying chemistry indicator.
 
@@ -409,7 +424,7 @@ class FeatureExtractor:
         ----------------
         Liquid methane/ethane is the proposed non-aqueous solvent for
         hypothetical Titan surface life (McKay & Smith 2005; McKay 2016;
-        Benner 2004).  Lakes cover ~1.5–2 % of Titan's surface globally
+        Benner 2004).  Lakes cover ~1.5-2 % of Titan's surface globally
         but ~40 % of the north polar region (Hayes et al. 2008).
         The Birch+2017 mapping provides higher-fidelity shorelines than the
         global Lopes+2019 map, specifically designed for the polar regions
@@ -442,7 +457,7 @@ class FeatureExtractor:
 
         result: np.ndarray = nan.copy()
 
-        # ── Priority 1: Birch+2017 / Palermo+2022 polar lake raster ──────────
+        # -- Priority 1: Birch+2017 / Palermo+2022 polar lake raster ----------
         # These are expert-mapped outlines from the same Cassini SAR data,
         # providing binary 1.0 for confirmed liquid and 0.0 elsewhere in the
         # mapped region.  Supersedes both the Lopes class and the SAR proxy
@@ -471,17 +486,17 @@ class FeatureExtractor:
                 "_liquid_hydrocarbon: Birch/Palermo: %d liquid pixels", n_birch_liquid
             )
 
-        # ── Priority 2: Lopes+2019 geomorphology lake class (label 7) ────────
+        # -- Priority 2: Lopes+2019 geomorphology lake class (label 7) --------
         # Used as a supplementary source in regions not covered by Birch.
         if "geomorphology" in stack:
             geo: np.ndarray = stack["geomorphology"].values.astype(np.float32)
             lake_mask: np.ndarray = (geo == 7.0).astype(np.float32)
-            lake_mask[geo == 0.0] = np.nan   # geomorphology nodata → skip
+            lake_mask[geo == 0.0] = np.nan   # geomorphology nodata -> skip
             # Only fill where result is still NaN (Birch takes priority)
             result = np.where(np.isfinite(result), result,
                               np.where(np.isfinite(lake_mask), lake_mask, result))
 
-        # ── Priority 3: SAR low-backscatter proxy ─────────────────────────────
+        # -- Priority 3: SAR low-backscatter proxy -----------------------------
         # Radar-dark (low sigma0) surfaces are consistent with liquid or smooth
         # organic material.  Used only where no better source is available.
         if "sar_mosaic" in stack:
@@ -489,7 +504,7 @@ class FeatureExtractor:
             sar_norm: np.ndarray = normalise_to_0_1(
                 sar, percentile_lo=1, percentile_hi=99
             )
-            # Invert: low backscatter → high liquid probability
+            # Invert: low backscatter -> high liquid probability
             sar_liquid: np.ndarray = (1.0 - sar_norm).astype(np.float32)
             result = np.where(
                 np.isfinite(result), result,
@@ -498,7 +513,7 @@ class FeatureExtractor:
 
         return result.astype(np.float32)
 
-    # ── Feature 2 ─────────────────────────────────────────────────────────────
+    # -- Feature 2 -------------------------------------------------------------
 
     def _organic_abundance(
         self, stack: xr.Dataset, nan: np.ndarray
@@ -508,15 +523,15 @@ class FeatureExtractor:
 
         Data sources and priority
         -------------------------
-        1. **VIMS+ISS mosaic — primary (where available).**
-           Titan_VIMS-ISS.tif Band 1 (1.59/1.27 µm band ratio plus ISS 938 nm;
+        1. **VIMS+ISS mosaic -- primary (where available).**
+           Titan_VIMS-ISS.tif Band 1 (1.59/1.27 umm band ratio plus ISS 938 nm;
            Seignovert et al. 2019, CaltechDATA doi:10.22002/D1.1173).
            This is the spectroscopically established tholin abundance proxy
-           (Le Mouélic et al. 2019; Barnes et al. 2007).
-           Coverage: ~50 % of the globe (roughly 0–180 °W).
+           (Le Mouelic et al. 2019; Barnes et al. 2007).
+           Coverage: ~50 % of the globe (roughly 0-180  degW).
 
-        2. **Geomorphology-based scores — gap-fill (global coverage).**
-           Where VIMS data is absent (180–360 °W and polar regions), organic
+        2. **Geomorphology-based scores -- gap-fill (global coverage).**
+           Where VIMS data is absent (180-360  degW and polar regions), organic
            abundance is assigned from the terrain-class lookup table
            :data:`TERRAIN_ORGANIC_SCORES`, which maps each Lopes et al. (2019)
            geomorphologic class to a published organic abundance value derived
@@ -536,7 +551,7 @@ class FeatureExtractor:
                :data:`TERRAIN_ORGANIC_SCORES`) provide scientifically
                defensible organic abundance priors.
 
-        3. **VIMS coverage density — weak fallback (no spectral information).**
+        3. **VIMS coverage density -- weak fallback (no spectral information).**
            Used only when neither VIMS mosaic nor geomorphology are available.
 
         Scientific basis
@@ -550,7 +565,7 @@ class FeatureExtractor:
         References
         ----------
         Seignovert et al. (2019)    doi:10.22002/D1.1173
-        Le Mouélic et al. (2019)    doi:10.1016/j.icarus.2018.09.017
+        Le Mouelic et al. (2019)    doi:10.1016/j.icarus.2018.09.017
         Barnes et al. (2007)        doi:10.1016/j.icarus.2006.08.021
         Lopes et al. (2020)         doi:10.1038/s41550-019-0917-6
         Cable et al. (2012)         doi:10.1089/ast.2011.0740
@@ -576,13 +591,13 @@ class FeatureExtractor:
                                   "vims_coverage") if k in stack]
         logger.info("organic_abundance: available layers = %s", available)
 
-        # ── Step 1: build geomorphology-based organic map (global, 100% cov) ──
+        # -- Step 1: build geomorphology-based organic map (global, 100% cov) --
         # This is precomputed regardless of VIMS availability so it can be
         # used as a gap-filler in the VIMS-absent regions.
         geo_organic: Optional[np.ndarray] = None
         if "geomorphology" in stack:
             geo_raw: np.ndarray = stack["geomorphology"].values
-            # Ensure integer class labels — geomorphology raster is int32
+            # Ensure integer class labels -- geomorphology raster is int32
             geo_int32: np.ndarray = np.where(
                 np.isfinite(geo_raw.astype(np.float32)),
                 geo_raw,
@@ -596,12 +611,12 @@ class FeatureExtractor:
                 sorted(np.unique(geo_int32).tolist()),
             )
 
-        # ── Step 2: normalise VIMS mosaic (primary spectral proxy) ──────────
+        # -- Step 2: normalise VIMS mosaic (primary spectral proxy) ----------
         vims_norm: Optional[np.ndarray] = None
         if "vims_mosaic" in stack:
             vims_raw: np.ndarray = stack["vims_mosaic"].values.astype(np.float32)
             # Normalise to [0, 1] using robust percentile range.
-            # High band ratio → high tholin abundance → high score.
+            # High band ratio -> high tholin abundance -> high score.
             vims_norm = normalise_to_0_1(vims_raw, percentile_lo=2, percentile_hi=98)
             logger.debug(
                 "organic_abundance: VIMS normalised "
@@ -609,13 +624,13 @@ class FeatureExtractor:
                 100.0 * np.isfinite(vims_norm).mean(),
             )
 
-        # ── Step 3: combine — VIMS primary, row-wise locally-offset geo fill ──────
+        # -- Step 3: combine -- VIMS primary, row-wise locally-offset geo fill ------
         #
         # The seam arises because VIMS values vary LOCALLY near the boundary.
-        # At 170–180°W (Shangri-La/Xanadu), VIMS is ~0.23 while the global
-        # calibrated geo score for that terrain class is ~0.38 — a +0.14 step.
+        # At 170-180 degW (Shangri-La/Xanadu), VIMS is ~0.23 while the global
+        # calibrated geo score for that terrain class is ~0.38 -- a +0.14 step.
         # Global class calibration cannot fix this: the class mean is computed
-        # over all of 0–180°W but the boundary region is locally anomalous.
+        # over all of 0-180 degW but the boundary region is locally anomalous.
         #
         # Solution: ROW-WISE LOCAL OFFSET.
         # For each row, find the last VIMS-valid pixel. The geo score in the
@@ -633,9 +648,9 @@ class FeatureExtractor:
             # Step 3a: published scores with a single global level shift
             #
             # We do NOT calibrate per-class from the VIMS overlap zone because
-            # the boundary region (170-180°W) is locally atypical: Shangri-La
+            # the boundary region (170-180 degW) is locally atypical: Shangri-La
             # dunes there score low in VIMS, pulling the calibrated dune score
-            # down to 0.29 — BELOW plains (0.54) — which inverts the correct
+            # down to 0.29 -- BELOW plains (0.54) -- which inverts the correct
             # scientific ranking (dunes are the most tholin-rich terrain).
             #
             # Instead: use published TERRAIN_ORGANIC_SCORES (which correctly
@@ -675,11 +690,11 @@ class FeatureExtractor:
             # Step 3b: row-wise local offset to eliminate the boundary step
             # For each row, compute edge_offset = VIMS_at_last_valid_col - geo_at_that_col.
             # Apply a decaying offset to geo pixels just past the boundary:
-            #   offset(c) = edge_offset × exp(−(c − c_edge) / decay_cols)
+            #   offset(c) = edge_offset x exp(-(c - c_edge) / decay_cols)
             # This makes the geo fill EXACTLY match VIMS at the boundary pixel
             # and blend smoothly to the calibrated geo value over decay_cols columns.
             nrows, ncols = vims_norm.shape
-            # Transition width: ~10° longitude
+            # Transition width: ~10 deg longitude
             deg_per_col  = 360.0 / ncols
             decay_cols   = max(5, int(10.0 / deg_per_col))
 
@@ -688,7 +703,7 @@ class FeatureExtractor:
             # Build column-distance array relative to each row's VIMS edge.
             # For row r with last valid VIMS column c_edge(r):
             #   dist[r, c] = c - c_edge(r)   (0 at edge, positive going right)
-            # Then: offset(r, c) = edge_offset(r) × exp(-dist / decay_cols)
+            # Then: offset(r, c) = edge_offset(r) x exp(-dist / decay_cols)
             #       where edge_offset(r) = vims_norm[r, c_edge] - calibrated_geo[r, c_edge]
             # Only applied to geo-filled pixels (where vims is NaN) with dist > 0.
             last_valid_col = np.full(nrows, -1, dtype=np.int32)
@@ -742,7 +757,7 @@ class FeatureExtractor:
             return result.astype(np.float32)
 
         if vims_norm is not None:
-            # VIMS only — no geomorphology available
+            # VIMS only -- no geomorphology available
             logger.info(
                 "organic_abundance: VIMS only (no geomorphology for gap-fill), "
                 "valid=%.1f%%",
@@ -751,7 +766,7 @@ class FeatureExtractor:
             return vims_norm
 
         if geo_organic is not None:
-            # No VIMS at all — use geomorphology scores alone
+            # No VIMS at all -- use geomorphology scores alone
             logger.info(
                 "organic_abundance: geomorphology-only fallback "
                 "(no VIMS mosaic available), valid=%.1f%%",
@@ -759,7 +774,7 @@ class FeatureExtractor:
             )
             return geo_organic
 
-        # ── ISS gap-fill fallback (no geomorphology shapefile available) ──────
+        # -- ISS gap-fill fallback (no geomorphology shapefile available) ------
         # When the Lopes geomorphology shapefiles have not been downloaded,
         # fall back to ISS 938nm broadband as a VIMS gap-filler.
         # To avoid the seam that comes from blending two different
@@ -801,20 +816,20 @@ class FeatureExtractor:
                         )
                         return result.astype(np.float32)
                 else:
-                    # No VIMS at all — ISS only
+                    # No VIMS at all -- ISS only
                     logger.warning(
                         "organic_abundance: using ISS-only (no VIMS, no geomorphology). "
                         "Download both for best results."
                     )
                     return iss_inv.astype(np.float32)
 
-        # ── Latitude-based prior fallback ─────────────────────────────────────
+        # -- Latitude-based prior fallback -------------------------------------
         # Last resort: use a smooth latitude-based terrain prior.
         # Equatorial dune belt (~0.75), mid-lat plains (~0.65),
         # polar regions (~0.4, less tholin accumulation).
         # This at least gives sensible spatial variation and no blank regions.
         if vims_norm is not None:
-            # VIMS only — no gap-fill available; leave NaN as-is
+            # VIMS only -- no gap-fill available; leave NaN as-is
             logger.warning(
                 "organic_abundance: VIMS only, no gap-fill source available. "
                 "Right half will be NaN. Download geomorphology shapefiles from "
@@ -822,11 +837,11 @@ class FeatureExtractor:
             )
             return vims_norm
 
-        # ── VIMS coverage density ─────────────────────────────────────────────
+        # -- VIMS coverage density ---------------------------------------------
         if "vims_coverage" in stack:
             logger.warning(
                 "organic_abundance: using VIMS coverage density as last-resort "
-                "fallback — no spectral or geomorphology data available."
+                "fallback -- no spectral or geomorphology data available."
             )
             return stack["vims_coverage"].values.astype(np.float32)
 
@@ -836,7 +851,7 @@ class FeatureExtractor:
         )
         return nan.copy()
 
-    # ── Feature 3 ─────────────────────────────────────────────────────────────
+    # -- Feature 3 -------------------------------------------------------------
 
     def _acetylene_energy(
         self, stack: xr.Dataset, nan: np.ndarray
@@ -850,13 +865,13 @@ class FeatureExtractor:
 
         Scientific basis
         ----------------
-        McKay & Smith (2005) calculate ΔG = −334 kJ/mol for:
-            C2H2 + 3H2 → 2CH4
+        McKay & Smith (2005) calculate DeltaG = -334 kJ/mol for:
+            C2H2 + 3H2 -> 2CH4
         This exceeds the minimum energy for Earth methanogens (~42 kJ/mol).
         Strobel (2010) reports H2 downward flux ~10^25 mol/s with surface
         depletion unexplained by abiotic chemistry alone.
-        Yanez et al. (2024) calculate acetylenotrophy energy 69–78 kJ/mol C,
-        higher than methanogenesis (25–65 kJ/mol C).
+        Yanez et al. (2024) calculate acetylenotrophy energy 69-78 kJ/mol C,
+        higher than methanogenesis (25-65 kJ/mol C).
         Both metabolisms require surface-atmosphere chemical disequilibrium,
         which is highest where organic products accumulate.
 
@@ -871,7 +886,7 @@ class FeatureExtractor:
             # Boost in topographic depressions (organic accumulation)
             if "topography" in stack:
                 dem = stack["topography"].values.astype(np.float32)
-                # Invert elevation: low terrain → high accumulation
+                # Invert elevation: low terrain -> high accumulation
                 topo_inv = normalise_to_0_1(-dem, percentile_lo=2, percentile_hi=98)
                 topo_inv = np.where(np.isfinite(topo_inv), topo_inv, 0.0)
                 energy = np.where(
@@ -890,7 +905,7 @@ class FeatureExtractor:
         logger.warning("No SAR or topography data for acetylene_energy.")
         return nan.copy()
 
-    # ── Feature 4 ─────────────────────────────────────────────────────────────
+    # -- Feature 4 -------------------------------------------------------------
 
     def _methane_cycle(
         self, stack: xr.Dataset, nan: np.ndarray
@@ -900,16 +915,16 @@ class FeatureExtractor:
 
         Components (fallback order)
         ---------------------------
-        1. VIMS coverage density (primary)  — coverage is highest where
+        1. VIMS coverage density (primary)  -- coverage is highest where
            Cassini observed the most flybys, which correlates with
            scientifically-motivated targeting of active methane-cycle
            regions (mid-latitudes and polar lake regions).
-        2. CIRS surface temperature gradient (secondary) — regions where
+        2. CIRS surface temperature gradient (secondary) -- regions where
            the latitudinal temperature gradient is steepest drive the
-           strongest evaporation–precipitation differential and therefore
+           strongest evaporation-precipitation differential and therefore
            the most active methane cycling (Tokano 2019; Jennings 2019).
            Derived from the synthesised `cirs_temperature` layer.
-        3. Pure latitude prior (fallback) — Gaussian peak at ±45°,
+        3. Pure latitude prior (fallback) -- Gaussian peak at +/-45 deg,
            representing mid-latitude active transport zones.
 
         Scientific basis
@@ -917,7 +932,7 @@ class FeatureExtractor:
         Titan's methane cycle (rain, rivers, lakes, evaporation) is the
         dominant surface process and the analog to Earth's hydrological
         cycle (Mitchell & Lora 2016). Seasonal surface temperature changes
-        of 1–4 K (Jennings et al. 2019) drive differential evaporation
+        of 1-4 K (Jennings et al. 2019) drive differential evaporation
         between northern and southern hemispheres. Schulze-Makuch &
         Grinspoon (2005) propose biological activity could enhance the
         methane cycle via biothermal energy. Observed rainfall events
@@ -927,7 +942,7 @@ class FeatureExtractor:
         References: Mitchell & Lora 2016; Jennings et al. 2019;
                     Tokano 2019; Turtle et al. 2011
         """
-        # ── Latitude prior (always available) ────────────────────────────
+        # -- Latitude prior (always available) ----------------------------
         # Derive grid shape from the stack if possible; else fall back to
         # self.grid so the function works with any input size (including tests).
         if stack.sizes:
@@ -942,12 +957,12 @@ class FeatureExtractor:
             ncols = self.grid.ncols
             lats = self.grid.lat_centres_deg()
         lat_grid = np.tile(lats[:, np.newaxis], (1, ncols))
-        # Gaussian peak at ±45° — active methane transport zones
+        # Gaussian peak at +/-45 deg -- active methane transport zones
         lat_weight = np.exp(
             -((np.abs(lat_grid) - 45.0) / 25.0) ** 2
         ).astype(np.float32)
 
-        # ── CIRS surface temperature gradient ────────────────────────────
+        # -- CIRS surface temperature gradient ----------------------------
         # Where |dT/dlat| is large, evaporation differential is strong.
         # Use the meridional gradient of the temperature raster.
         cirs_weight: Optional[np.ndarray] = None
@@ -962,7 +977,7 @@ class FeatureExtractor:
             )
             logger.debug("methane_cycle: cirs_temperature gradient present")
 
-        # ── VIMS coverage ─────────────────────────────────────────────────
+        # -- VIMS coverage -------------------------------------------------
         if "vims_coverage" in stack:
             coverage = stack["vims_coverage"].values.astype(np.float32)
             vims_norm = normalise_to_0_1(coverage, percentile_lo=0,
@@ -987,7 +1002,7 @@ class FeatureExtractor:
                               lat_weight * 0.40).astype(np.float32)
             return result
 
-        # ── No VIMS — temperature gradient or pure latitude prior ─────────
+        # -- No VIMS -- temperature gradient or pure latitude prior ---------
         if cirs_weight is not None:
             return np.clip(
                 cirs_weight * 0.60 + lat_weight * 0.40,
@@ -997,20 +1012,20 @@ class FeatureExtractor:
         # Pure latitude prior fallback
         return lat_weight
 
-    # ── Feature 5 ─────────────────────────────────────────────────────────────
+    # -- Feature 5 -------------------------------------------------------------
 
     def _surface_atm_interaction(
         self, stack: xr.Dataset, nan: np.ndarray
     ) -> np.ndarray:
         """
-        Surface–atmosphere chemical exchange intensity — Feature 5 (weight 0.08).
+        Surface-atmosphere chemical exchange intensity -- Feature 5 (weight 0.08).
 
         Component weights (sum to 1.0)
         -------------------------------
-        topographic_slope:     0.25  — gradient-driven runoff and exposure
-        lake_margin:           0.35  — evaporation/condensation hotspot
-        paleo_lake_indicator:  0.15  — Birch empty basins (wetting/drying cycles)
-        channel_density:       0.25  — Miller+2021 fluvial transport flux
+        topographic_slope:     0.25  -- gradient-driven runoff and exposure
+        lake_margin:           0.35  -- evaporation/condensation hotspot
+        paleo_lake_indicator:  0.15  -- Birch empty basins (wetting/drying cycles)
+        channel_density:       0.25  -- Miller+2021 fluvial transport flux
 
         If any component is absent its weight is redistributed proportionally
         among the remaining components.
@@ -1029,7 +1044,7 @@ class FeatureExtractor:
         Paleo-lake indicator (new component, requires Birch data)
         ----------------------------------------------------------
         Birch+2017 empty-basin pixels (``polar_lakes`` label 2) represent
-        areas that were periodically inundated and drained — a wetting/drying
+        areas that were periodically inundated and drained -- a wetting/drying
         cycle that:
           (a) concentrates amphiphilic molecules at the shoreline, creating
               the conditions proposed by Mayer & Nixon (2025) for protocell
@@ -1044,9 +1059,9 @@ class FeatureExtractor:
 
         Scientific basis
         ----------------
-        Surface–atmosphere exchange is most intense at lake margins, channel
+        Surface-atmosphere exchange is most intense at lake margins, channel
         networks, and topographic breaks (Hayes 2016; Miller et al. 2021;
-        Lorenz et al. 2013).  These zones are analogous to Earth's estuaries —
+        Lorenz et al. 2013).  These zones are analogous to Earth's estuaries --
         the most biologically productive per unit area.  The Mayer & Nixon
         (2025) protocell mechanism specifically requires the lake-surface /
         rain-splash interface.
@@ -1076,7 +1091,7 @@ class FeatureExtractor:
             POLAR_LAKE_FILLED, POLAR_LAKE_PALERMO, POLAR_LAKE_EMPTY,
         )
 
-        # ── Component weights ─────────────────────────────────────────────────
+        # -- Component weights -------------------------------------------------
         W_SLOPE:   float = 0.25
         W_MARGIN:  float = 0.35
         W_PALEO:   float = 0.15   # Birch empty-basin component (new)
@@ -1085,7 +1100,7 @@ class FeatureExtractor:
         components: List[np.ndarray] = []
         weights:    List[float]      = []
 
-        # ── 1. Topographic slope ──────────────────────────────────────────────
+        # -- 1. Topographic slope ----------------------------------------------
         if "topography" in stack:
             dem: np.ndarray = stack["topography"].values.astype(np.float64)
             dy, dx = np.gradient(np.where(np.isfinite(dem), dem, 0.0))
@@ -1097,8 +1112,8 @@ class FeatureExtractor:
             components.append(slope_norm)
             weights.append(W_SLOPE)
 
-        # ── 2. Lake margins ───────────────────────────────────────────────────
-        # Priority: Birch/Palermo exact shorelines → Lopes geo class → none
+        # -- 2. Lake margins ---------------------------------------------------
+        # Priority: Birch/Palermo exact shorelines -> Lopes geo class -> none
         from scipy.ndimage import binary_dilation
 
         # Margin width: ~3 pixels = ~13 km, consistent with lake-margin
@@ -1109,7 +1124,7 @@ class FeatureExtractor:
         labyrinth_component: Optional[np.ndarray] = None
 
         if "polar_lakes" in stack:
-            # Birch/Palermo confirmed liquid pixels → dilate to get margin zone
+            # Birch/Palermo confirmed liquid pixels -> dilate to get margin zone
             pl: np.ndarray = stack["polar_lakes"].values.astype(np.int16)
             birch_liquid_mask: np.ndarray = (
                 (pl == POLAR_LAKE_FILLED) | (pl == POLAR_LAKE_PALERMO)
@@ -1163,7 +1178,7 @@ class FeatureExtractor:
                 "(no polar_lakes or geomorphology layer)"
             )
 
-        # ── 3. Paleo-lake indicator (Birch empty basins) ──────────────────────
+        # -- 3. Paleo-lake indicator (Birch empty basins) ----------------------
         # Empty basins score proportionally to the fraction of the local
         # neighbourhood that is empty-basin pixels.  This captures the
         # cumulative wetting/drying cycle history of the area.
@@ -1180,13 +1195,13 @@ class FeatureExtractor:
                 weights.append(W_PALEO)
                 logger.debug(
                     "surface_atm_interaction: paleo_lake_indicator "
-                    "(%d empty-basin pixels → smoothed to %d non-zero)",
+                    "(%d empty-basin pixels -> smoothed to %d non-zero)",
                     int(empty_mask.sum()),
                     int((paleo_indicator > 0).sum()),
                 )
-            # else: Birch present but no empty pixels → skip this component
+            # else: Birch present but no empty pixels -> skip this component
 
-        # ── 4. Fluvial channel density (Miller et al. 2021) ───────────────────
+        # -- 4. Fluvial channel density (Miller et al. 2021) -------------------
         if "channel_density" in stack:
             ch: np.ndarray = stack["channel_density"].values.astype(np.float32)
             ch_norm: np.ndarray = normalise_to_0_1(ch)
@@ -1195,18 +1210,18 @@ class FeatureExtractor:
             logger.debug("surface_atm_interaction: channel_density layer present")
         else:
             logger.debug(
-                "surface_atm_interaction: channel_density absent — "
+                "surface_atm_interaction: channel_density absent -- "
                 "weight redistributed among available components."
             )
 
         if not components:
             logger.warning(
-                "surface_atm_interaction: no input layers available — "
+                "surface_atm_interaction: no input layers available -- "
                 "returning NaN array."
             )
             return nan.copy()
 
-        # ── Weighted blend ────────────────────────────────────────────────────
+        # -- Weighted blend ----------------------------------------------------
         total_w: float = sum(weights)
         norm_w: List[float] = [w / total_w for w in weights]
         stacked: np.ndarray = np.stack(
@@ -1223,7 +1238,7 @@ class FeatureExtractor:
         result[~valid_mask] = np.nan
         return result.astype(np.float32)
 
-    # ── Feature 6 ─────────────────────────────────────────────────────────────
+    # -- Feature 6 -------------------------------------------------------------
 
     def _topographic_complexity(
         self, stack: xr.Dataset, nan: np.ndarray
@@ -1237,7 +1252,7 @@ class FeatureExtractor:
         and chemical gradient opportunities. Hummocky and labyrinth terrain
         show highest roughness and highest water-ice content via VIMS
         (Lopes et al. 2019; Malaska et al. 2025). Mountains on Titan reach
-        ~1–2 km height and show radar-bright signatures consistent with
+        ~1-2 km height and show radar-bright signatures consistent with
         exposed water ice (Radebaugh et al. 2007).
 
         References: Lorenz et al. 2013; Lopes et al. 2019
@@ -1249,7 +1264,7 @@ class FeatureExtractor:
         logger.warning("No topography data for topographic_complexity.")
         return nan.copy()
 
-    # ── Feature 7 ─────────────────────────────────────────────────────────────
+    # -- Feature 7 -------------------------------------------------------------
 
     def _geomorphologic_diversity(
         self, stack: xr.Dataset, nan: np.ndarray
@@ -1262,7 +1277,7 @@ class FeatureExtractor:
         Ecotone effect: boundaries between different terrain types host the
         highest biodiversity on Earth (Wilson 1992). On Titan, terrain
         boundaries correspond to transitions between organic-rich dunes,
-        water-ice-rich mountains, and liquid-bearing lake margins — each
+        water-ice-rich mountains, and liquid-bearing lake margins -- each
         providing different chemical substrates and energy sources.
         Pixels at terrain boundaries thus represent the most chemically
         diverse micro-environments.
@@ -1282,7 +1297,7 @@ class FeatureExtractor:
         logger.warning("No geomorphology data for geomorphologic_diversity.")
         return nan.copy()
 
-    # ── Feature 8 ─────────────────────────────────────────────────────────────
+    # -- Feature 8 -------------------------------------------------------------
 
     def _subsurface_ocean(
         self, stack: xr.Dataset, nan: np.ndarray
@@ -1294,39 +1309,39 @@ class FeatureExtractor:
         ---------------------
         The global base probability is ``self.subsurface_ocean_base_prior``
         (default 0.03, configurable).  This is intentionally lower than the
-        raw k2 normalisation (0.589/1.5 ≈ 0.39) because the k2 measurement
+        raw k2 normalisation (0.589/1.5 =~ 0.39) because the k2 measurement
         tells us the ocean EXISTS, not that it communicates with the surface
         under current conditions.  The effective surface habitability from
         this pathway is presently low due to:
 
           - Time elapsed since D1 past epoch (~3.5 Gya, configurable)
             when widespread liquid water last existed at the surface.
-          - The D2 future window (~100–400 Myr from now, configurable)
+          - The D2 future window (~100-400 Myr from now, configurable)
             has not yet been reached.
           - Under the D2 uniform warming assumption, the present-day
             contribution of future-window habitability to the per-pixel
             score is zero (we are not yet inside the window).
 
-        SAR bright annuli — past liquid water proxy (D4)
+        SAR bright annuli -- past liquid water proxy (D4)
         --------------------------------------------------
         Radar-bright RING STRUCTURES (annuli) in Cassini RADAR SAR imagery
-        are interpreted as a proxy for PAST liquid water–organic contact.
+        are interpreted as a proxy for PAST liquid water-organic contact.
 
         Rationale (accepted):
         The bright annular morphology (ring/horseshoe shape, distinct from
         diffuse bright terrain) is consistent with:
-          (a) Impact melt pond RIMS — when a bolide strikes Titan, the
+          (a) Impact melt pond RIMS -- when a bolide strikes Titan, the
               impactor and target material briefly melt, forming a liquid
               water pool that interacts with the organic-rich surface.
               As the melt freezes, it leaves a bright radar-reflective ring
               at the flow front.  This interaction is the primary mechanism
               by which terrestrial amino acid precursors could have formed
               on early Titan (Neish et al. 2018; Artemieva & Lunine 2003).
-          (b) Cryovolcanic flow FRONTS — viscous cryovolcanic fluid
+          (b) Cryovolcanic flow FRONTS -- viscous cryovolcanic fluid
               (water-ammonia slurry) flowing from volcanic vents forms
               bright flow-front annuli as the advancing lobe cools and
               roughens (Lopes et al. 2007, 2013; Wood et al. 2010).
-          (c) NOT simply diffuse bright terrain — high SAR backscatter
+          (c) NOT simply diffuse bright terrain -- high SAR backscatter
               is found in many contexts (exposed water ice, rough dunes,
               mountains).  The key discriminator for this proxy is the
               ANNULAR morphology, which is detectable in SAR as a local
@@ -1352,12 +1367,12 @@ class FeatureExtractor:
 
         Scientific basis
         ----------------
-        Iess et al. (2012) k2=0.589±0.150 → global subsurface ocean confirmed.
-        Affholder et al. (2025) → glycine fermentation viable in ocean.
-        Lopes et al. (2007, 2013) → cryovolcanic SAR-bright features.
-        Neish et al. (2018) → impact melt liquid water + organics → amino acids.
-        Wood et al. (2010) → SAR-bright annular flow fronts.
-        Artemieva & Lunine (2003) → impact melt volumes and lifetimes.
+        Iess et al. (2012) k2=0.589+/-0.150 -> global subsurface ocean confirmed.
+        Affholder et al. (2025) -> glycine fermentation viable in ocean.
+        Lopes et al. (2007, 2013) -> cryovolcanic SAR-bright features.
+        Neish et al. (2018) -> impact melt liquid water + organics -> amino acids.
+        Wood et al. (2010) -> SAR-bright annular flow fronts.
+        Artemieva & Lunine (2003) -> impact melt volumes and lifetimes.
 
         References:
         Iess et al. (2012)          doi:10.1126/science.1219631
@@ -1365,9 +1380,9 @@ class FeatureExtractor:
         Lopes et al. (2007)         doi:10.1016/j.icarus.2007.06.022
         Neish et al. (2018)         doi:10.1089/ast.2017.1758
         Artemieva & Lunine (2003)   doi:10.1016/S0019-1035(02)00039-9
-        Wood et al. (2010)          Icarus 206, 334–344
+        Wood et al. (2010)          Icarus 206, 334-344
         """
-        # ── Base probability (D3: configurable, default 0.03) ─────────────────
+        # -- Base probability (D3: configurable, default 0.03) -----------------
         # k2=0.589 (Iess 2012) CONFIRMS ocean presence but does not constrain
         # surface exchange probability.  The low base prior reflects time-gating
         # by D1 (~3.5 Gya past epoch) and D2 (future window not yet reached).
@@ -1376,7 +1391,7 @@ class FeatureExtractor:
             (self.grid.nrows, self.grid.ncols), base_prob, dtype=np.float32
         )
 
-        # ── SAR bright annuli proxy (D4) ──────────────────────────────────────
+        # -- SAR bright annuli proxy (D4) --------------------------------------
         # Detect pixels that form BRIGHT RINGS around darker interiors.
         # Morphological approach: a pixel scores high if it is locally brighter
         # than its far neighbourhood but not its immediate neighbourhood.
@@ -1418,7 +1433,7 @@ class FeatureExtractor:
             logger.info(
                 "  subsurface_ocean: %d pixels boosted by SAR bright annuli "
                 "(D4 proxy; base_prior=%.3f, past_epoch=%.1f Gya, "
-                "future_window=%d–%d Myr%s)",
+                "future_window=%d-%d Myr%s)",
                 n_boosted,
                 base_prob,
                 self.window.past_liquid_water_epoch_gya,
@@ -1430,7 +1445,7 @@ class FeatureExtractor:
             logger.info(
                 "  subsurface_ocean: SAR not available; using uniform "
                 "base_prior=%.3f (D3). "
-                "D4 annular proxy disabled. D1=%.1f Gya, D2=%d–%d Myr.",
+                "D4 annular proxy disabled. D1=%.1f Gya, D2=%d-%d Myr.",
                 base_prob,
                 self.window.past_liquid_water_epoch_gya,
                 int(self.window.future_window_min_myr),

@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 tests/test_preprocessing.py
 =============================
@@ -43,15 +58,15 @@ class TestCanonicalGrid:
 
     def test_aspect_ratio_approx_2_to_1(self) -> None:
         """
-        SimpleCylindrical global grid: ncols ≈ 2 × nrows.
-        (360° wide, 180° tall.)
+        SimpleCylindrical global grid: ncols =~ 2 x nrows.
+        (360 deg wide, 180 deg tall.)
         """
         g = CanonicalGrid(4490.0)
         ratio = g.ncols / g.nrows
         assert 1.9 < ratio < 2.1, f"Expected ~2:1 aspect ratio, got {ratio:.3f}"
 
     def test_pixel_size_consistent(self) -> None:
-        """dx × ncols should equal 360° in metres."""
+        """dx x ncols should equal 360 deg in metres."""
         g = CanonicalGrid(4490.0)
         circumference_m = 2 * math.pi * TITAN_RADIUS_M
         m_per_deg = circumference_m / 360.0
@@ -74,7 +89,7 @@ class TestCanonicalGrid:
         lats = g.lat_centres_deg()
         assert lats[0] > 0, "First row should be north (positive lat)"
         assert lats[-1] < 0, "Last row should be south (negative lat)"
-        assert abs(lats[0]) < 90, "Lat centres should be inside ±90°"
+        assert abs(lats[0]) < 90, "Lat centres should be inside +/-90 deg"
         assert abs(lats[-1]) < 90
 
     def test_empty_returns_nan_array(self) -> None:
@@ -101,7 +116,7 @@ class TestCanonicalGrid:
 
 class TestNormaliseTo01:
     def test_uniform_input(self) -> None:
-        """All-same values → all zeros (no dynamic range)."""
+        """All-same values -> all zeros (no dynamic range)."""
         arr = np.full((5, 5), 42.0, dtype=np.float32)
         out = normalise_to_0_1(arr)
         assert np.all(out == 0.0)
@@ -141,13 +156,13 @@ class TestNormaliseTo01:
 
 class TestTopographicRoughness:
     def test_flat_dem_low_roughness(self) -> None:
-        """Flat DEM → near-zero roughness everywhere."""
+        """Flat DEM -> near-zero roughness everywhere."""
         dem = np.zeros((20, 20), dtype=np.float32)
         rough = compute_topographic_roughness(dem, window_radius=2)
         assert rough.max() < 0.1, f"Flat DEM should have low roughness, max={rough.max()}"
 
     def test_rough_dem_higher_values(self) -> None:
-        """Random DEM → higher roughness than flat DEM."""
+        """Random DEM -> higher roughness than flat DEM."""
         rng = np.random.default_rng(0)
         dem_flat  = np.zeros((20, 20), dtype=np.float32)
         dem_rough = rng.normal(0, 100, (20, 20)).astype(np.float32)
@@ -176,15 +191,15 @@ class TestTopographicRoughness:
 
 class TestTerrainDiversity:
     def test_uniform_class_zero_diversity(self) -> None:
-        """All pixels same class → zero Shannon diversity."""
+        """All pixels same class -> zero Shannon diversity."""
         class_map = np.ones((20, 20), dtype=np.int32)
         out = compute_terrain_diversity(class_map, n_classes=7, window_radius=2)
-        # With all same class, H = 0 everywhere → normalised to 0
+        # With all same class, H = 0 everywhere -> normalised to 0
         assert out.max() < 0.1
 
     def test_equal_classes_high_diversity(self) -> None:
         """
-        Checkerboard of two classes → higher diversity than uniform.
+        Checkerboard of two classes -> higher diversity than uniform.
         """
         class_map = np.zeros((20, 20), dtype=np.int32)
         class_map[::2, ::2]  = 1
@@ -203,7 +218,7 @@ class TestTerrainDiversity:
 class TestSynthesiseCirsTemperature:
     """
     Tests for the Jennings-formula-based CIRS temperature synthesis.
-    No external files required — the formula is fully embedded.
+    No external files required -- the formula is fully embedded.
     """
 
     @pytest.fixture
@@ -213,7 +228,7 @@ class TestSynthesiseCirsTemperature:
         processed = tmp_path / "processed"
         processed.mkdir()
         config = PipelineConfig(data_dir=tmp_path, processed_dir=processed)
-        grid   = CanonicalGrid(pixel_size_m=500_000)  # coarse — fast
+        grid   = CanonicalGrid(pixel_size_m=500_000)  # coarse -- fast
         return config, grid
 
     def test_synthesise_produces_geotiff(self, tmp_pipeline: Any) -> None:
@@ -227,7 +242,7 @@ class TestSynthesiseCirsTemperature:
         assert result["cirs_temperature"].exists()
 
     def test_synthesised_temperature_physically_plausible(self, tmp_pipeline: Any) -> None:
-        """All synthesised temperatures should be in 87–96 K."""
+        """All synthesised temperatures should be in 87-96 K."""
         rasterio = pytest.importorskip("rasterio")
         from titan.preprocessing import DataPreprocessor
         config, grid = tmp_pipeline
@@ -249,7 +264,7 @@ class TestSynthesiseCirsTemperature:
         result = dp._synthesise_cirs_temperature(overwrite=True)
         with rasterio.open(result["cirs_temperature"]) as ds:
             arr = ds.read(1)
-        # Find equatorial rows (lat ≈ 0)
+        # Find equatorial rows (lat =~ 0)
         lats = grid.lat_centres_deg()
         eq_row = int(np.argmin(np.abs(lats)))
         T_eq = float(arr[eq_row, arr.shape[1] // 2])
@@ -312,7 +327,7 @@ class TestPreprocessChannels:
         assert "channel_density" in src
 
     def test_preprocess_channels_returns_empty_when_shp_missing(self, tmp_path: Path) -> None:
-        """Missing global_channels.shp → graceful empty return, no exception."""
+        """Missing global_channels.shp -> graceful empty return, no exception."""
         from configs.pipeline_config import PipelineConfig
         from titan.preprocessing import DataPreprocessor
         config = PipelineConfig(

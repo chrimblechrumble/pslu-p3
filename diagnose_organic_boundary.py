@@ -1,6 +1,21 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 diagnose_organic_boundary.py
-Probes the exact values at the 180°W seam in organic_abundance.
+Probes the exact values at the 180 degW seam in organic_abundance.
 Run: python diagnose_organic_boundary.py
 Saves: outputs/diagnostics/organic_boundary_*.png + report.txt
 """
@@ -38,9 +53,9 @@ if vims is None or geo is None:
     sys.exit(1)
 
 nrows, ncols = vims.shape
-half = ncols // 2   # column closest to 180°W
+half = ncols // 2   # column closest to 180 degW
 
-# ── Call the actual _organic_abundance function from features.py ──────────────
+# -- Call the actual _organic_abundance function from features.py --------------
 # This ensures the diagnostic reflects the real pipeline code, not a
 # reimplementation that would become stale when features.py changes.
 import xarray as xr
@@ -94,15 +109,15 @@ for cls in range(1, 8):
     R(f"  Class {cls} {names[cls]:12s}: n={n:>8,}  calibrated={mu:.4f}  published={published:.4f}  diff={mu-published:+.4f}")
 
 R("\n" + "=" * 60)
-R("BOUNDARY ANALYSIS (columns near 180°W)")
+R("BOUNDARY ANALYSIS (columns near 180 degW)")
 R("=" * 60)
 
-# Equatorial strip ±20°
+# Equatorial strip +/-20 deg
 lat_centres = np.linspace(90 - 0.5*180/nrows, -90 + 0.5*180/nrows, nrows)
 eq = np.where(np.abs(lat_centres) < 20)[0]
 
-R(f"\nEquatorial strip (±20°), columns around boundary (half={half}):")
-R(f"{'Col':>6}  {'Lon°W':>7}  {'VIMS_norm':>10}  {'CalGeo':>8}  {'Org_out':>8}  {'Source':>6}")
+R(f"\nEquatorial strip (+/-20 deg), columns around boundary (half={half}):")
+R(f"{'Col':>6}  {'Lon degW':>7}  {'VIMS_norm':>10}  {'CalGeo':>8}  {'Org_out':>8}  {'Source':>6}")
 for dc in range(-8, 9):
     c = half + dc
     if c < 0 or c >= ncols: continue
@@ -112,17 +127,17 @@ for dc in range(-8, 9):
     ov = float(np.nanmean(org[eq, c]))
     src = 'VIMS' if np.any(np.isfinite(vims_norm[eq, c])) else 'GEO'
     flag = " <-- BOUNDARY" if dc == 0 else ""
-    R(f"{c:6d}  {lon:7.1f}°  {vv:10.4f}  {gv:8.4f}  {ov:8.4f}  {src:>6}{flag}")
+    R(f"{c:6d}  {lon:7.1f} deg  {vv:10.4f}  {gv:8.4f}  {ov:8.4f}  {src:>6}{flag}")
 
 # Compute seam magnitude
 left_mean  = float(np.nanmean(org[eq, half-10:half]))
 right_mean = float(np.nanmean(org[eq, half:half+10]))
-R(f"\nLeft mean (cols {half-10}–{half}):  {left_mean:.4f}")
-R(f"Right mean (cols {half}–{half+10}): {right_mean:.4f}")
+R(f"\nLeft mean (cols {half-10}-{half}):  {left_mean:.4f}")
+R(f"Right mean (cols {half}-{half+10}): {right_mean:.4f}")
 R(f"Step size at boundary:        {right_mean - left_mean:+.4f}")
 R(f"Typical within-VIMS variation (std over equatorial strip): {float(np.nanstd(vims_norm[eq, :half])):.4f}")
 
-# ── Figures ────────────────────────────────────────────────────────────────
+# -- Figures ----------------------------------------------------------------
 fig, axes = plt.subplots(2, 2, figsize=(16, 9))
 fig.suptitle("Organic Abundance Seam Diagnostic", fontsize=13)
 lon_centres = np.linspace(0.5*360/ncols, 360-0.5*360/ncols, ncols)
@@ -183,6 +198,14 @@ R(f"\nSaved: {out_dir/'organic_boundary_diag.png'}")
 import rasterio
 from rasterio.crs import CRS
 from titan.preprocessing import CanonicalGrid
+print(
+    "Titan Habitability Pipeline  Copyright (C) 2025/2026  Chris Meadows\n"
+    "This program comes with ABSOLUTELY NO WARRANTY; for details, see the\n"
+    "README.md at the project root.\n"
+    "This is free software, and you are welcome to redistribute it\n"
+    "under certain conditions; see the LICENSE.md file at the project\n"
+    "root for details.\n"
+)
 grid = CanonicalGrid()
 out_tif = out_dir / 'organic_abundance_combined.tif'
 nodata_val = -9999.0

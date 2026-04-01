@@ -1,12 +1,27 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/preprocessing.py
 ========================
-Stage 2 — Preprocessing to Canonical Format.
+Stage 2 -- Preprocessing to Canonical Format.
 
 Converts all raw datasets to a single shared canonical raster grid:
   Projection : SimpleCylindrical (equirectangular), Titan sphere R=2,575,000 m
-  Lon        : West-positive, 0° → 360°  (matches all USGS raster products)
-  Lat        : North-up, +90° → −90°
+  Lon        : West-positive, 0 deg -> 360 deg  (matches all USGS raster products)
+  Lat        : North-up, +90 deg -> -90 deg
   Units      : Metres (projected CRS)
   Dtype      : float32
   Nodata     : NaN
@@ -16,15 +31,15 @@ All inputs are handled via format-specific sub-routines that correctly
 address each product's CRS, nodata convention, and tile structure:
 
   GeoTIFF (USGS mosaics) : SimpleCylindrical metres, nodata=0.0
-  GTDR .IMG (PDS3)       : Equirectangular degrees, nodata=0xFF7FFFFB=−3.4e38
-  Shapefiles             : GCS_Titan_2000 east-positive degrees → must flip lon
+  GTDR .IMG (PDS3)       : Equirectangular deg, nodata=0xFF7FFFFB=-3.4e38
+  Shapefiles             : GCS_Titan_2000 east-positive deg -> must flip lon
   Parquet (VIMS index)   : Tabular, converted to 2-D raster via spatial binning
 
 References
 ----------
 Lorenz et al. (2013)    doi:10.1016/j.icarus.2013.04.002
 Lopes et al. (2019)     doi:10.1038/s41550-019-0917-6
-Le Mouélic et al. (2019) doi:10.1016/j.icarus.2018.09.017
+Le Mouelic et al. (2019) doi:10.1016/j.icarus.2018.09.017
 """
 
 from __future__ import annotations
@@ -67,12 +82,12 @@ class CanonicalGrid:
 
     The grid is an equirectangular (SimpleCylindrical) raster in projected
     metres with the Titan sphere (R=2,575,000 m) as the ellipsoid.
-    Longitude increases westward from 0° to 360°.
+    Longitude increases westward from 0 deg to 360 deg.
 
     Parameters
     ----------
     pixel_size_m:
-        Pixel size in metres.  Default 4,490 m ≈ 0.1°/px at equator
+        Pixel size in metres.  Default 4,490 m =~ 0.1 deg/px at equator
         (a compromise between the 351 m SAR mosaic and 22 km GTDR).
     """
 
@@ -91,7 +106,7 @@ class CanonicalGrid:
         self.dy_m: float = -180.0 * m_per_deg / self.nrows
 
         # Extent in projected metres
-        # West edge = 0°W = 0 m;  North edge = 90° × (R×π/180)
+        # West edge = 0 degW = 0 m;  North edge = 90 deg x (Rxpi/180)
         self.west_m:  float = 0.0
         self.north_m: float = 90.0 * m_per_deg
         self.east_m:  float = self.west_m  + self.ncols * self.dx_m
@@ -110,7 +125,7 @@ class CanonicalGrid:
         return CRS.from_proj4(CANONICAL_CRS_PROJ4)
 
     def lon_centres_deg(self) -> np.ndarray:
-        """Centre longitudes of each column in west-positive degrees."""
+        """Centre longitudes of each column in west-positive deg."""
         return np.linspace(
             0.0 + 180.0 / (math.pi * TITAN_RADIUS_M) * self.dx_m * 0.5,
             360.0 - 180.0 / (math.pi * TITAN_RADIUS_M) * self.dx_m * 0.5,
@@ -118,7 +133,7 @@ class CanonicalGrid:
         )
 
     def lat_centres_deg(self) -> np.ndarray:
-        """Centre latitudes of each row in degrees (north-first)."""
+        """Centre latitudes of each row in deg (north-first)."""
         m_per_deg = 2.0 * math.pi * TITAN_RADIUS_M / 360.0
         half_dy   = abs(self.dy_m) * 0.5 / m_per_deg
         return np.linspace(90.0 - half_dy, -90.0 + half_dy, self.nrows)
@@ -132,7 +147,7 @@ class CanonicalGrid:
         return (
             f"CanonicalGrid(res={self.pixel_size_m:.0f}m, "
             f"shape=({self.nrows},{self.ncols}), "
-            f"lon=[0→360°W], lat=[+90°→−90°])"
+            f"lon=[0->360 degW], lat=[+90 deg->-90 deg])"
         )
 
 
@@ -142,8 +157,8 @@ class CanonicalGrid:
 
 # ---------------------------------------------------------------------------
 # Suppress spurious PROJ "eqc: Invalid latitude" messages that rasterio
-# emits during reprojection of equirectangular Titan data at ±90° latitude.
-# These are not errors — PROJ flags lat=±90 in eqc as "invalid" but handles
+# emits during reprojection of equirectangular Titan data at +/-90 deg latitude.
+# These are not errors -- PROJ flags lat=+/-90 in eqc as "invalid" but handles
 # them correctly.  Silencing at the rasterio._err logger level is cleaner
 # than patching PROJ env vars.
 # ---------------------------------------------------------------------------
@@ -168,7 +183,7 @@ def _reproject_geotiff(
 
     GeoTIFF products from USGS Astropedia use:
       - Coordinates in metres (projected CRS)
-      - West-positive longitude, 0→360°
+      - West-positive longitude, 0->360 deg
       - Nodata = 0.0 (float32)
 
     Parameters
@@ -191,7 +206,7 @@ def _reproject_geotiff(
 
     with rasterio.open(src_path) as src:
         src_data = src.read(band).astype(np.float32)
-        # Mask nodata → NaN
+        # Mask nodata -> NaN
         src_data[src_data == nodata_in] = np.nan
         src_crs       = src.crs or grid.crs  # fallback if no CRS embedded
         src_transform = src.transform
@@ -223,9 +238,9 @@ def _reproject_gtdr(
     Mosaic and reproject the two GTDR PDS3 half-globe tiles.
 
     GTDR tiles use:
-      - Equirectangular projection, coordinates in DEGREES
-      - West-positive longitude, 0→360°
-      - Nodata = 0xFF7FFFFB = −3.4028×10³⁸ (NOT NaN — must exact-compare)
+      - Equirectangular projection, coordinates in deg
+      - West-positive longitude, 0->360 deg
+      - Nodata = 0xFF7FFFFB = -3.4028x10^3^8 (NOT NaN -- must exact-compare)
 
     Parameters
     ----------
@@ -249,7 +264,7 @@ def _reproject_gtdr(
     mosaic, meta = mosaic_gtdr_tiles(east_img, west_img, east_lbl, west_lbl)
 
     # Build a source rasterio-compatible transform for the mosaic
-    # Mosaic: 360 rows × 720 cols, 0.5°/pixel, west-positive, metres
+    # Mosaic: 360 rows x 720 cols, 0.5 deg/pixel, west-positive, metres
     m_per_deg = 2.0 * math.pi * TITAN_RADIUS_M / 360.0
     src_transform = from_origin(
         west=0.0,
@@ -281,7 +296,7 @@ def _rasterise_geomorphology(
     """
     Rasterise the Lopes et al. geomorphology shapefiles.
 
-    Handles the east-positive → west-positive longitude flip automatically.
+    Handles the east-positive -> west-positive longitude flip automatically.
     Output is an int16 terrain-class raster.
 
     Parameters
@@ -316,7 +331,7 @@ def _rasterise_channels(
     -----
     1. Load the shapefile (east-positive) and flip to west-positive.
     2. Burn each channel segment as a binary 1 into a float32 canvas.
-    3. Apply a Gaussian blur (sigma ≈ 3 pixels ≈ one grid cell half-width)
+    3. Apply a Gaussian blur (sigma =~ 3 pixels =~ one grid cell half-width)
        so that the channel influence spreads to adjacent pixels.
     4. Normalise to [0, 1] and write to GeoTIFF.
 
@@ -325,7 +340,7 @@ def _rasterise_channels(
     shp_path:
         Path to global_channels.shp.
     dst_path:
-        Output canonical GeoTIFF (float32, 0–1).
+        Output canonical GeoTIFF (float32, 0-1).
     grid:
         Canonical grid.
     """
@@ -376,7 +391,7 @@ def _bin_vims_to_raster(
     """
     Convert the VIMS spatial footprint index to a coverage-density raster.
 
-    The output represents normalised VIMS observation coverage (0→1),
+    The output represents normalised VIMS observation coverage (0->1),
     used as a proxy for surface composition data quality in the
     habitability feature extraction.
 
@@ -439,7 +454,7 @@ class DataPreprocessor:
         Returns
         -------
         Dict[str, Path]
-            Mapping of dataset name → canonical GeoTIFF path.
+            Mapping of dataset name -> canonical GeoTIFF path.
         """
         results: Dict[str, Path] = {}
 
@@ -461,7 +476,7 @@ class DataPreprocessor:
             self._preprocess_geotiff("vims_mosaic", overwrite)
         )
 
-        # VIMS footprint parquet → coverage raster
+        # VIMS footprint parquet -> coverage raster
         results.update(self._preprocess_vims_parquet(overwrite))
 
         # Geomorphology shapefiles
@@ -475,14 +490,14 @@ class DataPreprocessor:
         # Silently produces all-zeros if the Birch dataset is not installed.
         results.update(self._preprocess_polar_lakes(overwrite))
 
-        # CIRS temperature — synthesised from Jennings et al. (2019) formula.
+        # CIRS temperature -- synthesised from Jennings et al. (2019) formula.
         # No external file required; the analytical model is embedded in
         # titan/atmospheric_profiles.py and valid for the full Cassini mission.
         results.update(self._synthesise_cirs_temperature(overwrite))
 
         return results
 
-    # ── Format-specific dispatch ──────────────────────────────────────────────
+    # -- Format-specific dispatch ----------------------------------------------
 
     def _preprocess_topography(
         self, overwrite: bool
@@ -492,15 +507,15 @@ class DataPreprocessor:
 
         Source priority (all from Cornell eCommons / USGS gtdr-data.zip)
         ------------------------------------------------------------------
-        1. GTDE T126 — Dense spline-interpolated global DEM  **PREFERRED**
+        1. GTDE T126 -- Dense spline-interpolated global DEM  **PREFERRED**
            Files: GTDED00N090_T126_V01  +  GTDED00N270_T126_V01
            ~90% global coverage (Corlies et al. 2017).
 
-        2. GT0E T126 — Standard GTDR final mission (sparse)
+        2. GT0E T126 -- Standard GTDR final mission (sparse)
            Files: GT2ED00N090_T126_V01  +  GT2ED00N270_T126_V01
            ~25% coverage (altimetry + SARtopo nadir corridors only).
 
-        3. GT0E T077 — Standard GTDR legacy (sparse, partial mission)
+        3. GT0E T077 -- Standard GTDR legacy (sparse, partial mission)
            Files: GT0EB00N090_T077_V01  +  matching west tile
            ~15% coverage. Fallback for users who have only the older release.
 
@@ -527,7 +542,7 @@ class DataPreprocessor:
 
             This is topo_4PPD_interp.cub from the Hayes Research Group
             (hayesresearchgroup.com/data-products/, titan_topo_corlies.zip).
-            It has 100% global coverage at 4ppd resolution — useful as a
+            It has 100% global coverage at 4ppd resolution -- useful as a
             gap-filler where GTDE has NaN pixels (~10% of globe).
             """
             candidates = [
@@ -570,7 +585,7 @@ class DataPreprocessor:
                 return
 
             logger.info(
-                "Gap-fill: reprojecting %s to fill %d NaN pixels in topography …",
+                "Gap-fill: reprojecting %s to fill %d NaN pixels in topography ...",
                 fill_path.name, n_nan,
             )
             fill_reprojected = np.full((height, width), np.nan, dtype=np.float32)
@@ -612,13 +627,13 @@ class DataPreprocessor:
                     return lbl
             return None
 
-        # ── Priority 1: GTDE interpolated global DEM ──────────────────────
+        # -- Priority 1: GTDE interpolated global DEM ----------------------
         gtde_e = _find_img("GTDED00N090_T126_V01")
         gtde_w = _find_img("GTDED00N270_T126_V01")
         if gtde_e and gtde_w:
             logger.info(
                 "Preprocessing GTDE T126 interpolated DEM "
-                "(~90%% global coverage — preferred source) …"
+                "(~90%% global coverage -- preferred source) ..."
             )
             _reproject_gtdr(
                 gtde_e, gtde_w, out, self.grid,
@@ -641,7 +656,7 @@ class DataPreprocessor:
             "https://data.astro.cornell.edu/RADAR/DATA/GTDR/"
         )
 
-        # ── Priority 2: GT0E T126 standard GTDR (final mission) ───────────
+        # -- Priority 2: GT0E T126 standard GTDR (final mission) -----------
         gt0e_e = _find_img("GT2ED00N090_T126_V01")
         gt0e_w = _find_img("GT2ED00N270_T126_V01")
         if gt0e_e and gt0e_w:
@@ -655,7 +670,7 @@ class DataPreprocessor:
             )
             return {"topography": out}
 
-        # ── Priority 3: GT0E T077 legacy (partial mission) ────────────────
+        # -- Priority 3: GT0E T077 legacy (partial mission) ----------------
         legacy_e = _find_img("GT0EB00N090_T077_V01")
         legacy_w = (
             _find_img("GT0WB00N270_T077_V01") or
@@ -723,7 +738,7 @@ class DataPreprocessor:
                 self.config.data_dir,
             )
             return {}
-        is_sample = raw.stat().st_size < 10_000_000  # <10 MB → sample
+        is_sample = raw.stat().st_size < 10_000_000  # <10 MB -> sample
         if is_sample:
             logger.info(
                 "Using VIMS parquet SAMPLE (%s, %d KB). "
@@ -737,7 +752,7 @@ class DataPreprocessor:
         out = self.config.processed_dir / "vims_coverage_canonical.tif"
         if out.exists() and not overwrite:
             return {"vims_coverage": out}
-        logger.info("Binning VIMS footprint parquet → coverage raster …")
+        logger.info("Binning VIMS footprint parquet -> coverage raster ...")
         _bin_vims_to_raster(raw, out, self.grid)
         return {"vims_coverage": out}
 
@@ -752,7 +767,7 @@ class DataPreprocessor:
         out = self.config.processed_dir / "geomorphology_canonical.tif"
         if out.exists() and not overwrite:
             return {"geomorphology": out}
-        logger.info("Rasterising geomorphology shapefiles …")
+        logger.info("Rasterising geomorphology shapefiles ...")
         _rasterise_geomorphology(shp_dir, out, self.grid)
         return {"geomorphology": out}
 
@@ -762,7 +777,7 @@ class DataPreprocessor:
         """
         Rasterise the Birch+2017 / Palermo+2022 polar lake shapefiles.
 
-        Produces ``data/processed/polar_lakes_canonical.tif`` — a separate
+        Produces ``data/processed/polar_lakes_canonical.tif`` -- a separate
         int16 raster with four classes:
 
         =====================  =====  ========================================
@@ -790,9 +805,9 @@ class DataPreprocessor:
         Expected data layout::
 
             data/raw/birch_polar_mapping/
-              birch_filled/      ← Birch+2017 filled lake/sea .shp files
-              birch_empty/       ← Birch+2017 empty basin .shp files
-              palermo/           ← Palermo+2022 .shp files
+              birch_filled/      <- Birch+2017 filled lake/sea .shp files
+              birch_empty/       <- Birch+2017 empty basin .shp files
+              palermo/           <- Palermo+2022 .shp files
 
         Download:
             https://data.astro.cornell.edu/titan_polar_mapping_birch/
@@ -848,7 +863,7 @@ class DataPreprocessor:
 
         logger.info(
             "Rasterising Birch+2017 / Palermo+2022 polar lake shapefiles "
-            "from %s …", birch_dir,
+            "from %s ...", birch_dir,
         )
         rasteriser.rasterise(
             include_filled  = True,
@@ -876,7 +891,7 @@ class DataPreprocessor:
         shp = shp_dir / "global_channels.shp"
         if not shp.exists():
             logger.info(
-                "global_channels.shp not found in %s — channel_density "
+                "global_channels.shp not found in %s -- channel_density "
                 "layer will be absent. Download titan_channels_miller.zip "
                 "from https://hayesresearchgroup.com/data-products/",
                 shp_dir,
@@ -885,7 +900,7 @@ class DataPreprocessor:
         out = self.config.processed_dir / "channel_density_canonical.tif"
         if out.exists() and not overwrite:
             return {"channel_density": out}
-        logger.info("Rasterising channel map → channel_density …")
+        logger.info("Rasterising channel map -> channel_density ...")
         _rasterise_channels(shp, out, self.grid)
         return {"channel_density": out}
 
@@ -894,13 +909,13 @@ class DataPreprocessor:
     ) -> Dict[str, Path]:
         """
         Generate a canonical surface-temperature raster from the Jennings et al.
-        (2019) analytical model — no external CIRS file required.
+        (2019) analytical model -- no external CIRS file required.
 
         The model is evaluated at the epoch midpoint of the pipeline's
         temporal mode:
-          PRESENT  → 2011.0 (mid-Cassini mission, near equinox)
-          PAST     → equatorial value only, no seasonal variation modelled
-          FUTURE   → 2011.0 as a proxy (red giant phase beyond model range)
+          PRESENT  -> 2011.0 (mid-Cassini mission, near equinox)
+          PAST     -> equatorial value only, no seasonal variation modelled
+          FUTURE   -> 2011.0 as a proxy (red giant phase beyond model range)
 
         The output is a 2-D float32 raster (K) on the canonical grid, where
         each pixel receives the zonal-mean surface temperature for its
@@ -928,7 +943,7 @@ class DataPreprocessor:
 
         logger.info(
             "Synthesising CIRS surface temperature from Jennings 2019 "
-            "formula (epoch=%.1f, mode=%s) …", year_ce, mode,
+            "formula (epoch=%.1f, mode=%s) ...", year_ce, mode,
         )
 
         # Build a 2-D latitude grid on the canonical grid
@@ -996,7 +1011,7 @@ class CanonicalDataStack:
         -------
         xr.Dataset
             Dataset with dimensions (lat, lon) and one variable per layer.
-            Coordinates are in west-positive degrees (geographic,
+            Coordinates are in west-positive deg (geographic,
             recomputed from the projected metre grid).
             Missing layers are absent without raising errors.
         """
@@ -1038,7 +1053,7 @@ class CanonicalDataStack:
         return xr.Dataset(
             data_vars,
             attrs={
-                "title": "Titan Habitability Pipeline – Canonical Stack",
+                "title": "Titan Habitability Pipeline - Canonical Stack",
                 "titan_radius_km": TITAN_RADIUS_M / 1000.0,
                 "crs": CANONICAL_CRS_PROJ4,
                 "pixel_size_m": self.grid.pixel_size_m,
@@ -1067,7 +1082,7 @@ class CanonicalDataStack:
             path = self.config.processed_dir / "titan_canonical_stack.nc"
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         ds.to_netcdf(path, format="NETCDF4")
-        logger.info("Canonical stack saved → %s", path)
+        logger.info("Canonical stack saved -> %s", path)
         return path
 
 
@@ -1138,7 +1153,7 @@ def _regrid_netcdf(
     """
     Regrid a NetCDF file to the canonical grid via xarray interp().
 
-    Assumes the NetCDF has 'lat' and 'lon' dimensions (in degrees).
+    Assumes the NetCDF has 'lat' and 'lon' dimensions (in deg).
 
     Parameters
     ----------
@@ -1247,7 +1262,7 @@ def compute_terrain_diversity(
     Parameters
     ----------
     class_map:
-        2-D integer array of terrain class labels (0=nodata, 1–7=classes).
+        2-D integer array of terrain class labels (0=nodata, 1-7=classes).
     n_classes:
         Total number of terrain classes (default 7 per Lopes 2019 + lakes).
     window_radius:

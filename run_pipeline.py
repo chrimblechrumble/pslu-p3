@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 run_pipeline.py
 ================
@@ -6,10 +21,10 @@ Main entry-point for the Titan Habitability Pipeline.
 
 Temporal modes
 --------------
-  present  Cassini epoch (~2004–2017).  Original 8 features.
+  present  Cassini epoch (~2004-2017).  Original 8 features.
            Two priors corrected vs initial implementation:
-             organic_abundance 0.60 → 0.70  (Cable 2012; Malaska 2025)
-             subsurface_ocean  0.10 → 0.03  (D3; Neish et al. 2024)
+             organic_abundance 0.60 -> 0.70  (Cable 2012; Malaska 2025)
+             subsurface_ocean  0.10 -> 0.03  (D3; Neish et al. 2024)
 
   past     Early Titan ~3.5 Gya (Late Heavy Bombardment era). [D1 default]
            9 features: 7 adapted PRESENT features + impact_melt_proxy
@@ -22,19 +37,19 @@ Temporal modes
            NOTE: Distinct from the D2 near-future solar warming window (see
            below), which affects only the subsurface_ocean feature.
 
-Design decisions (D1–D4)
-------------------------
-D1 — Past epoch: 3.5 Gya default, configurable via --past-epoch-gya.
+Accepted design decisions (D1-D4)
+-----------------------------------
+D1 -- Past epoch: 3.5 Gya default, configurable via --past-epoch-gya.
      SAR-bright crater annuli (D4) are interpreted as relics of impact-melt
      liquid water from this epoch.
      Ref: Neish & Lorenz (2012); Artemieva & Lunine (2003)
 
-D2 — Near-future solar warming window: 100–400 Myr (onset from now).
+D2 -- Near-future solar warming window: 100-400 Myr (onset from now).
      More recent radiative-transfer estimates narrow the window to this range,
      much sooner than the classical red-giant estimate (~6 Gya). Used ONLY in
      the subsurface_ocean feature's temporal prior; does not affect the FUTURE
      temporal mode (which models the full red-giant-era scenario at ~6 Gya).
-     ASSUMPTION — uniform global warming (explicit):
+     ASSUMPTION -- uniform global warming (explicit):
        Solar brightening is applied uniformly across Titan's surface. A real
        GCM would show differential polar/equatorial warming, but no spatially
        resolved model matches the SAR resolution. This assumption is
@@ -42,16 +57,16 @@ D2 — Near-future solar warming window: 100–400 Myr (onset from now).
        --future-window-min, --future-window-max, --no-uniform-warming.
      Ref: Lorenz et al. (1997); Lunine & Lorenz (2009)
 
-D3 — Subsurface ocean prior: 0.03 (default, configurable via
+D3 -- Subsurface ocean prior: 0.03 (default, configurable via
      --subsurface-ocean-prior). Revised down from 0.10 based on Neish et al.
      (2024): organic flux to the subsurface ocean is ~7,500 kg/yr glycine
      (~one elephant/year), severely limiting its habitability in the present
      epoch. The k2=0.589 measurement (Iess 2012) confirms the ocean EXISTS
      but does not constrain habitability.
 
-D4 — SAR bright annuli as past-liquid-water proxy: ACCEPTED.
+D4 -- SAR bright annuli as past-liquid-water proxy: ACCEPTED.
      Radar-bright ring structures in Cassini SAR are interpreted as impact
-     melt rims and cryovolcanic flow fronts — locations where liquid water
+     melt rims and cryovolcanic flow fronts -- locations where liquid water
      briefly contacted Titan's organic surface. Used in Feature 8
      (subsurface_ocean) via a ring-shaped morphological filter on the SAR.
      Ref: Neish et al. (2018); Wood et al. (2010); Lopes et al. (2007, 2013)
@@ -92,7 +107,7 @@ from typing import List, Optional
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="run_pipeline.py",
-        description="Titan Habitability Pipeline — end-to-end temporal analysis.",
+        description="Titan Habitability Pipeline -- end-to-end temporal analysis.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--data-dir",       default="data/raw",       type=Path)
@@ -178,7 +193,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run all three temporal modes and produce comparison output",
     )
 
-    # ── D1: Past epoch (configurable; default 3.5 Gya) ───────────────────────
+    # -- D1: Past epoch (configurable; default 3.5 Gya) -----------------------
     # The age of the last major epoch of widespread liquid water on Titan's
     # surface (Late Heavy Bombardment / early cryovolcanic era).
     # SAR-bright annuli around craters are interpreted as relics of this epoch.
@@ -195,15 +210,15 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
 
-    # ── D2: Near-future solar-warming habitability window (100–400 Myr) ───────
+    # -- D2: Near-future solar-warming habitability window (100-400 Myr) -------
     # As the Sun brightens (~10%/Gyr on the main sequence), Titan's surface
     # temperature will eventually rise enough for episodic or sustained liquid
     # water. More recent radiative-transfer estimates place the ONSET of this
-    # window at 100–400 Myr from now — much sooner than the classical red-giant
+    # window at 100-400 Myr from now -- much sooner than the classical red-giant
     # estimate (~6 Gya). This is DISTINCT from the FUTURE temporal mode (which
     # models the full red-giant-era scenario).
     #
-    # ASSUMPTION — uniform global warming (explicit, per D2):
+    # ASSUMPTION -- uniform global warming (explicit, per D2):
     # Solar brightening is applied uniformly across all latitudes and
     # longitudes. Real GCMs would predict differential polar vs equatorial
     # warming due to Titan's obliquity and atmospheric dynamics, but no
@@ -247,7 +262,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
 
-    # ── D3: Subsurface ocean prior (configurable; default 0.03) ──────────────
+    # -- D3: Subsurface ocean prior (configurable; default 0.03) --------------
     # Revised down from an initial 0.10 based on Neish et al. (2024), which
     # shows organic flux to the subsurface ocean is ~7,500 kg/yr glycine
     # (equivalent to ~one elephant). This severely limits the ocean's access
@@ -295,7 +310,7 @@ def setup_logging(verbose: bool, log_dir: Path) -> None:
     for noisy in ("rasterio", "matplotlib", "pymc", "pytensor",
                   "fiona", "shapely", "numexpr", "jax"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
-    logging.info("Log file → %s", log_file)
+    logging.info("Log file -> %s", log_file)
 
 
 class Timer:
@@ -308,7 +323,7 @@ class Timer:
         return f"{s/60:.1f} min" if s >= 60 else f"{s:.1f} s"
 
     def done(self, log: logging.Logger) -> None:
-        log.info("─── %s done (%s) ───", self.name, self.elapsed())
+        log.info("--- %s done (%s) ---", self.name, self.elapsed())
 
 
 # ---------------------------------------------------------------------------
@@ -324,7 +339,7 @@ def run_single_mode(
     log:        logging.Logger,
 ) -> dict:
     """
-    Run stages 3–5 for one temporal mode.
+    Run stages 3-5 for one temporal mode.
 
     Returns a dict with result arrays for comparison.
     """
@@ -336,19 +351,19 @@ def run_single_mode(
     mode_out = cfg.output_dir / mode_str
 
     log.info("")
-    log.info("══════════════════════════════════════════════════")
+    log.info("==================================================")
     log.info("  TEMPORAL MODE: %s", mode_str.upper())
-    log.info("══════════════════════════════════════════════════")
+    log.info("==================================================")
     log.info("%s", describe_prior_changes(mode))
 
     feat_dir = mode_out / "features"
     feat_nc  = feat_dir / f"titan_features_{mode_str}.nc"
     inf_dir  = mode_out / "inference"
 
-    # ── Stage 3: Features ─────────────────────────────────────────────────
+    # -- Stage 3: Features -------------------------------------------------
     if not (args.skip_features or args.only_visualise):
         log.info("")
-        log.info("[%s] STAGE 3 — Feature Extraction", mode_str.upper())
+        log.info("[%s] STAGE 3 -- Feature Extraction", mode_str.upper())
         t = Timer(f"Stage 3 [{mode_str}]")
         from titan.temporal_features import TemporalFeatureExtractor
         extractor = TemporalFeatureExtractor(
@@ -365,7 +380,7 @@ def run_single_mode(
 
         feat_dir.mkdir(parents=True, exist_ok=True)
         features.to_xarray().to_netcdf(feat_nc)
-        log.info("  Saved → %s", feat_nc)
+        log.info("  Saved -> %s", feat_nc)
 
         # Save individual feature TIFs for external inspection.
         # These are float32 GeoTIFFs with nodata=-9999.
@@ -392,10 +407,10 @@ def run_single_mode(
                 blockxsize=256, blockysize=256,
             ) as dst:
                 dst.write(arr_out, 1)
-        log.info("  Feature TIFs → %s", tif_dir)
+        log.info("  Feature TIFs -> %s", tif_dir)
         t.done(log)
     else:
-        log.info("[%s] Stage 3 — loading features from %s", mode_str.upper(), feat_nc)
+        log.info("[%s] Stage 3 -- loading features from %s", mode_str.upper(), feat_nc)
         if not feat_nc.exists():
             log.error("Feature file not found: %s", feat_nc)
             return {}
@@ -410,10 +425,10 @@ def run_single_mode(
         )
         ds.close()
 
-    # ── Stage 4: Inference ─────────────────────────────────────────────────
+    # -- Stage 4: Inference -------------------------------------------------
     if not (args.skip_inference or args.only_visualise):
         log.info("")
-        log.info("[%s] STAGE 4 — Bayesian Inference [%s]",
+        log.info("[%s] STAGE 4 -- Bayesian Inference [%s]",
                  mode_str.upper(), cfg.bayesian_backend)
         t = Timer(f"Stage 4 [{mode_str}]")
         from titan.bayesian.temporal_inference import run_temporal_inference
@@ -430,7 +445,7 @@ def run_single_mode(
         result.save(inf_dir)
         t.done(log)
     else:
-        log.info("[%s] Stage 4 — loading inference from %s", mode_str.upper(), inf_dir)
+        log.info("[%s] Stage 4 -- loading inference from %s", mode_str.upper(), inf_dir)
         from titan.bayesian.inference import HabitabilityResult
         if not (inf_dir / "posterior_mean.npy").exists():
             log.error("Posterior not found in %s", inf_dir)
@@ -448,9 +463,9 @@ def run_single_mode(
             n_valid_pixels = int(np.sum(np.isfinite(posterior_mean)))
         result = _R()
 
-    # ── Stage 5: Visualisation ─────────────────────────────────────────────
+    # -- Stage 5: Visualisation ---------------------------------------------
     log.info("")
-    log.info("[%s] STAGE 5 — Visualisation", mode_str.upper())
+    log.info("[%s] STAGE 5 -- Visualisation", mode_str.upper())
     t = Timer(f"Stage 5 [{mode_str}]")
     from titan.visualisation import generate_paper_figures, plot_interactive
 
@@ -483,7 +498,7 @@ def run_single_mode(
         )
         plot_interactive(result.posterior_mean, fig_dir / "fig5_interactive.html",
                          title=f"Titan Habitability — {mode_str.upper()} mode")
-        log.info("  Figures → %s", fig_dir)
+        log.info("  Figures -> %s", fig_dir)
 
     t.done(log)
 
@@ -511,7 +526,7 @@ def _make_vis_feature_stack(
 
     nan = np.full((grid.nrows, grid.ncols), np.nan, dtype=np.float32)
 
-    # Mapping: temporal name → PRESENT name
+    # Mapping: temporal name -> PRESENT name
     ALIAS = {
         "water_ammonia_solvent":    "liquid_hydrocarbon",
         "organic_stockpile":        "organic_abundance",
@@ -607,7 +622,7 @@ def make_comparison_figure(
         p = out_dir / f"temporal_comparison.{ext}"
         fig.savefig(p, dpi=dpi, bbox_inches="tight")
     plt.close(fig)
-    logging.getLogger("pipeline").info("Temporal comparison → %s", out_dir)
+    logging.getLogger("pipeline").info("Temporal comparison -> %s", out_dir)
 
 
 # ---------------------------------------------------------------------------
@@ -615,6 +630,14 @@ def make_comparison_figure(
 # ---------------------------------------------------------------------------
 
 def main(argv: Optional[List[str]] = None) -> int:
+    print(
+        "Titan Habitability Pipeline  Copyright (C) 2025/2026  Chris Meadows\n"
+        "This program comes with ABSOLUTELY NO WARRANTY; for details, see the\n"
+        "README.md at the project root.\n"
+        "This is free software, and you are welcome to redistribute it\n"
+        "under certain conditions; see the LICENSE.md file at the project\n"
+        "root for details.\n"
+    )
     args   = build_parser().parse_args(argv)
     log_dir = Path(args.output_dir) / "logs"
     setup_logging(args.verbose, log_dir)
@@ -628,7 +651,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         PipelineConfig, HabitabilityWindowConfig, BayesianPriorConfig
     )
 
-    # ── Build temporal window config from CLI args (D1, D2) ──────────────────
+    # -- Build temporal window config from CLI args (D1, D2) ------------------
     window_cfg = HabitabilityWindowConfig(
         past_liquid_water_epoch_gya = args.past_epoch_gya,
         future_window_min_myr       = args.future_window_min,
@@ -637,7 +660,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     window_cfg.validate()
 
-    # ── Build Bayesian prior config with D3 override ──────────────────────────
+    # -- Build Bayesian prior config with D3 override --------------------------
     prior_cfg = BayesianPriorConfig(
         prior_mean_subsurface_ocean = args.subsurface_ocean_prior,
     )
@@ -672,20 +695,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     log.info("  Temporal mode(s)  : %s", ", ".join(modes_to_run))
     log.info("  Backend           : %s", cfg.bayesian_backend)
     log.info("  Resolution        : %.0f m/px", cfg.canonical_res_m)
-    log.info("  Grid              : %d × %d px", grid_rows, grid_cols)
-    log.info("  ── Temporal parameters (D1, D2) ──────────────────────")
+    log.info("  Grid              : %d x %d px", grid_rows, grid_cols)
+    log.info("  -- Temporal parameters (D1, D2) ----------------------")
     log.info(
         "  [D1] Past liquid-water epoch : %.2f Gya",
         cfg.habitability_window.past_liquid_water_epoch_gya,
     )
     log.info(
-        "  [D2] Near-future warm window : %d–%d Myr from now",
+        "  [D2] Near-future warm window : %d-%d Myr from now",
         int(cfg.habitability_window.future_window_min_myr),
         int(cfg.habitability_window.future_window_max_myr),
     )
     log.info(
         "  [D2] Uniform warming assumed : %s",
-        "YES (explicit assumption: spatially constant ΔT)"
+        "YES (explicit assumption: spatially constant deltaT)"
         if cfg.habitability_window.assume_uniform_warming
         else "NO (future-window prior disabled)",
     )
@@ -704,9 +727,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     t_total = time.perf_counter()
 
-    # ── Stage 1: Acquisition ─────────────────────────────────────────────
+    # -- Stage 1: Acquisition ---------------------------------------------
     if not (args.skip_acquisition or args.only_visualise):
-        log.info("\nSTAGE 1 — Data Acquisition")
+        log.info("\nSTAGE 1 -- Data Acquisition")
         t = Timer("Stage 1")
         from titan.acquisition import DataAcquisitionManager
         mgr = DataAcquisitionManager(cfg)
@@ -716,9 +739,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         report.save(cfg.output_dir / "acquisition_report.json")
         t.done(log)
 
-    # ── Stage 2: Preprocessing ────────────────────────────────────────────
+    # -- Stage 2: Preprocessing --------------------------------------------
     if not (args.skip_preprocessing or args.only_visualise):
-        log.info("\nSTAGE 2 — Preprocessing → canonical %.0f m/px grid",
+        log.info("\nSTAGE 2 -- Preprocessing -> canonical %.0f m/px grid",
                  cfg.canonical_res_m)
         t = Timer("Stage 2")
         from titan.preprocessing import DataPreprocessor, CanonicalGrid
@@ -728,39 +751,39 @@ def main(argv: Optional[List[str]] = None) -> int:
         log.info("  Layers produced: %s", list(processed.keys()))
         t.done(log)
 
-    # ── Load canonical stack ──────────────────────────────────────────────
+    # -- Load canonical stack ----------------------------------------------
     import numpy as np
     import xarray as xr
     from titan.preprocessing import CanonicalDataStack, CanonicalGrid
 
     grid   = CanonicalGrid(cfg.canonical_res_m)
     loader = CanonicalDataStack(cfg, grid)
-    log.info("\nLoading canonical data stack …")
+    log.info("\nLoading canonical data stack ...")
     stack  = loader.load()
     if stack.data_vars:
         log.info("  Layers: %s", list(stack.data_vars.keys()))
     else:
-        log.warning("  No canonical layers found — stages 3–5 will use priors only.")
+        log.warning("  No canonical layers found -- stages 3-5 will use priors only.")
     nc_path = cfg.processed_dir / "titan_canonical_stack.nc"
     if (not nc_path.exists() or args.overwrite) and stack.data_vars:
         loader.save_netcdf(stack, nc_path)
 
-    # ── Stages 3–5 per temporal mode ─────────────────────────────────────
+    # -- Stages 3-5 per temporal mode -------------------------------------
     all_results = []
     for mode_str in modes_to_run:
         result = run_single_mode(mode_str, args, cfg, stack, grid, log)
         all_results.append(result)
 
-    # ── Comparison figure (only when running multiple modes) ──────────────
+    # -- Comparison figure (only when running multiple modes) --------------
     if len(modes_to_run) > 1:
-        log.info("\nGenerating temporal comparison figure …")
+        log.info("\nGenerating temporal comparison figure ...")
         make_comparison_figure(
             all_results,
             out_dir=cfg.output_dir / "temporal_comparison",
             dpi=args.paper_dpi,
         )
 
-    # ── Summary ─────────────────────────────────────────────────────────
+    # -- Summary ---------------------------------------------------------
     elapsed = time.perf_counter() - t_total
     log.info("")
     log.info("=" * 65)
@@ -768,7 +791,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "  PIPELINE COMPLETE  (%.1f min)  modes=%s  backend=%s",
         elapsed / 60, modes_to_run, cfg.bayesian_backend,
     )
-    log.info("  Outputs → %s", cfg.output_dir.resolve())
+    log.info("  Outputs -> %s", cfg.output_dir.resolve())
     log.info("=" * 65)
     return 0
 

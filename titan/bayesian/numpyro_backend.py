@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/bayesian/numpyro_backend.py
 ===================================
@@ -101,10 +116,10 @@ class NumPyroBayesianBackend(BayesianBackend):
                 "pip install numpyro>=0.13 jax>=0.4.25 jaxlib>=0.4.25"
             ) from exc
 
-        logger.info("Running NumPyro NUTS backend (n_mcmc_pixels=%d)…",
+        logger.info("Running NumPyro NUTS backend (n_mcmc_pixels=%d)...",
                     self.n_mcmc_pixels)
 
-        # ── Sample valid pixels ───────────────────────────────────────────
+        # -- Sample valid pixels -------------------------------------------
         X_all, valid_idx = self._feature_matrix(features)
         N_valid = len(X_all)
         rng = np.random.default_rng(self.random_seed)
@@ -116,7 +131,7 @@ class NumPyroBayesianBackend(BayesianBackend):
         X_sample = X_all[sample_idx].astype(np.float32)
         M, F = X_sample.shape
 
-        # ── Priors ───────────────────────────────────────────────────────
+        # -- Priors -------------------------------------------------------
         weights   = np.array(self.priors.weight_vector(), dtype=np.float32)
         mu_global = float(np.dot(weights, self.priors.prior_mean_vector()))
         kappa     = float(self.priors.beta_concentration)
@@ -128,7 +143,7 @@ class NumPyroBayesianBackend(BayesianBackend):
         jax_X    = jnp.array(X_sample)          # (M, F)
         jax_w    = jnp.array(weights)           # (F,)
 
-        # ── NumPyro model ─────────────────────────────────────────────────
+        # -- NumPyro model -------------------------------------------------
         def model(obs: jnp.ndarray) -> None:
             """
             H[m] ~ Beta(alpha_0, beta_0)
@@ -148,7 +163,7 @@ class NumPyroBayesianBackend(BayesianBackend):
                     obs=jnp.clip(obs[:, f], 1e-6, 1.0 - 1e-6),
                 )
 
-        # ── Run NUTS ─────────────────────────────────────────────────────
+        # -- Run NUTS -----------------------------------------------------
         nuts_kernel = NUTS(model)
         mcmc = MCMC(
             nuts_kernel,
@@ -168,7 +183,7 @@ class NumPyroBayesianBackend(BayesianBackend):
         post_lower_sample = np.percentile(H_samples, 2.5,  axis=0)
         post_upper_sample = np.percentile(H_samples, 97.5, axis=0)
 
-        # ── Interpolate to full valid set ─────────────────────────────────
+        # -- Interpolate to full valid set ---------------------------------
         from sklearn.neighbors import KNeighborsRegressor
 
         def _knn(y: np.ndarray) -> np.ndarray:

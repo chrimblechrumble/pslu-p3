@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 configs/pipeline_config.py
 ===========================
@@ -5,7 +20,7 @@ Central, fully-typed configuration for the Titan Habitability Pipeline.
 
 All tuneable parameters live here. Researchers modifying the priors,
 resolution, Bayesian backend, or dataset paths should edit this file
-only — nothing scientific is hard-coded elsewhere.
+only -- nothing scientific is hard-coded elsewhere.
 
 Coordinate system notes (from direct inspection of real data)
 --------------------------------------------------------------
@@ -14,33 +29,33 @@ All raster products use the same projection family but differ in details:
   GeoTIFF mosaics (USGS Astropedia):
     - SimpleCylindrical, Titan sphere R=2,575,000 m
     - Coordinates stored in METRES (projected CRS)
-    - Longitude: WEST-positive, 0° → 360°  (clon180 convention)
+    - Longitude: WEST-positive, 0 deg -> 360 deg  (clon180 convention)
     - Nodata: 0.0 (float32)
     - Example pixel scale: 351.11 m/px at 128 ppd
 
   GTDR .IMG tiles (PDS3, Stanford/Zebker):
     - Equirectangular, Titan sphere R=2,575,000 m
-    - Coordinates in DEGREES (geographic)
-    - Longitude: WEST-positive, 0° → 360°
-    - Nodata: 0xFF7FFFFB = −3.4028×10³⁸  (PDS3 MISSING_CONSTANT, NOT NaN)
-    - Resolution: 2.0 ppd (0.5°/pixel = 22.47 km/pixel)
-    - Coverage: two half-globe tiles (0–180° and 180–360° west)
+    - Coordinates in deg (geographic)
+    - Longitude: WEST-positive, 0 deg -> 360 deg
+    - Nodata: 0xFF7FFFFB = -3.4028x10^3^8  (PDS3 MISSING_CONSTANT, NOT NaN)
+    - Resolution: 2.0 ppd (0.5 deg/pixel = 22.47 km/pixel)
+    - Coverage: two half-globe tiles (0-180 deg and 180-360 deg west)
 
   Shapefiles (JPL/Lopes geomorphology):
     - GEOGCS GCS_Titan_2000, Titan sphere R=2,575,000 m
-    - Coordinates in DEGREES (geographic)
-    - Longitude: EAST-positive, −180° → +180°  ← DIFFERENT from rasters
+    - Coordinates in deg (geographic)
+    - Longitude: EAST-positive, -180 deg -> +180 deg  <- DIFFERENT from rasters
     - PolygonM geometry type (has measure coordinate M)
     - One file per terrain class: Cr/Dn/Pl/Lb/Mt/Ba/Lk
-    - Conversion: lon_west = (−lon_east) % 360
+    - Conversion: lon_west = (-lon_east) % 360
 
   VIMS parquet (spatial footprint index):
     - Tabular, no raster
-    - lon column: WEST-positive (0→360°)
+    - lon column: WEST-positive (0->360 deg)
     - One row per VIMS pixel footprint
     - Links to PDS cube files via 'id' column (SCLK_counter format)
 
-The canonical pipeline grid uses west-positive 0→360° in metres.
+The canonical pipeline grid uses west-positive 0->360 deg in metres.
 
 References
 ----------
@@ -77,7 +92,7 @@ TITAN_RADIUS_KM: float = TITAN_RADIUS_M / 1000.0
 
 #: PROJ4 string for the canonical pipeline CRS.
 #: SimpleCylindrical (equirectangular), Titan sphere, west-positive,
-#: coordinates in metres, central meridian 0° (0°W = prime meridian).
+#: coordinates in metres, central meridian 0 deg (0 degW = prime meridian).
 #: Longitude increases westward in this convention (matches all rasters).
 CANONICAL_CRS_PROJ4: str = (
     "+proj=eqc +lat_ts=0 +lat_0=0 +lon_0=0 "
@@ -86,7 +101,7 @@ CANONICAL_CRS_PROJ4: str = (
 )
 
 #: WKT for the Titan geographic CRS used by the Lopes shapefiles.
-#: East-positive, degrees.  Must be reprojected to canonical before rasterising.
+#: East-positive, deg.  Must be reprojected to canonical before rasterising.
 SHAPEFILE_CRS_WKT: str = (
     'GEOGCS["GCS_Titan_2000",'
     'DATUM["D_Titan_2000",'
@@ -96,8 +111,8 @@ SHAPEFILE_CRS_WKT: str = (
 )
 
 #: PDS3 MISSING_CONSTANT for GTDR topography tiles (Howard Zebker, Stanford).
-#: This is NOT a NaN — it is 0xFF7FFFFB interpreted as little-endian float32.
-#: Value = −3.4028226550889045e+38  (close to −FLT_MAX).
+#: This is NOT a NaN -- it is 0xFF7FFFFB interpreted as little-endian float32.
+#: Value = -3.4028226550889045e+38  (close to -FLT_MAX).
 #: Must be masked by exact-value comparison, NOT np.isnan().
 GTDR_MISSING_CONSTANT: float = -3.4028226550889045e+38
 
@@ -249,7 +264,7 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
     """
     return {
 
-        # ── Topography — Cornell GTDR/GTDE product suite ───────────────────────
+        # -- Topography -- Cornell GTDR/GTDE product suite -----------------------
         #
         # All files downloadable from Cornell eCommons (gzip-compressed):
         #   https://data.astro.cornell.edu/RADAR/DATA/GTDR/
@@ -257,19 +272,19 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
         #   http://astropedia.astrogeology.usgs.gov/download/Titan/Cassini/GTDR/gtdr-data.zip
         #
         # Pipeline DEM priority in _preprocess_topography():
-        #   1. GTDE T126 — Dense interpolated (~90% global, Corlies 2017)  PREFERRED
-        #   2. GT0E T126 — Standard GTDR final mission (~25% coverage)
-        #   3. GT0E T077 — Standard GTDR legacy (~15% coverage, older release)
+        #   1. GTDE T126 -- Dense interpolated (~90% global, Corlies 2017)  PREFERRED
+        #   2. GT0E T126 -- Standard GTDR final mission (~25% coverage)
+        #   3. GT0E T077 -- Standard GTDR legacy (~15% coverage, older release)
         #
         # The reader accepts both .IMG and .IMG.gz (Cornell distributes .gz).
 
-        # ── GTDE: Dense interpolated DEM (PREFERRED, ~90% global) ────────────
+        # -- GTDE: Dense interpolated DEM (PREFERRED, ~90% global) ------------
         "gtde_east": DatasetSpec(
             name="gtde_east",
             description=(
-                "GTDE east tile — Dense spline-interpolated global DEM. "
+                "GTDE east tile -- Dense spline-interpolated global DEM. "
                 "~90% of Titan's surface with valid elevation data. "
-                "lon 0–180°W (N090). 2 ppd (22.47 km/px). "
+                "lon 0-180 degW (N090). 2 ppd (22.47 km/px). "
                 "Corlies et al. (2017); through flyby T126 (final mission). "
                 "From Cornell eCommons (distributed as GTDED00N090_T126_V01.IMG.gz)."
             ),
@@ -292,8 +307,8 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
         "gtde_west": DatasetSpec(
             name="gtde_west",
             description=(
-                "GTDE west tile — companion to gtde_east. "
-                "lon 180–360°W (N270). Corlies et al. (2017); T126. "
+                "GTDE west tile -- companion to gtde_east. "
+                "lon 180-360 degW (N270). Corlies et al. (2017); T126. "
                 "From Cornell eCommons (GTDED00N270_T126_V01.IMG.gz)."
             ),
             url="https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTDED00N270_T126_V01.IMG.gz",
@@ -309,13 +324,13 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             ),
         ),
 
-        # ── GT0E T126: Standard GTDR final mission (~25% coverage) ───────────
+        # -- GT0E T126: Standard GTDR final mission (~25% coverage) -----------
         "gtdr_east": DatasetSpec(
             name="gtdr_east",
             description=(
-                "GT0E east tile — standard GTDR altimetry + SARtopo tracks. "
+                "GT0E east tile -- standard GTDR altimetry + SARtopo tracks. "
                 "~25% surface coverage (nadir corridors only). "
-                "lon 0–180°W (N090). 2 ppd. Through flyby T126 (final mission). "
+                "lon 0-180 degW (N090). 2 ppd. Through flyby T126 (final mission). "
                 "Use GTDE tiles for global coverage. "
                 "From Cornell eCommons (GT2ED00N090_T126_V01.IMG.gz). "
                 "Legacy T077 variant (GT0EB00N090_T077_V01.IMG) also accepted."
@@ -337,8 +352,8 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
         "gtdr_west": DatasetSpec(
             name="gtdr_west",
             description=(
-                "GT0E west tile — companion to gtdr_east. "
-                "lon 180–360°W (N270). Through flyby T126. "
+                "GT0E west tile -- companion to gtdr_east. "
+                "lon 180-360 degW (N270). Through flyby T126. "
                 "From Cornell eCommons (GT2ED00N270_T126_V01.IMG.gz)."
             ),
             url="https://data.astro.cornell.edu/RADAR/DATA/GTDR/GT2ED00N270_T126_V01.IMG.gz",
@@ -354,7 +369,7 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             ),
         ),
 
-        # ── SAR Backscatter (geomorphology proxy) ─────────────────────────────
+        # -- SAR Backscatter (geomorphology proxy) -----------------------------
         "sar_mosaic": DatasetSpec(
             name="sar_mosaic",
             description=(
@@ -380,12 +395,12 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             ),
         ),
 
-        # ── ISS Optical Mosaic ────────────────────────────────────────────────
+        # -- ISS Optical Mosaic ------------------------------------------------
         "iss_mosaic_450m": DatasetSpec(
             name="iss_mosaic_450m",
             description=(
                 "Cassini ISS 938 nm near-global controlled mosaic at 450 m/pixel. "
-                "Photogrammetrically registered, +45° to −65° latitude. "
+                "Photogrammetrically registered, +45 deg to -65 deg latitude. "
                 "Best positional accuracy for correlative studies."
             ),
             url=(
@@ -403,27 +418,27 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             ),
         ),
 
-        # ── VIMS + ISS Global Mosaic (Caltech/JPL) ────────────────────────────
+        # -- VIMS + ISS Global Mosaic (Caltech/JPL) ----------------------------
         #
         # The standalone VIMS mosaic is NOT available as a direct GeoTIFF
         # download from vims.univ-nantes.fr.  Instead, the pipeline uses the
         # published VIMS+ISS combined mosaic by Seignovert et al. (2019),
-        # which uses the same VIMS band ratios as Le Mouélic et al. (2019) but
+        # which uses the same VIMS band ratios as Le Mouelic et al. (2019) but
         # blends in the seamless ISS 938 nm map (PIA22770) to fill coverage gaps.
         #
         # Band layout (verified from Titan_VIMS-ISS.tif.aux.xml):
-        #   Band 1: 1.59/1.27 µm  + 938 nm ISS  ← tholin proxy (organic_abundance)
-        #   Band 2: 2.03/1.27 µm  + 938 nm ISS  ← surface 2 µm window
-        #   Band 3: 1.27/1.08 µm  + 938 nm ISS  ← water-ice indicator
+        #   Band 1: 1.59/1.27 umm  + 938 nm ISS  <- tholin proxy (organic_abundance)
+        #   Band 2: 2.03/1.27 umm  + 938 nm ISS  <- surface 2 umm window
+        #   Band 3: 1.27/1.08 umm  + 938 nm ISS  <- water-ice indicator
         #
         # This is BETTER than the pure VIMS mosaic for the pipeline because:
-        #   1. Direct download URL — no login, no contact required
+        #   1. Direct download URL -- no login, no contact required
         #   2. ISS blending fills high-latitude and low-incidence gaps in VIMS
         #   3. Same band-ratio definitions as the Nantes VIMS portal products
         #   4. BSD-3-Clause license (compatible with research use)
         #
         # Derived from:
-        #   VIMS: Le Mouélic et al. (2019) doi:10.1016/j.icarus.2018.09.017
+        #   VIMS: Le Mouelic et al. (2019) doi:10.1016/j.icarus.2018.09.017
         #   ISS:  PIA22770, Cassini Imaging Team (Dec 2018)
         #
         # DOI: 10.22002/D1.1173
@@ -433,11 +448,11 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             description=(
                 "VIMS + ISS combined global mosaic (Seignovert et al. 2019, "
                 "CaltechDATA doi:10.22002/D1.1173). 3-band GeoTIFF: "
-                "Band 1 = 1.59/1.27 µm + 938 nm (tholin proxy); "
-                "Band 2 = 2.03/1.27 µm + 938 nm (surface); "
-                "Band 3 = 1.27/1.08 µm + 938 nm (water ice). "
+                "Band 1 = 1.59/1.27 umm + 938 nm (tholin proxy); "
+                "Band 2 = 2.03/1.27 umm + 938 nm (surface); "
+                "Band 3 = 1.27/1.08 umm + 938 nm (water ice). "
                 "ISS blending fills VIMS coverage gaps at high latitudes. "
-                "Same band ratios as Le Mouélic et al. (2019). "
+                "Same band ratios as Le Mouelic et al. (2019). "
                 "BSD-3-Clause licence. 144.2 MB GeoTIFF."
             ),
             url=(
@@ -447,14 +462,14 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             local_filename="Titan_VIMS-ISS.tif",
             file_format="geotiff",
             nodata_value=None,   # no nodata embedded; NaN/zero handled in preprocessing
-            band=1,              # Band 1: 1.59/1.27 µm = tholin proxy for organic_abundance
+            band=1,              # Band 1: 1.59/1.27 umm = tholin proxy for organic_abundance
             units="VIMS band ratio + ISS 938 nm (dimensionless)",
             citation="Seignovert2019CaltechDATA",
             sha256="",           # MD5 known (see description); SHA-256 not published
-            manual_instructions="",  # direct download — no login required
+            manual_instructions="",  # direct download -- no login required
         ),
 
-        # ── VIMS+ISS ENVI header (companion to vims_mosaic) ───────────────────
+        # -- VIMS+ISS ENVI header (companion to vims_mosaic) -------------------
         # The .hdr file contains the ENVI projection metadata for Titan_VIMS-ISS.tif.
         # 479 bytes; downloaded alongside the GeoTIFF for provenance.
         "vims_mosaic_hdr": DatasetSpec(
@@ -474,13 +489,13 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             manual_instructions="",
         ),
 
-        # ── VIMS Spatial Footprint Index (parquet) ────────────────────────────
-        # ── VIMS Spatial Footprint Index (parquet) ────────────────────────────
+        # -- VIMS Spatial Footprint Index (parquet) ----------------------------
+        # -- VIMS Spatial Footprint Index (parquet) ----------------------------
         #
         # Accepted filenames (searched in data_dir in this order):
         #   1. vims_footprints.parquet       canonical full file (~5.4M rows, 227 MB)
         #   2. vims_sample_1000rows.parquet  the 1,000-row sample uploaded at project
-        #                                    start — fully usable for development and
+        #                                    start -- fully usable for development and
         #                                    testing; covers sparse global sampling
         #   3. vims_*.parquet                any parquet with VIMS-matching schema
         #
@@ -495,8 +510,8 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             description=(
                 "VIMS spatial footprint index in parquet format. "
                 "One row per VIMS pixel: id (SCLK format), flyby, "
-                "obs_start/end, altitude (km), lon (°W, 0-360), "
-                "lat (°), res (km/px). The 'id' column maps directly to "
+                "obs_start/end, altitude (km), lon ( degW, 0-360), "
+                "lat (deg), res (km/px). The 'id' column maps directly to "
                 "cube download URLs on vims.univ-nantes.fr. "
                 "Full file: ~5.4 million rows, 227 MB. "
                 "Sample: 1,000 rows, 43 KB (vims_sample_1000rows.parquet). "
@@ -515,7 +530,7 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
                 "  vims_*.parquet                (any VIMS-prefixed parquet)\n"
                 "\n"
                 "To obtain the full 227 MB catalogue:\n"
-                "  Contact Stéphane Le Mouélic (LPG Nantes), or build\n"
+                "  Contact Stephane Le Mouelic (LPG Nantes), or build\n"
                 "  from pyVIMS: https://github.com/seignovert/pyvims\n"
                 "\n"
                 "Individual cubes are downloadable without the parquet:\n"
@@ -527,7 +542,7 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             ),
         ),
 
-        # ── Geomorphology Shapefiles (Lopes et al. 2019/2020) ────────────────
+        # -- Geomorphology Shapefiles (Lopes et al. 2019/2020) ----------------
         "geomorphology_shapefiles": DatasetSpec(
             name="geomorphology_shapefiles",
             description=(
@@ -535,7 +550,7 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
                 "Six terrain classes: Craters(Cr), Dunes(Dn), Plains(Pl), "
                 "Labyrinth(Lb), Mountains(Mt), Basins(Ba). "
                 "One shapefile per class. PolygonM geometry. "
-                "CRS: GCS_Titan_2000, east-positive degrees. "
+                "CRS: GCS_Titan_2000, east-positive deg. "
                 "JPL cube files provided by Rosaly Lopes."
             ),
             url="https://data.mendeley.com/research-data/?query=titan",
@@ -553,7 +568,7 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             ),
         ),
 
-        # ── Fluvial Channel Map (Miller et al. 2021) ──────────────────────────
+        # -- Fluvial Channel Map (Miller et al. 2021) --------------------------
         "titan_channels": DatasetSpec(
             name="titan_channels",
             description=(
@@ -577,9 +592,9 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             ),
         ),
 
-        # ── Corlies 2017 Globally Interpolated Topography (gap-filler) ──────────
+        # -- Corlies 2017 Globally Interpolated Topography (gap-filler) ----------
         # Source: Hayes Research Group (hayesresearchgroup.com/data-products/)
-        # titan_topo_corlies.zip → hayes_topo/topo_4PPD_interp.cub
+        # titan_topo_corlies.zip -> hayes_topo/topo_4PPD_interp.cub
         # This is the GLOBALLY INTERPOLATED version of the Corlies et al. (2017) GRL
         # topographic map (Geophys. Res. Lett. 44, 11754). It uses all Cassini RADAR
         # data (altimetry + SARtopo + stereophotogrammetry) with radial basis function
@@ -591,12 +606,12 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
         "corlies_interp_topo": DatasetSpec(
             name="corlies_interp_topo",
             description=(
-                "Globally interpolated Titan topography — Corlies et al. (2017) "
+                "Globally interpolated Titan topography -- Corlies et al. (2017) "
                 "Geophys. Res. Lett. 44, 11754. All Cassini RADAR data (altimetry, "
                 "SARtopo, stereo). RBF interpolation gives 100%% global coverage "
                 "at 4 ppd (~11 km/px). ISIS3 .cub format. "
                 "Used as gap-filler for GTDE NaN pixels in preprocessing. "
-                "NOT YET USED DIRECTLY — optional enhancement for 100%% topographic coverage."
+                "NOT YET USED DIRECTLY -- optional enhancement for 100%% topographic coverage."
             ),
             url="https://hayesresearchgroup.com/data-products/",
             local_filename="hayes_topo/topo_4PPD_interp.cub",
@@ -613,22 +628,22 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             ),
         ),
 
-        # ── CIRS Atmospheric Temperature ──────────────────────────────────────
+        # -- CIRS Atmospheric Temperature --------------------------------------
         #
         # NOTE: There is NO pre-packaged cirs_temperature.nc on PDS Atmospheres.
         # The PDS CIRS archive holds raw spectra only (COCIRS_0xxx volumes).
         # Published temperature retrievals exist in two forms:
         #
-        #   1. Achterberg et al. (2008) Icarus 194, 263 — latitude/pressure maps
-        #      of the stratosphere from the nominal mission (75°S–75°N, 10–0.001 mbar).
+        #   1. Achterberg et al. (2008) Icarus 194, 263 -- latitude/pressure maps
+        #      of the stratosphere from the nominal mission (75 degS-75 degN, 10-0.001 mbar).
         #      Supplementary data NOT in a public repository; contact first author.
         #
-        #   2. Jennings et al. (2019) ApJL 877, L8 — surface brightness temperatures
-        #      in 10° latitude bins, full mission 2004–2017.
+        #   2. Jennings et al. (2019) ApJL 877, L8 -- surface brightness temperatures
+        #      in 10 deg latitude bins, full mission 2004-2017.
         #      DOI: 10.3847/2041-8213/ab1f91
         #      Supplementary table available from the journal; can be converted to NetCDF.
         #
-        # The pipeline degrades gracefully when this file is absent — features that
+        # The pipeline degrades gracefully when this file is absent -- features that
         # depend on it (acetylene_energy, methane_cycle) return NaN rather than failing.
         # Place the NetCDF at data/raw/cirs_temperature.nc to enable those features.
         "cirs_temperature": DatasetSpec(
@@ -636,12 +651,12 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             description=(
                 "Titan surface brightness temperature map synthesised at runtime "
                 "from the Jennings et al. (2019) ApJL 877, L8 analytical formula. "
-                "No download required — generated by _synthesise_cirs_temperature() "
+                "No download required -- generated by _synthesise_cirs_temperature() "
                 "in titan/preprocessing.py using the embedded formula from "
                 "titan/atmospheric_profiles.py. "
-                "Formula: T(L,Y) = (93.53−0.095Y)·cos[(L+0.85−3.2Y)·(0.0029−0.00006Y)] "
-                "Valid for L=−90→+90°, Y=−4.9→+8.1 yr from equinox (2004–2017). "
-                "σ=0.4 K fit, sourced from Schinder et al. (2011) and HASI anchor."
+                "Formula: T(L,Y) = (93.53-0.095Y)*cos[(L+0.85-3.2Y)*(0.0029-0.00006Y)] "
+                "Valid for L=-90->+90 deg, Y=-4.9->+8.1 yr from equinox (2004-2017). "
+                "sigma=0.4 K fit, sourced from Schinder et al. (2011) and HASI anchor."
             ),
             url="https://doi.org/10.3847/2041-8213/ab1f91",
             local_filename="cirs_temperature.nc",
@@ -651,17 +666,17 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             manual_instructions=None,
         ),
 
-        # ── INMS Atmospheric Composition ──────────────────────────────────────
-        # NOTE: inms_composition is a forward stub — not yet used by any feature.
+        # -- INMS Atmospheric Composition --------------------------------------
+        # NOTE: inms_composition is a forward stub -- not yet used by any feature.
         # Raw INMS data is per-flyby PDS3 binary (REDRs), not a simple CSV.
         # The correct PDS page is inst-inms.html (not cassini-inms.html).
         # Marked as "not_used" so acquisition never warns about it.
         "inms_composition": DatasetSpec(
             name="inms_composition",
             description=(
-                "Cassini INMS upper-atmosphere neutral composition (~950–1200 km). "
+                "Cassini INMS upper-atmosphere neutral composition (~950-1200 km). "
                 "N2, CH4, HCN, benzene, tholins. Waite et al. (2007). "
-                "NOT YET USED BY ANY PIPELINE FEATURE — forward stub only. "
+                "NOT YET USED BY ANY PIPELINE FEATURE -- forward stub only. "
                 "Raw data: PDS Level 1A REDRs at "
                 "https://pds-atmospheres.nmsu.edu/data_and_services/"
                 "atmospheres_data/Cassini/inst-inms.html "
@@ -679,8 +694,8 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             manual_instructions=None,
         ),
 
-        # ── Magnetosphere / Plasma (MAG) ─────────────────────────────────────
-        # NOTE: magnetosphere_mag is a forward stub — not yet used by any feature.
+        # -- Magnetosphere / Plasma (MAG) -------------------------------------
+        # NOTE: magnetosphere_mag is a forward stub -- not yet used by any feature.
         # The calibrated MAG archive (urn:nasa:pds:cassini-mag-cal) at the PDS
         # Plasma Interactions Node (pds-ppi.igpp.ucla.edu) contains ~5,000 daily
         # ASCII .TAB files for the full mission. There is no pre-made Titan-flyby
@@ -690,7 +705,7 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             name="magnetosphere_mag",
             description=(
                 "Cassini MAG calibrated magnetometer data (Titan flybys). "
-                "NOT YET USED BY ANY PIPELINE FEATURE — forward stub only. "
+                "NOT YET USED BY ANY PIPELINE FEATURE -- forward stub only. "
                 "Titan has no intrinsic field (Backes et al. 2005); data shows "
                 "Saturn's external field modified by Titan's ionosphere. "
                 "Archive: PDS PPI urn:nasa:pds:cassini-mag-cal (~5,000 daily TAB files). "
@@ -705,13 +720,13 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             manual_instructions=None,
         ),
 
-        # ── Gravity / Tidal Love Number ────────────────────────────────────────
+        # -- Gravity / Tidal Love Number ----------------------------------------
         "gravity_k2": DatasetSpec(
             name="gravity_k2",
             description=(
-                "Titan's tidal Love number k2=0.589±0.150 (Iess et al. 2012), "
+                "Titan's tidal Love number k2=0.589+/-0.150 (Iess et al. 2012), "
                 "indicating a global subsurface water ocean. "
-                "Stored as a JSON scalar — applied globally as a constant "
+                "Stored as a JSON scalar -- applied globally as a constant "
                 "habitability modifier in the Bayesian model."
             ),
             url="https://doi.org/10.1126/science.1219631",
@@ -740,11 +755,11 @@ class BayesianPriorConfig:
 
     Model overview
     --------------
-    We model Titan habitability as a latent variable H ∈ [0, 1] per pixel.
-    Eight observable features f_i ∈ [0, 1] are derived from the canonical
+    We model Titan habitability as a latent variable H in [0, 1] per pixel.
+    Eight observable features f_i in [0, 1] are derived from the canonical
     data stack.  The posterior is:
 
-        P(H | f_1,...,f_8) ∝ P(f_1,...,f_8 | H) · P(H)
+        P(H | f_1,...,f_8) proportional to P(f_1,...,f_8 | H) . P(H)
 
     The sklearn backend approximates this using isotonically-calibrated
     Gaussian Naive Bayes, treating each feature as conditionally
@@ -758,21 +773,21 @@ class BayesianPriorConfig:
     --------------------------------------------
     All prior means are informed by specific published measurements.
 
-    Feature 1 — liquid_hydrocarbon  (weight 0.25)
+    Feature 1 -- liquid_hydrocarbon  (weight 0.25)
         Definition: Probability pixel has surface liquid hydrocarbon.
-        Primary data: lake_mask from SAR; secondary: VIMS 5 µm emissivity.
-        Prior mean 0.02: Lakes cover ~1.5–2% of Titan globally
+        Primary data: lake_mask from SAR; secondary: VIMS 5 umm emissivity.
+        Prior mean 0.02: Lakes cover ~1.5-2% of Titan globally
         (Stofan et al. 2007; Hayes et al. 2008).  Polar pixels ~0.4.
         Rationale: Liquid hydrocarbon is the non-aqueous solvent for
         surface life (McKay & Smith 2005; McKay 2016).
         Highest weight because solvent availability is prerequisite.
 
-    Feature 2 — organic_abundance  (weight 0.20)
+    Feature 2 -- organic_abundance  (weight 0.20)
         Definition: Surface organic (tholin) compound abundance proxy.
-        Primary data:   VIMS+ISS mosaic Band 1 (1.59/1.27 µm band ratio;
+        Primary data:   VIMS+ISS mosaic Band 1 (1.59/1.27 umm band ratio;
                         Seignovert et al. 2019).  Covers ~50% of globe.
         Gap-fill data:  Geomorphology-class scores from Lopes et al. (2019)
-                        terrain map — global 100% coverage via published VIMS
+                        terrain map -- global 100% coverage via published VIMS
                         spectral studies of each terrain type.
                         Dunes=0.82, Plains=0.68, Basins=0.58,
                         Labyrinth=0.55, Craters=0.35, Mountains=0.25,
@@ -788,30 +803,30 @@ class BayesianPriorConfig:
         and biotic chemistry (Neish et al. 2018; Meyer-Dombard 2025 Ch.14).
         High weight: without organics, no substrate for life.
 
-    Feature 3 — acetylene_energy  (weight 0.20)
+    Feature 3 -- acetylene_energy  (weight 0.20)
         Definition: Chemical energy gradient proxy.
-        Primary: SAR-dark surface (low C2H2 surface deposit → consumed?)
+        Primary: SAR-dark surface (low C2H2 surface deposit -> consumed?)
         Secondary: surface-atmosphere H2 gradient from Strobel (2010).
         Prior mean 0.35: Strobel (2010) found a downward H2 flux consistent
         with surface consumption, though Teolis et al. (2015) recalibration
         of the INMS instrument may reduce its magnitude (Strobel 2022 notes
-        the original INMS calibration may not need the 2.2× correction).
+        the original INMS calibration may not need the 2.2x correction).
         The disequilibrium signal is real but its amplitude is uncertain.
-        McKay & Smith (2005) compute ΔG = 334 kJ/mol for C2H2 + 3H2 → CH4.
-        Yanez et al. (2024) compute acetylenotrophy energy 69–78 kJ/mol C.
+        McKay & Smith (2005) compute DeltaG = 334 kJ/mol for C2H2 + 3H2 -> CH4.
+        Yanez et al. (2024) compute acetylenotrophy energy 69-78 kJ/mol C.
         Rationale: Chemical disequilibrium is the energy source for life
         in absence of sunlight (Schulze-Makuch & Grinspoon 2005).
         High weight: energy is prerequisite for metabolism.
 
-    Feature 4 — methane_cycle  (weight 0.15)
+    Feature 4 -- methane_cycle  (weight 0.15)
         Definition: Active methane-cycle proxy.
         Derived from three components (blend weights):
-          vims_coverage       (0.50) — VIMS observation density (flybys target
+          vims_coverage       (0.50) -- VIMS observation density (flybys target
                                        active methane-cycle regions)
-          cirs_temperature    (0.25) — Meridional |dT/dlat| gradient from Jennings
-                                       et al. (2019); steep gradient → strong
-                                       evaporation differential → active cycling
-          lat_weight          (0.25) — Gaussian prior at ±45° (Mitchell & Lora 2016)
+          cirs_temperature    (0.25) -- Meridional |dT/dlat| gradient from Jennings
+                                       et al. (2019); steep gradient -> strong
+                                       evaporation differential -> active cycling
+          lat_weight          (0.25) -- Gaussian prior at +/-45 deg (Mitchell & Lora 2016)
         Without vims_coverage: cirs_temperature 60%, lat_weight 40%.
         Without cirs_temperature: vims_coverage 60%, lat_weight 40%.
         Prior mean 0.40: Methane cycle active across mid-latitudes
@@ -819,12 +834,12 @@ class BayesianPriorConfig:
         Rationale: Temperature gradient from Jennings (2019) provides
         physically-grounded spatial weighting without an external data file.
 
-    Feature 5 — surface_atm_interaction  (weight 0.08)
-        Definition: Surface–atmosphere chemical exchange intensity.
+    Feature 5 -- surface_atm_interaction  (weight 0.08)
+        Definition: Surface-atmosphere chemical exchange intensity.
         Derived from three components (weights):
-          topographic_slope  (0.30) — gradient-driven runoff and exposure
-          lake_margin        (0.40) — evaporation/condensation hotspots
-          channel_density    (0.30) — Miller et al. (2021) global channel map
+          topographic_slope  (0.30) -- gradient-driven runoff and exposure
+          lake_margin        (0.40) -- evaporation/condensation hotspots
+          channel_density    (0.30) -- Miller et al. (2021) global channel map
         Prior mean 0.35: Exchange zones active at lake margins, channel
         networks, and topographic breaks (Hayes 2016; Miller et al. 2021).
         If channel_density layer is absent, weight is redistributed between
@@ -832,42 +847,42 @@ class BayesianPriorConfig:
         Rationale: Exchange zones provide chemical gradients analogous
         to Earth coastal/riparian habitats (most biologically productive).
 
-    Feature 6 — topographic_complexity  (weight 0.06)
+    Feature 6 -- topographic_complexity  (weight 0.06)
         Definition: Local DEM roughness (std-dev in sliding window).
         Primary data: GTDR elevation.
         Prior mean 0.25: Terrain roughness correlated with dissected/
         hummocky units, which have highest water-ice content (Lopes 2019).
-        Rationale: Complex terrain → more micro-environments → more
+        Rationale: Complex terrain -> more micro-environments -> more
         chemical gradient opportunities.
 
-    Feature 7 — geomorphologic_diversity  (weight 0.04)
+    Feature 7 -- geomorphologic_diversity  (weight 0.04)
         Definition: Shannon diversity of terrain classes in local window.
         Primary data: rasterised Lopes et al. shapefiles.
         Prior mean 0.30: Multiple terrain units co-occur at boundaries
         (Malaska et al. 2025; Lopes 2019).
-        Rationale: Ecotone effect — boundaries between terrain types
+        Rationale: Ecotone effect -- boundaries between terrain types
         have highest biodiversity on Earth; analogous logic applied here.
 
-    Feature 8 — subsurface_ocean  (weight 0.02)
+    Feature 8 -- subsurface_ocean  (weight 0.02)
         Definition: Proxy for subsurface-surface exchange via cryovolcanism
         and past-liquid-water interaction.
         Primary: SAR bright annuli (radar-bright ring structures) interpreted
-        as evidence of past liquid water contact — impact melt ponds, lava flow
+        as evidence of past liquid water contact -- impact melt ponds, lava flow
         fronts, or cryovolcanic ejecta blankets where liquid interacted with
         organics (D4 reasoning; Lopes et al. 2007; Wood et al. 2010).
         Secondary: global constant k2=0.589 (Iess et al. 2012) confirming a
-        subsurface water-ammonia ocean at 55–80 km depth.
+        subsurface water-ammonia ocean at 55-80 km depth.
         Prior mean 0.03 (revised down from earlier 0.10): The subsurface ocean
         is confirmed but its surface expression is heavily time-gated.
         The ~3.5 Gya past-epoch constraint (D1) means organic-water contact
         products are ancient and largely degraded or buried; the future
-        habitability window (100–400 Myr; D2) is not yet reached. The
+        habitability window (100-400 Myr; D2) is not yet reached. The
         effective present-day surface habitability from this pathway is
         therefore low. (See HabitabilityWindowConfig for temporal parameters.)
         Rationale: Affholder et al. (2025) demonstrate glycine fermentation
         viable in Titan's subsurface ocean; cryovolcanic zones and bright
         annular SAR structures are the primary surface evidence for
-        past/present ocean–surface exchange pathways.
+        past/present ocean-surface exchange pathways.
         Low weight: surface expression poorly constrained.
 
     Weights sum to 1.0.
@@ -891,7 +906,7 @@ class BayesianPriorConfig:
     Meyer-Dombard et al.(2025) Titan After Cassini-Huygens Ch.14
     """
 
-    # ── Feature weights ────────────────────────────────────────────────────
+    # -- Feature weights ----------------------------------------------------
     # Must sum to 1.0 (enforced by validate())
     weight_liquid_hydrocarbon:      float = 0.25
     weight_organic_abundance:       float = 0.20
@@ -902,7 +917,7 @@ class BayesianPriorConfig:
     weight_geomorphologic_diversity:float = 0.04
     weight_subsurface_ocean:        float = 0.02
 
-    # ── Prior means (Beta distribution: α = mean × κ) ─────────────────────
+    # -- Prior means (Beta distribution: alpha = mean x kappa) ---------------------
     prior_mean_liquid_hydrocarbon:      float = 0.02
     prior_mean_organic_abundance:       float = 0.60
     prior_mean_acetylene_energy:        float = 0.30
@@ -912,23 +927,23 @@ class BayesianPriorConfig:
     prior_mean_geomorphologic_diversity:float = 0.30
     prior_mean_subsurface_ocean:        float = 0.03
 
-    # ── Beta prior concentration ───────────────────────────────────────────
-    # κ = alpha + beta in Beta(α, β).  Higher κ = more confident prior.
-    # κ=5: weakly informative (appropriate given Titan data uncertainty).
-    # κ=2: very diffuse (use for poorly constrained features).
-    # κ=20: moderately confident (use for well-measured quantities like lakes).
+    # -- Beta prior concentration -------------------------------------------
+    # kappa = alpha + beta in Beta(alpha, beta).  Higher kappa = more confident prior.
+    # kappa=5: weakly informative (appropriate given Titan data uncertainty).
+    # kappa=2: very diffuse (use for poorly constrained features).
+    # kappa=20: moderately confident (use for well-measured quantities like lakes).
     beta_concentration_default: float = 5.0
     beta_concentration_liquid:  float = 20.0   # lakes well-measured by SAR
     beta_concentration_organics:float = 8.0    # VIMS coverage reasonable
 
-    # ── Likelihood model parameters ────────────────────────────────────────
+    # -- Likelihood model parameters ----------------------------------------
     # For sklearn GNB: Gaussian variance per class
     gnb_var_smoothing: float = 1e-9
 
     # For PyMC / NumPyro logistic: sigmoid sharpness
     likelihood_sharpness: float = 6.0
 
-    # ── Positive training label threshold ─────────────────────────────────
+    # -- Positive training label threshold ---------------------------------
     # Pixels with weighted feature sum > this threshold are used as
     # "habitable" training examples for the sklearn backend.
     positive_label_threshold: float = 0.35
@@ -938,7 +953,7 @@ class BayesianPriorConfig:
     # numerically meaningful (~top 5-15% of pixels score positive).
 
     def feature_weights(self) -> Dict[str, float]:
-        """Return ordered dict of feature name → weight."""
+        """Return ordered dict of feature name -> weight."""
         return {
             "liquid_hydrocarbon":      self.weight_liquid_hydrocarbon,
             "organic_abundance":       self.weight_organic_abundance,
@@ -951,7 +966,7 @@ class BayesianPriorConfig:
         }
 
     def prior_means(self) -> Dict[str, float]:
-        """Return ordered dict of feature name → prior mean."""
+        """Return ordered dict of feature name -> prior mean."""
         return {
             "liquid_hydrocarbon":      self.prior_mean_liquid_hydrocarbon,
             "organic_abundance":       self.prior_mean_organic_abundance,
@@ -964,7 +979,7 @@ class BayesianPriorConfig:
         }
 
     def validate(self) -> None:
-        """Raise ValueError if weights do not sum to 1.0 ± 0.01."""
+        """Raise ValueError if weights do not sum to 1.0 +/- 0.01."""
         total = sum(self.feature_weights().values())
         if abs(total - 1.0) > 0.01:
             raise ValueError(
@@ -975,7 +990,7 @@ class BayesianPriorConfig:
             if not (0.0 <= w <= 1.0):
                 raise ValueError(f"Weight '{name}' = {w} is outside [0, 1].")
 
-    # ── Convenience vector accessors (used by bayesian backends) ──────────────
+    # -- Convenience vector accessors (used by bayesian backends) --------------
     # These return ordered lists matching feature_weights() / prior_means() order.
 
     def weight_vector(self) -> List[float]:
@@ -1002,7 +1017,7 @@ class HabitabilityWindowConfig:
 
     Design decisions
     ----------------
-    D1 — Past epoch (configurable, default 3.5 Gya)
+    D1 -- Past epoch (configurable, default 3.5 Gya)
         Titan's surface last had widespread access to liquid water ~3.5 Gya
         ago (analogous to the Late Heavy Bombardment epoch on Earth and Mars).
         Impact melt ponds, cryovolcanic flows, and large-basin flooding events
@@ -1016,23 +1031,23 @@ class HabitabilityWindowConfig:
 
         References: Neish & Lorenz (2012) doi:10.1016/j.pss.2011.12.004
                     Artemieva & Lunine (2003) doi:10.1016/S0019-1035(02)00039-9
-                    Wood et al. (2010) Icarus 206, 334–344
+                    Wood et al. (2010) Icarus 206, 334-344
 
-    D2 — Future habitability window (configurable, 100–400 Myr default)
+    D2 -- Future habitability window (configurable, 100-400 Myr default)
         As the Sun increases in luminosity (~10% per Gyr, standard main-
         sequence evolution), Titan's surface temperature will eventually warm
         sufficiently for liquid water to exist transiently or persistently.
         Recent estimates (Lorenz et al. 1997; McKay 2016) place this window
-        at ~1.0–2.0 Gyr from now, but more recent Solar evolution models
+        at ~1.0-2.0 Gyr from now, but more recent Solar evolution models
         with improved Titan atmospheric radiative transfer constrain the
-        ONSET to 100–400 Myr from now (Lunine & Lorenz 2009 review;
-        Hörst 2017; Tobie et al. 2020 updated).
+        ONSET to 100-400 Myr from now (Lunine & Lorenz 2009 review;
+        Horst 2017; Tobie et al. 2020 updated).
 
-        ASSUMPTION — uniform global warming:
+        ASSUMPTION -- uniform global warming:
         This implementation assumes that solar-driven warming is spatially
         uniform across Titan's surface (i.e., the temperature increment per
         unit time is the same at all latitudes/longitudes). This is a
-        deliberate simplification — in reality polar regions will warm
+        deliberate simplification -- in reality polar regions will warm
         differently from equatorial ones due to Titan's obliquity and
         atmospheric dynamics. The uniform warming assumption is flagged here
         and should be revisited with GCM output when available.
@@ -1042,14 +1057,14 @@ class HabitabilityWindowConfig:
         [future_window_min_myr, future_window_max_myr], i.e., a uniform
         prior on the onset time:
 
-            P(onset ≤ t) = (t − min) / (max − min)  for t ∈ [min, max]
+            P(onset <= t) = (t - min) / (max - min)  for t in [min, max]
 
         This enters the `subsurface_ocean` feature as a multiplicative
         temporal prior on the probability of future surface liquid water.
 
         References: Lorenz et al. (1997) doi:10.1006/icar.1997.5647
                     Lunine & Lorenz (2009) Annual Rev. Earth Planet. Sci.
-                    Hörst (2017) doi:10.1002/2016JE005240
+                    Horst (2017) doi:10.1002/2016JE005240
                     Tobie et al. (2020) Titan After Cassini-Huygens Ch.3
 
     Parameters
@@ -1089,11 +1104,11 @@ class HabitabilityWindowConfig:
         the inverse of the window width (narrower window = higher
         probability density = higher weight).
 
-        A 300 Myr window (100–400 Myr) maps to weight ≈ 0.14.
+        A 300 Myr window (100-400 Myr) maps to weight =~ 0.14.
         """
         if not self.assume_uniform_warming:
             return 0.0
-        # Normalise: 1 Gyr reference window → weight 1.0
+        # Normalise: 1 Gyr reference window -> weight 1.0
         return 1000.0 / self.future_window_width_myr()
 
     def validate(self) -> None:
@@ -1139,7 +1154,7 @@ class PipelineConfig:
         ``"sklearn"`` (default), ``"pymc"``, or ``"numpyro"``.
     canonical_res_m:
         Output grid pixel size in metres.
-        Default 4490 m (~0.1°/px, 10 ppd) — a reasonable compromise
+        Default 4490 m (~0.1 deg/px, 10 ppd) -- a reasonable compromise
         between the 351 m SAR mosaic and 22 km GTDR topography.
         Set to 351 for full SAR resolution (very large arrays).
         Set to 22471 for GTDR-native resolution (fast, low-memory).
@@ -1160,7 +1175,7 @@ class PipelineConfig:
     habitability_window:
         Temporal habitability window configuration (D1: past epoch,
         D2: future window).  Uses HabitabilityWindowConfig defaults
-        (3.5 Gya past epoch, 100–400 Myr future window) if not supplied.
+        (3.5 Gya past epoch, 100-400 Myr future window) if not supplied.
     shapefile_dir:
         Path to the directory containing Lopes geomorphology shapefiles.
         Overrides the path derived from data_dir if set.
@@ -1180,7 +1195,7 @@ class PipelineConfig:
     bayesian_backend: Literal["sklearn", "pymc", "numpyro"] = "sklearn"
 
     # Grid resolution
-    canonical_res_m: float = 4490.0   # ~0.1°/px, 10 ppd
+    canonical_res_m: float = 4490.0   # ~0.1 deg/px, 10 ppd
 
     # MCMC parameters (PyMC / NumPyro only)
     mcmc_draws:  int = 2000
@@ -1233,7 +1248,7 @@ class PipelineConfig:
         """
         import math
         circumference_m = 2 * math.pi * TITAN_RADIUS_M
-        # Degrees per metre at equator
+        # deg per metre at equator
         m_per_deg = circumference_m / 360.0
         ncols = round(360.0 * m_per_deg / self.canonical_res_m)
         nrows = round(180.0 * m_per_deg / self.canonical_res_m)
@@ -1284,9 +1299,9 @@ class PipelineConfig:
         Expected sub-directory layout::
 
             birch_polar_mapping/
-              birch_filled/      ← Birch+2017 confirmed liquid surfaces
-              birch_empty/       ← Birch+2017 empty basins (paleo-lakes)
-              palermo/           ← Palermo+2022 alternative lake mapping
+              birch_filled/      <- Birch+2017 confirmed liquid surfaces
+              birch_empty/       <- Birch+2017 empty basins (paleo-lakes)
+              palermo/           <- Palermo+2022 alternative lake mapping
 
         The pipeline gracefully handles missing sub-directories; each one
         that is absent is silently skipped.

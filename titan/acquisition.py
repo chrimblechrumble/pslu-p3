@@ -1,7 +1,22 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/acquisition.py
 =====================
-Stage 1 — Data Acquisition.
+Stage 1 -- Data Acquisition.
 
 Manages downloading, verifying, and cataloguing all raw datasets.
 
@@ -57,7 +72,7 @@ logger = logging.getLogger(__name__)
 # Cornell eCommons: direct download (GTDR/GTDE tiles, .IMG.gz).
 # CaltechDATA: direct S3-backed downloads (VIMS+ISS mosaic).
 _AUTO_DOWNLOAD_STEMS = {
-    "gtde_east",        # interpolated global DEM — preferred
+    "gtde_east",        # interpolated global DEM -- preferred
     "gtde_west",
     "gtdr_east",        # sparse GTDR standard tracks
     "gtdr_west",
@@ -126,11 +141,11 @@ def verify_file(
     if stamp.exists() and stamp.stat().st_mtime >= path.stat().st_mtime:
         return True
 
-    logger.info("Verifying %s …", path.name)
+    logger.info("Verifying %s ...", path.name)
     actual = sha256_file(path)
     if actual.lower() == expected_sha256.lower():
         stamp.write_text(f"{actual}\n{time.strftime('%Y-%m-%dT%H:%M:%SZ')}\n")
-        logger.info("✓  %s  verified.", path.name)
+        logger.info("[OK]  %s  verified.", path.name)
         return True
     else:
         logger.error(
@@ -187,7 +202,7 @@ def _download_with_progress(url: str, dest: Path) -> None:
                 bar.update(len(chunk))
 
     shutil.move(str(tmp), str(dest))
-    logger.info("Downloaded %s → %s", url, dest)
+    logger.info("Downloaded %s -> %s", url, dest)
 
 
 # ---------------------------------------------------------------------------
@@ -209,7 +224,7 @@ class DataAcquisitionManager:
         self.config = config
         self.config.make_dirs()
 
-    # ── Public interface ────────────────────────────────────────────────────
+    # -- Public interface ----------------------------------------------------
 
     def acquire_all(self, dry_run: bool = False) -> "AcquisitionReport":
         """
@@ -232,22 +247,22 @@ class DataAcquisitionManager:
         for name, spec in self.config.datasets.items():
             dest = self.config.data_dir / spec.local_filename
 
-            # ── Synthesised datasets (no download needed) ──────────────────
+            # -- Synthesised datasets (no download needed) ------------------
             # Generated at runtime by the preprocessing pipeline
             # (e.g. cirs_temperature from the Jennings 2019 formula).
             if spec.file_format == "synthesised":
                 logger.info(
-                    "'%s' is synthesised at runtime — no download required.", name
+                    "'%s' is synthesised at runtime -- no download required.", name
                 )
                 report.present.append(name)
                 continue
 
-            # ── Directory datasets (shapefiles) ────────────────────────────
+            # -- Directory datasets (shapefiles) ----------------------------
             if spec.file_format == "shapefile_dir":
                 status = self._check_shapefile_dir(name, spec, report)
                 continue
 
-            # ── Special case: VIMS parquet (multiple acceptable filenames) ─
+            # -- Special case: VIMS parquet (multiple acceptable filenames) -
             if name == "vims_footprint":
                 found = self.config.get_vims_parquet()
                 if found is not None:
@@ -264,7 +279,7 @@ class DataAcquisitionManager:
                         self._print_manual_instructions(name, spec)
                 continue
 
-            # ── Already present ────────────────────────────────────────────
+            # -- Already present --------------------------------------------
             if dest.exists():
                 ok = verify_file(dest, spec.sha256)
                 if ok:
@@ -273,10 +288,10 @@ class DataAcquisitionManager:
                     report.corrupt.append(name)
                 continue
 
-            # ── Auto-download ──────────────────────────────────────────────
+            # -- Auto-download ----------------------------------------------
             if name in _AUTO_DOWNLOAD_STEMS and spec.url and not dry_run:
                 try:
-                    logger.info("Auto-downloading %s …", name)
+                    logger.info("Auto-downloading %s ...", name)
                     _download_with_progress(spec.url, dest)
                     verify_file(dest, spec.sha256)
                     report.downloaded.append(name)
@@ -285,7 +300,7 @@ class DataAcquisitionManager:
                     report.failed.append((name, str(exc)))
                     self._print_manual_instructions(name, spec)
 
-            # ── Manual download required ───────────────────────────────────
+            # -- Manual download required -----------------------------------
             else:
                 report.manual_required.append(name)
                 if not dry_run:
@@ -337,7 +352,7 @@ class DataAcquisitionManager:
         """
         return self.acquire_all(dry_run=True)
 
-    # ── Helpers ────────────────────────────────────────────────────────────
+    # -- Helpers ------------------------------------------------------------
 
     def _check_shapefile_dir(
         self,
@@ -368,11 +383,11 @@ class DataAcquisitionManager:
     @staticmethod
     def _print_manual_instructions(name: str, spec: "DatasetSpec") -> None:
         """Print clearly formatted manual download instructions."""
-        sep = "─" * 65
+        sep = "-" * 65
         print(f"\n{sep}")
         print(f"  MANUAL DOWNLOAD REQUIRED: {name}")
         print(sep)
-        print(f"  Description : {spec.description[:80]}…"
+        print(f"  Description : {spec.description[:80]}..."
               if len(spec.description) > 80 else f"  Description : {spec.description}")
         print(f"  Target file : {spec.local_filename}")
         print(f"  URL         : {spec.url}")
@@ -406,7 +421,7 @@ class DataAcquisitionManager:
             "doi": "10.1126/science.1219631",
             "note": (
                 "Tidal Love number k2 from Cassini gravity measurements. "
-                "k2 = 0.589 ± 0.150 implies a global subsurface liquid layer "
+                "k2 = 0.589 +/- 0.150 implies a global subsurface liquid layer "
                 "(water-ammonia ocean) beneath Titan's ice shell."
             ),
         }
@@ -459,17 +474,17 @@ class AcquisitionReport:
 
     def print_summary(self) -> None:
         """Print a coloured status table to stdout."""
-        sep = "═" * 65
+        sep = "=" * 65
         print(f"\n{sep}")
-        print("  TITAN PIPELINE — DATA ACQUISITION STATUS")
+        print("  TITAN PIPELINE -- DATA ACQUISITION STATUS")
         print(sep)
         print(f"  Ready      : {self.ready_count} / {self.total_count} datasets")
         if self.present:
-            print(f"\n  ✓  Present + verified:")
+            print(f"\n  [OK]  Present + verified:")
             for n in self.present:
                 print(f"       {n}")
         if self.downloaded:
-            print(f"\n  ↓  Downloaded this run:")
+            print(f"\n  v  Downloaded this run:")
             for n in self.downloaded:
                 print(f"       {n}")
         if self.partial:
@@ -481,11 +496,11 @@ class AcquisitionReport:
             for n in self.manual_required:
                 print(f"       {n}")
         if self.corrupt:
-            print(f"\n  ✗  Corrupt (SHA-256 mismatch):")
+            print(f"\n  [FAIL]  Corrupt (SHA-256 mismatch):")
             for n in self.corrupt:
                 print(f"       {n}")
         if self.failed:
-            print(f"\n  ✗  Download failed:")
+            print(f"\n  [FAIL]  Download failed:")
             for n, err in self.failed:
                 print(f"       {n}: {err}")
         print(sep)
@@ -500,7 +515,7 @@ class AcquisitionReport:
         )
         if missing_critical:
             print(
-                f"\n  ⚠   Critical datasets missing: {missing_critical}\n"
+                f"\n  [WARNING]   Critical datasets missing: {missing_critical}\n"
                 "      The pipeline will run with reduced accuracy.\n"
                 "      Features derived from missing data will be NaN.\n"
             )
@@ -527,4 +542,4 @@ class AcquisitionReport:
     def save(self, path: Path) -> None:
         """Save status report to JSON."""
         Path(path).write_text(json.dumps(self.to_dict(), indent=2))
-        logger.info("Acquisition report saved → %s", path)
+        logger.info("Acquisition report saved -> %s", path)

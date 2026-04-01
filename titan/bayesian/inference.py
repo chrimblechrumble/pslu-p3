@@ -1,7 +1,22 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/bayesian/inference.py
 ============================
-Stage 4 — Bayesian Habitability Inference.
+Stage 4 -- Bayesian Habitability Inference.
 
 Produces a pixel-wise posterior probability map P(habitable | data)
 from the eight feature maps extracted in Stage 3.
@@ -11,10 +26,10 @@ Model
 Following Catling et al. (2018) and Affholder et al. (2021) we frame
 the problem as:
 
-    P(H | D) ∝ P(D | H) · P(H)
+    P(H | D) proportional to P(D | H) . P(H)
 
 where:
-  H  = latent habitability score ∈ [0,1] per pixel
+  H  = latent habitability score in [0,1] per pixel
   D  = vector of 8 observed feature values at each pixel
 
 Three backend implementations are available:
@@ -33,7 +48,7 @@ Three backend implementations are available:
 
   numpyro
     JAX-accelerated equivalent of the PyMC model.
-    ~10× faster than PyMC on GPU/TPU hardware.
+    ~10x faster than PyMC on GPU/TPU hardware.
 
 All backends produce the same output: a posterior probability map plus
 optional uncertainty bounds.
@@ -46,9 +61,9 @@ Design follows:
 References
 ----------
 Catling et al. (2018)    "Exoplanet Biosignatures: A Framework for Assessment"
-  Astrobiology 18, 709–738. doi:10.1089/ast.2017.1737
+  Astrobiology 18, 709-738. doi:10.1089/ast.2017.1737
 Affholder et al. (2021)  "Bayesian analysis of Enceladus's plume data"
-  Nature Astronomy 5, 805–814. doi:10.1038/s41550-021-01372-6
+  Nature Astronomy 5, 805-814. doi:10.1038/s41550-021-01372-6
 Affholder et al. (2025)  "Viability of Glycine Fermentation in Titan's Ocean"
   Planet. Sci. J. 6, 86. doi:10.3847/PSJ/addb09
 """
@@ -184,12 +199,12 @@ class SklearnHabitabilityModel:
         weights = cfg.feature_weights()
         means   = cfg.prior_means()
 
-        # ── 1. Stack features into (n_pixels, n_features) matrix ─────────────
+        # -- 1. Stack features into (n_pixels, n_features) matrix -------------
         arr_3d = features.as_array()          # (8, nrows, ncols)
         nfeats, nrows, ncols = arr_3d.shape
         arr_2d = arr_3d.reshape(nfeats, -1).T  # (n_pixels, 8)
 
-        # ── 2. Valid pixel mask (all 8 features finite) ───────────────────────
+        # -- 2. Valid pixel mask (all 8 features finite) -----------------------
         valid_mask  = np.all(np.isfinite(arr_2d), axis=1)   # (n_pixels,)
         X_valid     = arr_2d[valid_mask]                     # (n_valid, 8)
 
@@ -200,7 +215,7 @@ class SklearnHabitabilityModel:
                 X_valid.shape[0],
             )
 
-        # ── 3. Generate soft labels from weighted feature sum ─────────────────
+        # -- 3. Generate soft labels from weighted feature sum -----------------
         w_vec  = np.array([weights[n] for n in FEATURE_NAMES], dtype=np.float64)
         X_f64  = X_valid.astype(np.float64)
         with np.errstate(divide="ignore", over="ignore", invalid="ignore"):
@@ -227,14 +242,14 @@ class SklearnHabitabilityModel:
                 valid_mask, features, "sklearn",
             )
 
-        # ── 4. Fit GNB with isotonic calibration ──────────────────────────────
+        # -- 4. Fit GNB with isotonic calibration ------------------------------
         gnb = GaussianNB(var_smoothing=cfg.gnb_var_smoothing)
         # Use cross-validated calibration for better probability estimates
         cal_clf = CalibratedClassifierCV(gnb, cv=3, method="isotonic")
         cal_clf.fit(X_valid, y_label)
         self._model = cal_clf
 
-        # ── 5. Apply prior correction ─────────────────────────────────────────
+        # -- 5. Apply prior correction -----------------------------------------
         # Adjust raw posterior by Bayesian prior means
         proba_raw   = cal_clf.predict_proba(X_valid)[:, 1]   # P(habitable)
         prior_score = np.array(
@@ -242,16 +257,16 @@ class SklearnHabitabilityModel:
         )
         # Weight-adjusted prior: dot(prior_means, weights)
         prior_mean_global = float(prior_score @ w_vec)
-        # Bayesian update: posterior ∝ likelihood × prior
+        # Bayesian update: posterior proportional to likelihood x prior
         # Simplified: blend calibrated posterior with prior
         alpha = 0.8   # weight on data-driven posterior vs prior
         proba_posterior = alpha * proba_raw + (1.0 - alpha) * prior_mean_global
         proba_posterior = np.clip(proba_posterior, 0.0, 1.0)
 
-        # ── 6. Feature importances (permutation-based approximation) ──────────
+        # -- 6. Feature importances (permutation-based approximation) ----------
         feature_importances = self._compute_importances(X_valid, y_label, w_vec)
 
-        # ── 7. Assemble result ────────────────────────────────────────────────
+        # -- 7. Assemble result ------------------------------------------------
         posterior = np.full(nrows * ncols, np.nan, dtype=np.float32)
         posterior[valid_mask] = proba_posterior
         return self._make_result(
@@ -333,15 +348,15 @@ class PyMCHabitabilityModel:
     -------------------
     For pixel i with feature vector x_i:
 
-        α       ~ Normal(0, 1)                        # intercept
-        β_j     ~ Normal(μ_j, σ_j)  for j=1..8       # feature coefficients
-                  where μ_j = logit(prior_mean_j)     # prior-informed mean
-                  and   σ_j = 1.0                     # weakly informative
+        alpha       ~ Normal(0, 1)                        # intercept
+        beta_j     ~ Normal(mu_j, sigma_j)  for j=1..8       # feature coefficients
+                  where mu_j = logit(prior_mean_j)     # prior-informed mean
+                  and   sigma_j = 1.0                     # weakly informative
 
-        logit(p_i) = α + Σ_j β_j · x_ij
+        logit(p_i) = alpha + Sigma_j beta_j . x_ij
         y_i     ~ Bernoulli(p_i)
 
-    The prior means (μ_j) are set from BayesianPriorConfig and grounded
+    The prior means (mu_j) are set from BayesianPriorConfig and grounded
     in published measurements (McKay 2005, Iess 2012, etc.).
 
     NOTE: PyMC MCMC on full global rasters is computationally prohibitive.
@@ -502,7 +517,7 @@ class NumPyroHabitabilityModel:
     JAX-accelerated Bayesian logistic regression via NumPyro.
 
     Identical model specification to PyMCHabitabilityModel but uses
-    NumPyro's NUTS sampler, which is ~5–10× faster on modern hardware
+    NumPyro's NUTS sampler, which is ~5-10x faster on modern hardware
     and supports GPU/TPU acceleration via JAX.
 
     References

@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/bayesian/temporal_inference.py
 =====================================
@@ -46,7 +61,7 @@ def _temporal_prior_config(mode: TemporalMode) -> BayesianPriorConfig:
     prior_set = get_prior_set(mode)
     # Create a minimal BayesianPriorConfig with defaults
     cfg = BayesianPriorConfig()
-    # Override the threshold only — weights and means are from temporal prior set
+    # Override the threshold only -- weights and means are from temporal prior set
     return cfg
 
 
@@ -212,7 +227,7 @@ def _permutation_importances(
     Returns
     -------
     dict[str, float]
-        Mapping of feature name → normalised importance (sums to 1).
+        Mapping of feature name -> normalised importance (sums to 1).
     """
     base: float = cal.predict_proba(X)[:, 1].mean()
     deltas: dict[str, float] = {}
@@ -268,7 +283,7 @@ def _numpyro_temporal(
     prior_set:         "TemporalPriorSet",
     config:            PipelineConfig,
 ) -> HabitabilityResult:
-    """NumPyro inference — falls back to sklearn on import error."""
+    """NumPyro inference -- falls back to sklearn on import error."""
     try:
         import numpyro  # noqa
     except ImportError:

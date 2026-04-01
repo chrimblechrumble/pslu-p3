@@ -1,8 +1,23 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 diagnose_organic.py
 ===================
 Diagnostic script that probes exactly what data reaches _organic_abundance
-and saves plot images you can upload to help debug the 180-360° blank.
+and saves plot images you can upload to help debug the 180-360 deg blank.
 
 Run from the project root:
     python diagnose_organic.py
@@ -40,9 +55,17 @@ for f in key_files:
     p = processed / f
     exists[f] = p.exists()
     status = f"EXISTS  ({p.stat().st_size/1024/1024:.1f} MB)" if p.exists() else "MISSING"
-    print(f"  {'✓' if p.exists() else '✗'}  {f:<45} {status}")
+    print(f"  {'[OK]' if p.exists() else '[FAIL]'}  {f:<45} {status}")
 
 import rasterio
+print(
+    "Titan Habitability Pipeline  Copyright (C) 2025/2026  Chris Meadows\n"
+    "This program comes with ABSOLUTELY NO WARRANTY; for details, see the\n"
+    "README.md at the project root.\n"
+    "This is free software, and you are welcome to redistribute it\n"
+    "under certain conditions; see the LICENSE.md file at the project\n"
+    "root for details.\n"
+)
 
 def load(name: str) -> "np.ndarray | None":
     p = processed / f'{name}_canonical.tif'
@@ -65,17 +88,17 @@ if vims is not None:
     left_valid  = np.isfinite(vims[:, :half]).mean()
     right_valid = np.isfinite(vims[:, half:]).mean()
     print(f"  Shape: {vims.shape}")
-    print(f"  Left  half (0-180°W)  valid: {left_valid:.1%}")
-    print(f"  Right half (180-360°W) valid: {right_valid:.1%}")
+    print(f"  Left  half (0-180 degW)  valid: {left_valid:.1%}")
+    print(f"  Right half (180-360 degW) valid: {right_valid:.1%}")
     
     # Sample values around the boundary
     eq_rows = slice(int(nrows*0.45), int(nrows*0.55))
-    print(f"\n  Values at equator around 180°W boundary:")
+    print(f"\n  Values at equator around 180 degW boundary:")
     for c in range(half-3, half+3):
         lon = 360.0 * c / ncols
         v = float(np.nanmean(vims[eq_rows, c])) if np.any(np.isfinite(vims[eq_rows, c])) else float('nan')
-        flag = " ← BOUNDARY" if abs(c - half) <= 1 else ""
-        print(f"    col {c:4d}  {lon:6.1f}°W  VIMS={v:.4f}{flag}")
+        flag = " <- BOUNDARY" if abs(c - half) <= 1 else ""
+        print(f"    col {c:4d}  {lon:6.1f} degW  VIMS={v:.4f}{flag}")
 else:
     print("  VIMS mosaic NOT FOUND in data/processed/")
 
@@ -90,29 +113,29 @@ if geo is not None:
     for cls, cnt in zip(classes, counts):
         print(f"    Class {int(cls)}: {cnt:>8,}  ({100*cnt/total:.1f}%)")
     right_valid = np.isfinite(geo[:, geo.shape[1]//2:]).mean()
-    print(f"  Right half (180-360°W) valid: {right_valid:.1%}")
+    print(f"  Right half (180-360 degW) valid: {right_valid:.1%}")
 else:
-    print("  ✗ geomorphology_canonical.tif NOT FOUND")
+    print("  [FAIL] geomorphology_canonical.tif NOT FOUND")
     print("    This is the geomorphology shapefile from JPL (Rosaly Lopes).")
     print("    Without this file, the geo-based gap-fill CANNOT WORK.")
-    print("    → The fix needs a fallback that doesn't require this file.")
+    print("    -> The fix needs a fallback that doesn't require this file.")
 
 print("\n" + "=" * 60)
 print("WHAT _organic_abundance WOULD RETURN")
 print("=" * 60)
 if vims is not None and geo is not None:
-    print("  Both VIMS and geomorphology available → Option B should work")
+    print("  Both VIMS and geomorphology available -> Option B should work")
 elif vims is not None and geo is None:
-    print("  ✗ Only VIMS available — right half will be NaN")
-    print("    DIAGNOSIS CONFIRMED: geomorphology missing → 180-360° blank")
+    print("  [FAIL] Only VIMS available -- right half will be NaN")
+    print("    DIAGNOSIS CONFIRMED: geomorphology missing -> 180-360 deg blank")
 elif vims is None and geo is not None:
-    print("  Only geomorphology available → geo-only path")
+    print("  Only geomorphology available -> geo-only path")
 else:
-    print("  ✗ Neither VIMS nor geomorphology → all NaN")
+    print("  [FAIL] Neither VIMS nor geomorphology -> all NaN")
 
-# ── Generate diagnostic images ──────────────────────────────────────────────
+# -- Generate diagnostic images ----------------------------------------------
 fig, axes = plt.subplots(2, 2, figsize=(14, 8))
-fig.suptitle("Organic Abundance Diagnostic — Raw Inputs", fontsize=13)
+fig.suptitle("Organic Abundance Diagnostic -- Raw Inputs", fontsize=13)
 
 def show(ax: "matplotlib.axes.Axes", arr: "np.ndarray | None", title: str) -> None:
     if arr is None:
@@ -142,7 +165,7 @@ fig.savefig(p, dpi=120, bbox_inches='tight')
 plt.close()
 print(f"\nSaved: {p}")
 
-# ── Simulate what _organic_abundance actually returns ─────────────────────────
+# -- Simulate what _organic_abundance actually returns -------------------------
 print("\n" + "=" * 60)
 print("SIMULATING _organic_abundance OUTPUT")
 print("=" * 60)

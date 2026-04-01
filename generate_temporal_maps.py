@@ -1,24 +1,39 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 generate_temporal_maps.py
 ==========================
 Generate global habitability maps across 36 epochs spanning the Late Heavy
-Bombardment (−3.5 Gya) through the present Cassini epoch to the red-giant
+Bombardment (-3.5 Gya) through the present Cassini epoch to the red-giant
 solar expansion peak (+6.5 Gya).
 
 Outputs
 -------
 outputs/temporal_maps/
-  geotiffs/                   ← QGIS-ready GeoTIFF per epoch
+  geotiffs/                   <- QGIS-ready GeoTIFF per epoch
     habitability_-3.500_Gya.tif
     habitability_-2.379_Gya.tif
     ...
     habitability_+6.500_Gya.tif
-  titan_temporal_habitability.nc  ← NetCDF time-series stack (all epochs)
+  titan_temporal_habitability.nc  <- NetCDF time-series stack (all epochs)
   animation/
-    titan_habitability_animation.mp4  ← MP4 flythrough PAST→FUTURE
-    titan_habitability_animation.gif  ← Lightweight GIF version
+    titan_habitability_animation.mp4  <- MP4 flythrough PAST->FUTURE
+    titan_habitability_animation.gif  <- Lightweight GIF version
   posters/
-    key_epochs_poster.png       ← Six-panel summary figure
+    key_epochs_poster.png       <- Six-panel summary figure
 
 How it works
 ------------
@@ -41,7 +56,7 @@ Feature time-scaling strategy
 Each present-epoch feature array F_i(lat, lon) at t = 0 is transformed
 to the corresponding array at epoch t by::
 
-    F_i(lat, lon, t) = clamp(F_i(lat, lon, 0) × scale_i(t), 0, 1)
+    F_i(lat, lon, t) = clamp(F_i(lat, lon, 0) x scale_i(t), 0, 1)
 
 where scale_i(t) is a spatially uniform scalar derived from the physical
 models in ``analyse_location_habitability.py``.  The spatial structure
@@ -57,9 +72,9 @@ Bayesian inference
 At each epoch, the weighted feature sum is computed pixel-by-pixel and
 fed through the same Beta conjugate update as the main pipeline::
 
-    α_post = α_0 + λ × Σ_i w_i × F_i
-    β_post = β_0 + λ × (1 − Σ_i w_i × F_i)
-    P(habitable) = α_post / (α_post + β_post)
+    alpha_post = alpha_0 + lambda x Sigma_i w_i x F_i
+    beta_post = beta_0 + lambda x (1 - Sigma_i w_i x F_i)
+    P(habitable) = alpha_post / (alpha_post + beta_post)
 
 GeoTIFF CRS
 -----------
@@ -97,17 +112,17 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-# ─── Physical constants ───────────────────────────────────────────────────────
+# --- Physical constants -------------------------------------------------------
 
 TITAN_RADIUS_M:   float = 2_575_000.0
 CANONICAL_RES_M:  float = 4_490.0
-EUTECTIC_K:       float = 176.0    # water–ammonia eutectic melting point (K)
+EUTECTIC_K:       float = 176.0    # water-ammonia eutectic melting point (K)
 T_SURFACE_K:      float = 93.65    # present-day Titan surface temperature (K)
 
 #: Canonical grid size (nrows, ncols)
 GRID_SHAPE: Tuple[int, int] = (1802, 3603)
 
-# ─── Polar visualisation parameters ─────────────────────────────────────────
+# --- Polar visualisation parameters -----------------------------------------
 
 #: Southern/northern latitude at which the polar-cap circle boundary is drawn.
 #: The stereographic resampling maps r=1 (circle edge) to exactly this latitude,
@@ -117,12 +132,12 @@ POLAR_CAP_EDGE_DEG: float = 50.0
 
 #: Pre-computed scale factor for the polar stereographic projection.
 #: Derived from POLAR_CAP_EDGE_DEG via:
-#:   lat = 90 - 2·arctan(r·scale)  →  at r=1: lat = POLAR_CAP_EDGE_DEG
-#:   ∴  scale = tan((90 - POLAR_CAP_EDGE_DEG) / 2)
-#: Reference: Snyder (1987) "Map Projections — A Working Manual", §21.
+#:   lat = 90 - 2.arctan(r.scale)  ->  at r=1: lat = POLAR_CAP_EDGE_DEG
+#:   therefore  scale = tan((90 - POLAR_CAP_EDGE_DEG) / 2)
+#: Reference: Snyder (1987) "Map Projections -- A Working Manual", s.21.
 POLAR_SCALE: float = math.tan(math.radians((90.0 - POLAR_CAP_EDGE_DEG) / 2.0))
 
-# ─── Colour palette ──────────────────────────────────────────────────────────
+# --- Colour palette ----------------------------------------------------------
 # All hex colours are defined here so they can be changed in one place.
 # Colours use 8-digit hex (RRGGBBAA) when transparency is required.
 
@@ -136,7 +151,7 @@ COLOUR_POLAR_RING:  str = "#888899"
 COLOUR_SPINE:       str = "#444455"
 #: Colour for poster panel spine edges (slightly lighter).
 COLOUR_SPINE_POSTER: str = "#555566"
-#: Marker colour for the top-10 location dots — chosen to stand out on Plasma.
+#: Marker colour for the top-10 location dots -- chosen to stand out on Plasma.
 COLOUR_MARKER:      str = "#00ffcc"
 #: Dark green used as the marker edge so dots have a visible outline.
 COLOUR_MARKER_EDGE: str = "#003333"
@@ -148,7 +163,7 @@ COLOUR_ANNOT_BOX:   str = "#000000aa"
 COLOUR_ANNOT_BOX_POLAR: str = "#000000bb"
 #: White text for annotation labels.
 COLOUR_TEXT:        str = "#ffffff"
-#: Body text inside the narrative box — slightly off-white.
+#: Body text inside the narrative box -- slightly off-white.
 COLOUR_NARRATIVE_BODY: str = "#ccccdd"
 #: Steel-blue border for the narrative body box.
 COLOUR_NARRATIVE_BORDER: str = "#4466aacc"
@@ -160,7 +175,7 @@ COLOUR_NARRATIVE_TITLE: str = "#ffcc33"
 COLOUR_TITLE_BORDER: str = "#ffcc3366"
 #: Dark amber fill for the narrative title pill.
 COLOUR_TITLE_FILL:   str = "#1a1200dd"
-#: Fully transparent placeholder — keeps figure layout stable.
+#: Fully transparent placeholder -- keeps figure layout stable.
 COLOUR_TRANSPARENT:  str = "#00000000"
 #: Progress bar fill colour.
 COLOUR_PROGRESS_BAR: str = "#44aaff"
@@ -177,27 +192,27 @@ COLOUR_AXIS_LABEL:   str = "#aaaacc"
 #: Poster info-line colour for normal epochs.
 COLOUR_POSTER_INFO:  str = "#aabbff"
 
-# ─── Figure geometry ─────────────────────────────────────────────────────────
+# --- Figure geometry ---------------------------------------------------------
 
 #: Figure width in inches.
 #: Derived so each polar panel width equals the shared row height exactly (wspace=0):
-#:   polar_width = (GS_RIGHT−GS_LEFT) × fig_width / 4
-#:   panel_height = (GS_TOP−GS_BOTTOM) × fig_height
-#:   Setting equal:  fig_width = 4 × (GS_TOP−GS_BOTTOM) / (GS_RIGHT−GS_LEFT) × fig_height
-#:   With GS values below and fig_height=8.5:  20.7" → delta < 0.01mm
+#:   polar_width = (GS_RIGHT-GS_LEFT) x fig_width / 4
+#:   panel_height = (GS_TOP-GS_BOTTOM) x fig_height
+#:   Setting equal:  fig_width = 4 x (GS_TOP-GS_BOTTOM) / (GS_RIGHT-GS_LEFT) x fig_height
+#:   With GS values below and fig_height=8.5:  20.7" -> delta < 0.01mm
 FIG_WIDTH_IN:  float = 20.7
 FIG_HEIGHT_IN: float = 8.5
 
 #: GridSpec margins (figure-fraction, 0=bottom/left, 1=top/right).
-#:   GS_LEFT  = 0.08 — space for equirectangular y-axis labels (Latitude °N)
-#:   GS_BOTTOM= 0.30 — space for colourbar + x-axis label + narrative text boxes
-#:   GS_TOP   = 0.855 — panel titles clear of the progress bar above
+#:   GS_LEFT  = 0.08 -- space for equirectangular y-axis labels (Latitude  degN)
+#:   GS_BOTTOM= 0.30 -- space for colourbar + x-axis label + narrative text boxes
+#:   GS_TOP   = 0.855 -- panel titles clear of the progress bar above
 GS_LEFT:   float = 0.08
 GS_RIGHT:  float = 0.99
 GS_TOP:    float = 0.855
 GS_BOTTOM: float = 0.300
 
-# ─── Feature weights and priors ──────────────────────────────────────────────
+# --- Feature weights and priors ----------------------------------------------
 
 #: Feature weights (must match pipeline run_pipeline.py).
 WEIGHTS: Dict[str, float] = {
@@ -232,7 +247,7 @@ PRIOR_MEANS: Dict[str, float] = {
 #: Colourmap display range for P(habitable | features).
 VMIN, VMAX = 0.10, 0.65
 
-# ─── Epoch axis ───────────────────────────────────────────────────────────────
+# --- Epoch axis ---------------------------------------------------------------
 
 def make_epoch_axis(n_limit: Optional[int] = None) -> np.ndarray:
     """
@@ -251,14 +266,14 @@ def make_epoch_axis(n_limit: Optional[int] = None) -> np.ndarray:
         Epochs in Gya from present (negative = past, positive = future).
     """
     segs = [
-        np.linspace(-3.80, -3.00,  5),   # LHB → early decline
+        np.linspace(-3.80, -3.00,  5),   # LHB -> early decline
         np.linspace(-3.00, -1.50,  8),   # early Titan
-        np.linspace(-1.50, -0.40, 12),   # lake formation — dense
-        np.linspace(-0.40,  0.10,  8),   # near-present — very dense
+        np.linspace(-1.50, -0.40, 12),   # lake formation -- dense
+        np.linspace(-0.40,  0.10,  8),   # near-present -- very dense
         np.linspace( 0.10,  2.00,  8),   # near future
         np.linspace( 2.00,  3.80,  6),   # mid future
-        np.linspace( 3.80,  5.00, 10),   # solar warming — dense
-        np.linspace( 5.00,  5.30, 10),   # eutectic transition — very dense
+        np.linspace( 3.80,  5.00, 10),   # solar warming -- dense
+        np.linspace( 5.00,  5.30, 10),   # eutectic transition -- very dense
         np.linspace( 5.30,  6.00,  8),   # ocean phase
         np.linspace( 6.00,  6.50,  5),   # end
     ]
@@ -321,7 +336,7 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
 ]
 
 
-# ─── Solar / temperature models ───────────────────────────────────────────────
+# --- Solar / temperature models -----------------------------------------------
 
 def solar_luminosity_ratio(t: float) -> float:
     """L(t) / L_present. Continuous through t=0."""
@@ -347,13 +362,13 @@ def titan_temp_K(t: float) -> float:
     return T_SURFACE_K * solar_luminosity_ratio(t) ** 0.25
 
 
-# ─── Time-scaling functions ───────────────────────────────────────────────────
+# --- Time-scaling functions ---------------------------------------------------
 
 def _scale_liquid_hc(t: float) -> float:
     """Scalar multiplier for liquid_hydrocarbon at epoch t."""
     T = titan_temp_K(t)
     if T >= EUTECTIC_K:
-        return 50.0   # global ocean — huge additive override (clamped to 1 after)
+        return 50.0   # global ocean -- huge additive override (clamped to 1 after)
     if t < -1.0:
         return 0.10
     elif t < -0.5:
@@ -379,7 +394,7 @@ def _scale_organic(t: float) -> float:
 
 
 def _scale_acetylene(t: float) -> float:
-    """UV-driven C2H2 energy proxy — continuous through t=0."""
+    """UV-driven C2H2 energy proxy -- continuous through t=0."""
     T = titan_temp_K(t)
     if T >= EUTECTIC_K:
         return 0.10 / 0.35  # return as scale on prior mean
@@ -409,7 +424,7 @@ def _scale_methane(t: float) -> float:
 
 
 def _scale_surface_atm(t: float) -> float:
-    """Scale surface–atmosphere interaction via liquid proxy."""
+    """Scale surface-atmosphere interaction via liquid proxy."""
     lhc = min(1.0, _scale_liquid_hc(t))
     slope_frac   = 0.40
     liquid_frac  = 0.60
@@ -417,7 +432,7 @@ def _scale_surface_atm(t: float) -> float:
 
 
 def _scale_topo(t: float) -> float:
-    """Topographic complexity — changes slowly."""
+    """Topographic complexity -- changes slowly."""
     if t < -2.0:
         return 1.30
     elif t < -1.0:
@@ -436,7 +451,7 @@ def _scale_geodiversity(t: float) -> float:
 def _scale_subsurface(t: float) -> float:
     T = titan_temp_K(t)
     if T >= EUTECTIC_K:
-        return 1.0 / 0.03   # ocean IS the surface — override
+        return 1.0 / 0.03   # ocean IS the surface -- override
     if t < -2.0:
         return 2.5
     elif t < -1.0:
@@ -448,7 +463,7 @@ def _scale_subsurface(t: float) -> float:
 
 def _impact_melt_global(t: float) -> float:
     """
-    Global impact-melt bonus — spatially uniform additive term.
+    Global impact-melt bonus -- spatially uniform additive term.
     Peaks at LHB (-3.8 Gya), decays symmetrically.
     """
     t_lhb, tau = -3.8, 0.8
@@ -470,7 +485,7 @@ FEATURE_SCALE_FUNCS = {
 }
 
 
-# ─── Feature map loaders ─────────────────────────────────────────────────────
+# --- Feature map loaders -----------------------------------------------------
 
 def _lat_lon_grids() -> Tuple[np.ndarray, np.ndarray]:
     """Return (lat_deg, lon_W_deg) 2-D grids for GRID_SHAPE."""
@@ -487,41 +502,41 @@ def _synthetic_features() -> Dict[str, np.ndarray]:
 
     Used when real pipeline TIFs are not available.  Each map encodes the
     known gross structure of Titan's surface:
-      - Polar lakes (>60°N/S) high liquid_HC
+      - Polar lakes (>60 degN/S) high liquid_HC
       - Equatorial belt high organic_abundance (dunes)
-      - Crater regions (near 90°W) higher geomorphologic_diversity
-      - Ontario Lacus (179°W, -72°) southern lake
+      - Crater regions (near 90 degW) higher geomorphologic_diversity
+      - Ontario Lacus (179 degW, -72 deg) southern lake
     """
     lat, lon_W = _lat_lon_grids()
     lat_r = np.deg2rad(lat)
 
-    # ── liquid_hydrocarbon ────────────────────────────────────────────────────
+    # -- liquid_hydrocarbon ----------------------------------------------------
     north_lake_zone = np.clip((lat - 60.0) / 20.0, 0.0, 1.0) ** 1.5
     south_lake_zone = np.clip((-lat - 60.0) / 20.0, 0.0, 1.0) ** 1.5
-    # Ontario Lacus: 179°W, -72°
+    # Ontario Lacus: 179 degW, -72 deg
     ontario = np.exp(-((lon_W - 179.0) ** 2 + (lat + 72.0) ** 2) / 64.0)
     liquid = np.clip(north_lake_zone * 0.7 + south_lake_zone * 0.15 +
                      ontario * 0.5, 0.0, 1.0).astype(np.float32)
 
-    # ── organic_abundance ─────────────────────────────────────────────────────
-    # High in equatorial dune belt (|lat|<30°), lower at poles, very low Xanadu
+    # -- organic_abundance -----------------------------------------------------
+    # High in equatorial dune belt (|lat|<30 deg), lower at poles, very low Xanadu
     dune_belt = np.clip(1.0 - np.abs(lat) / 30.0, 0.0, 1.0) ** 0.5
-    # Xanadu (~100°W, -5°): low organic, high water-ice
+    # Xanadu (~100 degW, -5 deg): low organic, high water-ice
     xanadu = 1.0 - 0.7 * np.exp(-((lon_W - 100.0) ** 2 + lat ** 2) / 400.0)
     organic = np.clip(0.35 + 0.45 * dune_belt * xanadu, 0.0, 1.0).astype(np.float32)
 
-    # ── acetylene_energy ──────────────────────────────────────────────────────
-    # Driven by UV photolysis — mild equatorial enhancement, lake surface ~0
+    # -- acetylene_energy ------------------------------------------------------
+    # Driven by UV photolysis -- mild equatorial enhancement, lake surface ~0
     ace = np.clip(0.28 + 0.15 * (1.0 - np.abs(lat) / 90.0) -
                   0.15 * liquid, 0.0, 1.0).astype(np.float32)
 
-    # ── methane_cycle ─────────────────────────────────────────────────────────
+    # -- methane_cycle ---------------------------------------------------------
     # Peaks near equator where precipitation is most active
     meth = np.clip(0.30 + 0.15 * np.cos(lat_r) +
                    0.10 * north_lake_zone, 0.0, 1.0).astype(np.float32)
 
-    # ── surface_atm_interaction ───────────────────────────────────────────────
-    # Highest at lake margins (~63–67°N) and channels
+    # -- surface_atm_interaction -----------------------------------------------
+    # Highest at lake margins (~63-67 degN) and channels
     lake_margin = np.clip(
         np.exp(-((lat - 64.0) ** 2) / 8.0) * 0.8 +
         np.exp(-((lat + 64.0) ** 2) / 8.0) * 0.25, 0.0, 1.0
@@ -529,7 +544,7 @@ def _synthetic_features() -> Dict[str, np.ndarray]:
     sai = np.clip(0.20 + 0.35 * lake_margin + 0.15 * np.cos(lat_r) ** 2,
                   0.0, 1.0).astype(np.float32)
 
-    # ── topographic_complexity ────────────────────────────────────────────────
+    # -- topographic_complexity ------------------------------------------------
     # Higher at poles (labyrinth), crater regions, mountain chains
     np.random.seed(42)
     topo_noise = np.random.uniform(0.0, 0.1, GRID_SHAPE).astype(np.float32)
@@ -538,17 +553,17 @@ def _synthetic_features() -> Dict[str, np.ndarray]:
     topo = np.clip(0.15 + topo_noise + selk + menrva +
                    0.10 * np.abs(lat) / 90.0, 0.0, 1.0).astype(np.float32)
 
-    # ── geomorphologic_diversity ──────────────────────────────────────────────
+    # -- geomorphologic_diversity ----------------------------------------------
     geo = np.clip(0.20 + 0.20 * lake_margin + selk * 0.5 +
                   menrva * 0.4 + 0.10 * np.abs(lat) / 90.0,
                   0.0, 1.0).astype(np.float32)
 
-    # ── subsurface_ocean ──────────────────────────────────────────────────────
-    # Uniform global prior — k2=0.589 confirms global subsurface ocean
+    # -- subsurface_ocean ------------------------------------------------------
+    # Uniform global prior -- k2=0.589 confirms global subsurface ocean
     sub = np.full(GRID_SHAPE, 0.03, dtype=np.float32)
 
-    # ── impact_melt_bonus ─────────────────────────────────────────────────────
-    # Localised around craters — 0 everywhere at present (already past)
+    # -- impact_melt_bonus -----------------------------------------------------
+    # Localised around craters -- 0 everywhere at present (already past)
     imb = np.zeros(GRID_SHAPE, dtype=np.float32)
 
     return {
@@ -578,7 +593,7 @@ def load_present_features(feature_dir: Path) -> Dict[str, np.ndarray]:
     Returns
     -------
     Dict[str, np.ndarray]
-        Feature name → float32 array of shape GRID_SHAPE.
+        Feature name -> float32 array of shape GRID_SHAPE.
     """
     feature_names = list(WEIGHTS.keys())
     maps: Dict[str, np.ndarray] = {}
@@ -609,13 +624,13 @@ def load_present_features(feature_dir: Path) -> Dict[str, np.ndarray]:
         return maps
     else:
         if n_real > 0:
-            print(f"  Only {n_real} TIFs found — falling back to synthetic maps")
+            print(f"  Only {n_real} TIFs found -- falling back to synthetic maps")
         else:
-            print(f"  No feature TIFs found in {feature_dir} — using synthetic maps")
+            print(f"  No feature TIFs found in {feature_dir} -- using synthetic maps")
         return _synthetic_features()
 
 
-# ─── Temporal scaling ─────────────────────────────────────────────────────────
+# --- Temporal scaling ---------------------------------------------------------
 
 def scale_features_to_epoch(
     present: Dict[str, np.ndarray],
@@ -645,13 +660,13 @@ def scale_features_to_epoch(
             # arr encodes relative organic density; scale the absolute level
             scaled = arr * scale
         elif name == "subsurface_ocean" and titan_temp_K(t) >= EUTECTIC_K:
-            # Global water ocean — override to 1.0 everywhere
+            # Global water ocean -- override to 1.0 everywhere
             scaled = np.ones_like(arr)
         elif name == "liquid_hydrocarbon" and titan_temp_K(t) >= EUTECTIC_K:
-            # Global water ocean — override to 1.0 everywhere
+            # Global water ocean -- override to 1.0 everywhere
             scaled = np.ones_like(arr)
         elif name == "impact_melt_bonus":
-            # Additive global field — ignore present spatial pattern
+            # Additive global field -- ignore present spatial pattern
             # (there are no present craters still melting; past is modelled globally)
             scaled = np.full_like(arr, min(1.0, _impact_melt_global(t)))
         else:
@@ -662,7 +677,7 @@ def scale_features_to_epoch(
     return result
 
 
-# ─── Bayesian inference ───────────────────────────────────────────────────────
+# --- Bayesian inference -------------------------------------------------------
 
 def bayesian_posterior_map(
     features: Dict[str, np.ndarray],
@@ -706,7 +721,7 @@ def bayesian_posterior_map(
     return posterior
 
 
-# ─── GeoTIFF writer ──────────────────────────────────────────────────────────
+# --- GeoTIFF writer ----------------------------------------------------------
 
 TITAN_CRS_PROJ4: str = (
     "+proj=eqc +a=2575000 +b=2575000 +units=m +no_defs "
@@ -717,7 +732,7 @@ def canonical_transform() -> "rasterio.transform.Affine":
     """
     Return the rasterio Affine transform for the canonical Titan grid.
 
-    The grid is equirectangular, west-positive, covering 0–360°W × −90–90°N.
+    The grid is equirectangular, west-positive, covering 0-360 degW x -90-90 degN.
     """
     import rasterio.transform as rt
     m_per_deg: float = math.pi * TITAN_RADIUS_M / 180.0
@@ -765,7 +780,7 @@ def write_geotiff(
         transform = canonical_transform(),
         nodata    = nodata,
         compress  = "deflate",
-        predictor = 2,          # float predictor — better compression for rasters
+        predictor = 2,          # float predictor -- better compression for rasters
         tiled     = True,
         blockxsize = 512,
         blockysize = 512,
@@ -775,7 +790,7 @@ def write_geotiff(
             dst.update_tags(**metadata)
 
 
-# ─── NetCDF writer ────────────────────────────────────────────────────────────
+# --- NetCDF writer ------------------------------------------------------------
 
 def save_netcdf_stack(
     epochs:    np.ndarray,
@@ -786,7 +801,7 @@ def save_netcdf_stack(
     Save all epoch maps as a NetCDF4 time-series stack.
 
     Dimensions: (time, lat, lon)
-    Variable:   P_habitable  — posterior mean P(habitable | features)
+    Variable:   P_habitable  -- posterior mean P(habitable | features)
     time:       epoch in Gya from present
 
     QGIS Temporal Controller can open this directly.
@@ -806,7 +821,7 @@ def save_netcdf_stack(
         try:
             import scipy.io.netcdf as scipy_nc
         except ImportError:
-            print("  WARNING: neither netCDF4 nor scipy available — skipping .nc output")
+            print("  WARNING: neither netCDF4 nor scipy available -- skipping .nc output")
             return
 
     # Use numpy + manual NetCDF3 via scipy if netCDF4 not available
@@ -851,12 +866,12 @@ def save_netcdf_stack(
         )
         out_path.parent.mkdir(parents=True, exist_ok=True)
         ds.to_netcdf(out_path, format="NETCDF4")
-        print(f"  NetCDF stack saved → {out_path}")
+        print(f"  NetCDF stack saved -> {out_path}")
     except Exception as exc:
         print(f"  WARNING: NetCDF save failed: {exc}")
 
 
-# ─── Matplotlib renderer ──────────────────────────────────────────────────────
+# --- Matplotlib renderer ------------------------------------------------------
 
 def _epoch_label(t: float) -> str:
     """Human-readable epoch label."""
@@ -873,14 +888,14 @@ def _phase_label(t: float) -> str:
     Phase boundaries
     ----------------
     t < -3.0              Late Heavy Bombardment
-    -3.0 ≤ t < -1.0       Early Titan
-    -1.0 ≤ t < -0.3       Lake formation
-    -0.3 ≤ t < -0.05      Recent past          ← avoids "Near future" for past epochs
-    |t| < 0.05            Cassini epoch         ← tight window: ±50 Mya
-    0.05 ≤ t < 3.0        Near future
-    3.0 ≤ t < 5.0         Pre red-giant
-    5.0 ≤ t < EUTECTIC    Red-giant ramp
-    t ≥ EUTECTIC          Red-giant water ocean
+    -3.0 <= t < -1.0       Early Titan
+    -1.0 <= t < -0.3       Lake formation
+    -0.3 <= t < -0.05      Recent past          <- avoids "Near future" for past epochs
+    |t| < 0.05            Cassini epoch         <- tight window: +/-50 Mya
+    0.05 <= t < 3.0        Near future
+    3.0 <= t < 5.0         Pre red-giant
+    5.0 <= t < EUTECTIC    Red-giant ramp
+    t >= EUTECTIC          Red-giant water ocean
     """
     T: float = titan_temp_K(t)
     if T >= EUTECTIC_K:
@@ -924,15 +939,15 @@ def render_frame(
 
     nrows, ncols = GRID_SHAPE
 
-    # ── Colourmap ────────────────────────────────────────────────────────────
+    # -- Colourmap ------------------------------------------------------------
     cmap = matplotlib.colormaps["plasma"]
     cmap.set_bad(color=COLOUR_SPACE)   # matplotlib keyword stays American English
     norm = mcolors.Normalize(vmin=VMIN, vmax=VMAX)   # matplotlib API
 
     T_surface = titan_temp_K(t)
 
-    # ── Top-10 locations ─────────────────────────────────────────────────────
-    # (lon_W°, lat°, short_label, rank, pole: N/S/blank)
+    # -- Top-10 locations -----------------------------------------------------
+    # (lon_W deg, lat deg, short_label, rank, pole: N/S/blank)
     TOP10: List[Tuple[float, float, str, int, str]] = [
         (310.0,  68.0, "Kraken",     1, "N"),
         ( 78.0,  79.0, "Ligeia",     2, "N"),
@@ -955,18 +970,18 @@ def render_frame(
         dy: float = 5.0 if lat < 70 else -6.0
         return dx, dy
 
-    # ── Shared figure layout ──────────────────────────────────────────────────
+    # -- Shared figure layout --------------------------------------------------
     # The figure is split vertically into three zones:
-    #   top strip  (y = GS_TOP  → 1.00) : title, epoch info, progress bar
-    #   map panels (y = GS_BOTTOM → GS_TOP) : equirectangular + 2 polar caps
-    #   bottom bar (y = 0.00 → GS_BOTTOM)  : colourbar, narrative text boxes
+    #   top strip  (y = GS_TOP  -> 1.00) : title, epoch info, progress bar
+    #   map panels (y = GS_BOTTOM -> GS_TOP) : equirectangular + 2 polar caps
+    #   bottom bar (y = 0.00 -> GS_BOTTOM)  : colourbar, narrative text boxes
     #
     # Height-matching geometry (wspace=0):
-    #   With width_ratios=[2,1,1] the polar panel fraction = (GS_RIGHT−GS_LEFT)/4.
-    #   Setting this equal to the panel height fraction (GS_TOP−GS_BOTTOM) gives:
-    #     fig_width = 4·(GS_TOP−GS_BOTTOM)/(GS_RIGHT−GS_LEFT)·fig_height
-    #   Substituting FIG_HEIGHT_IN=7.5 yields FIG_WIDTH_IN≈20.1 (see constants).
-    #   With wspace=0 the polar subplots are allocated exactly FIG_HEIGHT_IN×0.655
+    #   With width_ratios=[2,1,1] the polar panel fraction = (GS_RIGHT-GS_LEFT)/4.
+    #   Setting this equal to the panel height fraction (GS_TOP-GS_BOTTOM) gives:
+    #     fig_width = 4.(GS_TOP-GS_BOTTOM)/(GS_RIGHT-GS_LEFT).fig_height
+    #   Substituting FIG_HEIGHT_IN=7.5 yields FIG_WIDTH_IN=~20.1 (see constants).
+    #   With wspace=0 the polar subplots are allocated exactly FIG_HEIGHT_INx0.655
     #   inches of width, which equals the row height, so aspect='equal' fills the
     #   full disc and the circles match the cylindrical map height.
     fig = plt.figure(figsize=(FIG_WIDTH_IN, FIG_HEIGHT_IN),
@@ -979,7 +994,7 @@ def render_frame(
 
     T_surface = titan_temp_K(t)
 
-    # ── Left panel: equirectangular (cylindrical) global map ─────────────────
+    # -- Left panel: equirectangular (cylindrical) global map -----------------
     ax1 = fig.add_subplot(gs[0, 0])
     ax1.set_facecolor(COLOUR_BACKGROUND)
     ax1.imshow(
@@ -988,7 +1003,7 @@ def render_frame(
         extent=[0, 360, -90, 90], interpolation="lanczos",
     )
 
-    # Longitude graticule at 30° intervals, latitude at 15° intervals
+    # Longitude graticule at 30 deg intervals, latitude at 15 deg intervals
     ax1.set_xticks(range(0, 361, 30))
     ax1.set_yticks(range(-90, 91, 15))
     ax1.tick_params(colors="white", labelsize=7.5, length=3, width=0.7)
@@ -1020,48 +1035,56 @@ def render_frame(
     for spine in ax1.spines.values():
         spine.set_edgecolor(COLOUR_SPINE)
 
-    # ── Polar reproject helper ────────────────────────────────────────────────
+    # -- Polar reproject helper ------------------------------------------------
     def polar_reproject(img: np.ndarray, north: bool, size: int = 500) -> np.ndarray:
         """
         Resample *img* into a circular polar stereographic view.
 
-        The circle boundary (r=1) corresponds exactly to POLAR_CAP_EDGE_DEG (50°),
-        so the filled disc occupies the entire circular panel.
+        Geometry (Snyder 1987, s.21 -- oblique stereographic, polar case)
+        ---------------------------------------------------------------
+        The disc coordinate r (0 = pole, 1 = disc edge) maps to latitude via:
 
-        Fix for original bug:
-          Original formula: lat = 90 - 2*arctan(r)
-            → r=1 maps to lat=0° (equator), so only r<0.364 was visible
-            → filled only 13% of the circle area.
-          Fixed formula: lat = 90 - 2*arctan(r * POLAR_SCALE)
-            → r=1 maps to lat=POLAR_CAP_EDGE_DEG (50°), filling the full circle.
+            r = tan((90 deg - |lat|) / 2) / POLAR_SCALE
+
+        where POLAR_SCALE = tan((90 deg - POLAR_CAP_EDGE_DEG) / 2) so that
+        r = 1 corresponds to exactly POLAR_CAP_EDGE_DEG, filling the full
+        circular panel with data.
+
+        Azimuth (both hemispheres):
+
+            lon_W = atan2(x, -y)      [0 degW at disc top, increasing clockwise]
+
+        This convention places the prime meridian at the top of each polar
+        disc, matching standard cartographic practice for both poles.
         """
+        nrows_i: int
+        ncols_i: int
         nrows_i, ncols_i = img.shape
+        y0: np.ndarray
+        x0: np.ndarray
         y0, x0 = np.mgrid[-1:1:size*1j, -1:1:size*1j]
-        r = np.sqrt(x0**2 + y0**2)
-        outside = r > 1.0
+        r: np.ndarray = np.sqrt(x0**2 + y0**2)
+        outside: np.ndarray = r > 1.0
 
-        # Fixed stereographic formula
-        lat_s = 90.0 - 2.0 * np.degrees(
-            np.arctan(r * POLAR_SCALE)
-        )
+        # Stereographic latitude (Snyder s.21):  lat = 90 - 2.arctan(r.POLAR_SCALE)
+        lat_s: np.ndarray = 90.0 - 2.0 * np.degrees(np.arctan(r * POLAR_SCALE))
         if not north:
             lat_s = -lat_s
 
-        # Azimuth: lon_W = atan2(x, -y)
-        # This places 0°W at the disc top (y = -1 in display coords)
-        # with longitude increasing clockwise — consistent with standard
-        # polar maps of both hemispheres.
-        lon_s = (np.degrees(np.arctan2(x0, -y0)) + 360.0) % 360.0
+        # Azimuth: lon_W = atan2(x, -y) -- 0 degW at top, clockwise increasing
+        lon_s: np.ndarray = (np.degrees(np.arctan2(x0, -y0)) + 360.0) % 360.0
 
-        # Convert to pixel coords
-        row_s = (90.0 - lat_s) / 180.0 * nrows_i
-        col_s = lon_s / 360.0 * ncols_i
+        # Convert disc coords to raster pixel indices
+        row_s: np.ndarray = (90.0 - lat_s) / 180.0 * nrows_i
+        col_s: np.ndarray = lon_s / 360.0 * ncols_i
 
-        flat_img = img.copy().astype(np.float64)
+        flat_img: np.ndarray = img.copy().astype(np.float64)
         flat_img[~np.isfinite(flat_img)] = -1.0
-        sampled = map_coordinates(flat_img, [row_s.ravel(), col_s.ravel()],
-                                  order=1, mode="wrap", cval=-1.0)
-        out = sampled.reshape(size, size).astype(np.float32)
+        sampled: np.ndarray = map_coordinates(
+            flat_img, [row_s.ravel(), col_s.ravel()],
+            order=1, mode="wrap", cval=-1.0
+        )
+        out: np.ndarray = sampled.reshape(size, size).astype(np.float32)
         out[outside] = np.nan
         out[out < 0] = np.nan
         # Pixels outside the unit disc are already NaN (set above).
@@ -1069,7 +1092,7 @@ def render_frame(
 
     def _loc_to_stereo(lon_W: float, lat: float, north: bool) -> Tuple[Optional[float], Optional[float]]:
         """
-        Convert (lon_W°, lat°) to panel coordinates using the fixed
+        Convert (lon_W deg, lat deg) to panel coordinates using the fixed
         stereographic formula (consistent with polar_reproject).
         """
         if (north and lat < POLAR_CAP_EDGE_DEG) or (not north and lat > -POLAR_CAP_EDGE_DEG):
@@ -1080,21 +1103,21 @@ def render_frame(
         if r > 1.0:
             return None, None
         lon_rad: float = math.radians(lon_W)
-        # Stereographic inverse (Snyder 1987, §21):
+        # Stereographic inverse (Snyder 1987, s.21):
         #   r = tan((90 - |lat|) / 2) / POLAR_SCALE
-        #   x =  r · sin(lon_W)
-        #   y = -r · cos(lon_W)
+        #   x =  r . sin(lon_W)
+        #   y = -r . cos(lon_W)
         # The -cos convention matches the azimuth formula atan2(x, -y),
-        # which places 0°W at the top of the disc for both hemispheres.
+        # which places 0 degW at the top of the disc for both hemispheres.
         x_s: float =  r * math.sin(lon_rad)
         y_s: float = -r * math.cos(lon_rad)   # same for north AND south
         return x_s, y_s
 
-    # Longitude tick marks for polar caps (Snyder 1987 §21 inverse).
-    # Ticks placed from r=0.93 to r=1.0; labels at r=0.82, 30° increments.
-    # Formula: x = r·sin(lon_W),  y = -r·cos(lon_W)  (0°W at top, CW increasing)
+    # Longitude tick marks for polar caps (Snyder 1987 s.21 inverse).
+    # Ticks placed from r=0.93 to r=1.0; labels at r=0.82, 30 deg increments.
+    # Formula: x = r.sin(lon_W),  y = -r.cos(lon_W)  (0 degW at top, CW increasing)
     def _draw_polar_graticule(ax: "matplotlib.axes.Axes") -> None:
-        """Draw 30° longitude tick marks and labels around the polar disc."""
+        """Draw 30 deg longitude tick marks and labels around the polar disc."""
         for lon_W_tick in range(0, 360, 30):
             lon_rad: float = math.radians(lon_W_tick)
             sin_l: float = math.sin(lon_rad)
@@ -1111,7 +1134,7 @@ def render_frame(
                     bbox=dict(boxstyle="square,pad=0.05",
                               fc=COLOUR_BACKGROUND, ec="none", alpha=0.7))
 
-    # ── Centre: North polar cap (POLAR_CAP_EDGE_DEG° – 90°N) ─────────────────
+    # -- Centre: North polar cap (POLAR_CAP_EDGE_DEG deg - 90 degN) -----------------
     ax2 = fig.add_subplot(gs[0, 1], aspect="equal")
     ax2.set_facecolor(COLOUR_BACKGROUND)
     north_img = polar_reproject(posterior, north=True, size=500)
@@ -1149,7 +1172,7 @@ def render_frame(
             bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
         )
 
-    # ── Right panel: South polar cap (POLAR_CAP_EDGE_DEG° – 90°S) ────────────
+    # -- Right panel: South polar cap (POLAR_CAP_EDGE_DEG deg - 90 degS) ------------
     ax3 = fig.add_subplot(gs[0, 2], aspect="equal")
     ax3.set_facecolor(COLOUR_BACKGROUND)
     south_img = polar_reproject(posterior, north=False, size=500)
@@ -1185,7 +1208,7 @@ def render_frame(
             bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
         )
 
-    # ── Colourbar ─────────────────────────────────────────────────────────────
+    # -- Colourbar -------------------------------------------------------------
     # Placed well below GS_BOTTOM so the equirectangular x-axis label (at
     # ~y=0.268) and the colourbar top (y=0.170) have ~0.8" of clear space.
     cax = fig.add_axes([0.10, 0.178, 0.80, 0.022])
@@ -1194,7 +1217,7 @@ def render_frame(
     cb.set_label("P(habitable | features)", color="white", fontsize=11)
     cb.ax.xaxis.set_tick_params(color="white", labelcolor="white", labelsize=9)
 
-    # ── Narrative text box ────────────────────────────────────────────────────
+    # -- Narrative text box ----------------------------------------------------
     # Both frames (narrative and blank) render identical sized elements so that
     # bbox_inches=None produces a consistent frame height throughout the video.
     #
@@ -1202,15 +1225,15 @@ def render_frame(
     #   y=0.170  colourbar bar top
     #   y=0.148  colourbar bar bottom
     #   y=0.120  colourbar label centre
-    #   ── 0.5" gap ──────────────────────────────────────
+    #   -- 0.5" gap --------------------------------------
     #   y=0.090  title pill centre
-    #   ── gap ────────────────────────────────────────────
+    #   -- gap --------------------------------------------
     #   y=0.038  body box centre
     if narrative:
         lines: list = [ln.strip() for ln in narrative.strip().split("\n") if ln.strip()]
         title_line: str       = lines[0] if lines else ""
         body_lines: list[str] = lines[1:] if len(lines) > 1 else []
-        body_text:  str       = "\n".join(body_lines) if body_lines else "─" * 60
+        body_text:  str       = "\n".join(body_lines) if body_lines else "-" * 60
 
         fig.text(0.50, 0.038, body_text,
                  color=COLOUR_NARRATIVE_BODY, fontsize=10.5, fontweight="normal",
@@ -1247,7 +1270,7 @@ def render_frame(
              f"Phase:  {_phase_label(t).replace(chr(10),' ')}   |   {solar_str}",
              color=phase_col, fontsize=10, ha="center", va="bottom")
 
-    # ── Progress bar ──────────────────────────────────────────────────────────
+    # -- Progress bar ----------------------------------------------------------
     bar_ax = fig.add_axes([0.10, 0.910, 0.80, 0.006])
     bar_ax.set_xlim(0, n_epochs)
     bar_ax.set_ylim(0, 1)
@@ -1257,7 +1280,7 @@ def render_frame(
     return fig
 
 
-# ─── Six-panel poster ─────────────────────────────────────────────────────────
+# --- Six-panel poster ---------------------------------------------------------
 
 def render_poster(
     epoch_maps: Dict[float, np.ndarray],
@@ -1272,8 +1295,8 @@ def render_poster(
 
     key_epochs: List[float] = [-3.5, -1.0, 0.0, 1.0, 5.2, 6.0]
     titles: List[str] = [
-        "LHB peak\n(−3.5 Gya)",
-        "Lake formation\n(−1.0 Gya)",
+        "LHB peak\n(-3.5 Gya)",
+        "Lake formation\n(-1.0 Gya)",
         "Present\n(Cassini epoch)",
         "Near future\n(+1.0 Gya)",
         "Red giant ramp\n(+5.2 Gya)",
@@ -1335,13 +1358,21 @@ def render_poster(
     fig.savefig(out_path, dpi=150, bbox_inches="tight",
                 facecolor=fig.get_facecolor())
     plt.close(fig)
-    print(f"  Poster saved → {out_path}")
+    print(f"  Poster saved -> {out_path}")
 
 
-# ─── Main ────────────────────────────────────────────────────────────────────
+# --- Main --------------------------------------------------------------------
 
 def main(args: argparse.Namespace) -> None:
     """Main entry point."""
+    print(
+        "Titan Habitability Pipeline  Copyright (C) 2025/2026  Chris Meadows\n"
+        "This program comes with ABSOLUTELY NO WARRANTY; for details, see the\n"
+        "README.md at the project root.\n"
+        "This is free software, and you are welcome to redistribute it\n"
+        "under certain conditions; see the LICENSE.md file at the project\n"
+        "root for details.\n"
+    )
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -1359,14 +1390,14 @@ def main(args: argparse.Namespace) -> None:
 
     epochs = make_epoch_axis(n_limit=args.epochs if args.epochs > 0 else None)
     print(f"\nTitan Temporal Habitability Maps")
-    print(f"  Epochs:        {len(epochs)} points, {epochs[0]:+.2f} → {epochs[-1]:+.2f} Gya")
-    print(f"  Grid:          {GRID_SHAPE[0]} × {GRID_SHAPE[1]} = {GRID_SHAPE[0]*GRID_SHAPE[1]:,} pixels")
+    print(f"  Epochs:        {len(epochs)} points, {epochs[0]:+.2f} -> {epochs[-1]:+.2f} Gya")
+    print(f"  Grid:          {GRID_SHAPE[0]} x {GRID_SHAPE[1]} = {GRID_SHAPE[0]*GRID_SHAPE[1]:,} pixels")
     print(f"  Feature TIFs:  {feat_dir}")
     print(f"  Output:        {out_dir}")
     print()
 
     # Load present-epoch features once
-    print("Loading present-epoch feature maps…")
+    print("Loading present-epoch feature maps...")
     present = load_present_features(feat_dir)
     print()
 
@@ -1375,14 +1406,14 @@ def main(args: argparse.Namespace) -> None:
         import rasterio
         has_rasterio = True
     except ImportError:
-        print("  rasterio not installed — GeoTIFFs will be saved as raw numpy .npy")
+        print("  rasterio not installed -- GeoTIFFs will be saved as raw numpy .npy")
         print("  Install rasterio to get QGIS-compatible GeoTIFF output.\n")
 
-    # ── Process each epoch ────────────────────────────────────────────────────
+    # -- Process each epoch ----------------------------------------------------
     all_posteriors: List[np.ndarray] = []
     epoch_map_cache: Dict[float, np.ndarray] = {}  # for poster
 
-    print("Computing habitability maps…")
+    print("Computing habitability maps...")
     for i, t in enumerate(epochs):
         T_s = titan_temp_K(t)
         phase = _phase_label(t).replace("\n", " ")
@@ -1398,7 +1429,7 @@ def main(args: argparse.Namespace) -> None:
         # Cache for poster (6 key epochs)
         epoch_map_cache[t] = posterior
 
-        # ── Save GeoTIFF ──────────────────────────────────────────────────────
+        # -- Save GeoTIFF ------------------------------------------------------
         t_str = f"{t:+.3f}".replace("+", "p").replace("-", "m").replace(".", "_")
         tif_path = tif_dir / f"habitability_{t_str}_Gya.tif"
 
@@ -1430,18 +1461,18 @@ def main(args: argparse.Namespace) -> None:
 
     print()
 
-    # ── NetCDF stack ──────────────────────────────────────────────────────────
+    # -- NetCDF stack ----------------------------------------------------------
     if not args.no_netcdf:
-        print("Saving NetCDF time-series stack…")
+        print("Saving NetCDF time-series stack...")
         save_netcdf_stack(epochs, all_posteriors, nc_path)
 
-    # ── Six-panel poster ──────────────────────────────────────────────────────
-    print("Rendering key-epoch poster…")
+    # -- Six-panel poster ------------------------------------------------------
+    print("Rendering key-epoch poster...")
     render_poster(epoch_map_cache, poster_dir / "key_epochs_poster.png")
 
-    # ── Animation ─────────────────────────────────────────────────────────────
+    # -- Animation -------------------------------------------------------------
     if not args.no_animation:
-        print(f"Rendering animation ({len(epochs)} unique frames)…")
+        print(f"Rendering animation ({len(epochs)} unique frames)...")
         print(f"  Pause events: {len(TRANSITION_EVENTS)}, target: ~60 s")
 
         frames_dir = anim_dir / "frames"
@@ -1452,7 +1483,7 @@ def main(args: argparse.Namespace) -> None:
             len(epochs) - len(TRANSITION_EVENTS), 1
         )
 
-        # Map each event to the single closest epoch — avoids pausing multiple
+        # Map each event to the single closest epoch -- avoids pausing multiple
         # adjacent frames when the dense axis has two epochs near the same event.
         event_best: Dict[float, Tuple[float, str]] = {}
         for i, t in enumerate(epochs):
@@ -1488,7 +1519,7 @@ def main(args: argparse.Namespace) -> None:
 
             fpath = frames_dir / f"frame_{i:03d}.png"
             fig.savefig(fpath, dpi=args.dpi,
-                        bbox_inches=None,   # fixed size — NEVER tight-crop frames
+                        bbox_inches=None,   # fixed size -- NEVER tight-crop frames
                         facecolor=fig.get_facecolor())
             plt.close(fig)
             frame_paths.append(fpath)
@@ -1497,7 +1528,7 @@ def main(args: argparse.Namespace) -> None:
             concat_lines.append(f"file '{fpath.resolve()}'")
             concat_lines.append(f"duration {hold:.4f}")
 
-            marker: str = " ◆ PAUSE" if event_data else ""
+            marker: str = " * PAUSE" if event_data else ""
             if (i + 1) % 8 == 0 or i == len(epochs) - 1 or event_data:
                 print(f"  [{i+1:2d}/{len(epochs)}]  t={t:+6.3f} Gya  "
                       f"hold={hold:.2f}s{marker}")
@@ -1527,7 +1558,7 @@ def main(args: argparse.Namespace) -> None:
         result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
         if result.returncode == 0:
             sz = mp4_path.stat().st_size / 1e6
-            print(f"  MP4 saved → {mp4_path}  ({sz:.1f} MB)")
+            print(f"  MP4 saved -> {mp4_path}  ({sz:.1f} MB)")
         else:
             print(f"  ffmpeg MP4 failed:\n{result.stderr[-400:]}")
 
@@ -1548,11 +1579,11 @@ def main(args: argparse.Namespace) -> None:
         result2 = subprocess.run(ffmpeg_gif, capture_output=True, text=True)
         if result2.returncode == 0:
             sz2 = gif_path.stat().st_size / 1e6
-            print(f"  GIF saved → {gif_path}  ({sz2:.1f} MB)")
+            print(f"  GIF saved -> {gif_path}  ({sz2:.1f} MB)")
         else:
-            print(f"  GIF encoding failed — MP4 is the primary output")
+            print(f"  GIF encoding failed -- MP4 is the primary output")
 
-    # ── Summary and QGIS instructions ─────────────────────────────────────────
+    # -- Summary and QGIS instructions -----------------------------------------
     print()
     print("=" * 72)
     print("  OUTPUT SUMMARY")
@@ -1569,83 +1600,83 @@ def main(args: argparse.Namespace) -> None:
     print("  QGIS-LTR IMPORT GUIDE")
     print("=" * 72)
     print("""
-  ┌─ SET PROJECT CRS ──────────────────────────────────────────────────────┐
-  │ 1. Project → Properties → CRS                                          │
-  │ 2. Search: 'titan'  — if not found, click '+ Add'                      │
-  │ 3. Paste this PROJ4 string as the custom CRS:                          │
-  │                                                                         │
-  │    +proj=eqc +a=2575000 +b=2575000 +units=m +no_defs +lon_0=0         │
-  │                                                                         │
-  │ 4. Name it "Titan_2000_Equirectangular" and save.                      │
-  └────────────────────────────────────────────────────────────────────────┘
+  +- SET PROJECT CRS -------------------------------------------------------+
+  | 1. Project -> Properties -> CRS                                         |
+  | 2. Search: 'titan'  -- if not found, click '+ Add'                      |
+  | 3. Paste this PROJ4 string as the custom CRS:                           |
+  |                                                                         |
+  |    +proj=eqc +a=2575000 +b=2575000 +units=m +no_defs +lon_0=0           |
+  |                                                                         |
+  | 4. Name it "Titan_2000_Equirectangular" and save.                       |
+  +-------------------------------------------------------------------------+
 
-  ┌─ CYLINDRICAL (EQUIRECTANGULAR) MAP ────────────────────────────────────┐
-  │ • Layer → Add Layer → Add Raster Layer                                  │
-  │ • Load any habitability_*_Gya.tif                                       │
-  │ • Layer → Properties → Symbology                                        │
-  │     Render type: Singleband pseudocolor                                 │
-  │     Min: 0.10   Max: 0.65                                               │
-  │     Color ramp: Magma or Plasma (perceptually uniform)                  │
-  │ • Set project CRS to Titan equirectangular (above)                      │
-  └────────────────────────────────────────────────────────────────────────┘
+  +- CYLINDRICAL (EQUIRECTANGULAR) MAP -------------------------------------+
+  | * Layer -> Add Layer -> Add Raster Layer                                |
+  | * Load any habitability_*_Gya.tif                                       |
+  | * Layer -> Properties -> Symbology                                      |
+  |     Render type: Singleband pseudocolor                                 |
+  |     Min: 0.10   Max: 0.65                                               |
+  |     Color ramp: Magma or Plasma (perceptually uniform)                  |
+  | * Set project CRS to Titan equirectangular (above)                      |
+  +-------------------------------------------------------------------------+
 
-  ┌─ GLOBE / ORTHOGRAPHIC VIEW ─────────────────────────────────────────────┐
-  │ Method A — QGIS Sphere/Globe plugin:                                     │
-  │   Plugins → Manage Plugins → search 'Globe' → Install                   │
-  │   View → Panels → Globe → enable; drag layer into globe panel            │
-  │                                                                          │
-  │ Method B — Orthographic projection:                                      │
-  │   Project → Properties → CRS → search "ortho"                           │
-  │   Custom CRS: +proj=ortho +a=2575000 +b=2575000 +lat_0=30 +lon_0=180   │
-  │   Adjust lat_0 and lon_0 to set the centre of the globe view.           │
-  │   The raster layer must be loaded first; QGIS will reproject on-the-fly.│
-  └──────────────────────────────────────────────────────────────────────────┘
+  +- GLOBE / ORTHOGRAPHIC VIEW ---------------------------------------------+
+  | Method A -- QGIS Sphere/Globe plugin:                                   |
+  |   Plugins -> Manage Plugins -> search 'Globe' -> Install                |
+  |   View -> Panels -> Globe -> enable; drag layer into globe panel        |
+  |                                                                         |
+  | Method B -- Orthographic projection:                                    |
+  |   Project -> Properties -> CRS -> search "ortho"                        |
+  |   Custom CRS: +proj=ortho +a=2575000 +b=2575000 +lat_0=30 +lon_0=180    |
+  |   Adjust lat_0 and lon_0 to set the centre of the globe view.           |
+  |   The raster layer must be loaded first; QGIS will reproject on-the-fly.|
+  +-------------------------------------------------------------------------+
 
-  ┌─ POLAR CIRCULAR MAP ────────────────────────────────────────────────────┐
-  │ 1. Project → Properties → CRS → Custom CRS                              │
-  │                                                                          │
-  │   North polar:                                                           │
-  │   +proj=stere +a=2575000 +b=2575000 +lat_0=90 +lon_0=0 +k=1 +units=m  │
-  │                                                                          │
-  │   South polar:                                                           │
-  │   +proj=stere +a=2575000 +b=2575000 +lat_0=-90 +lon_0=0 +k=1 +units=m │
-  │                                                                          │
-  │ 2. QGIS will reproject the equirectangular raster on-the-fly.           │
-  │ 3. Zoom to extent of the layer to see the polar cap.                    │
-  └────────────────────────────────────────────────────────────────────────┘
+  +- POLAR CIRCULAR MAP ----------------------------------------------------+
+  | 1. Project -> Properties -> CRS -> Custom CRS                           |
+  |                                                                         |
+  |   North polar:                                                          |
+  |   +proj=stere +a=2575000 +b=2575000 +lat_0=90 +lon_0=0 +k=1 +units=m    |
+  |                                                                         |
+  |   South polar:                                                          |
+  |   +proj=stere +a=2575000 +b=2575000 +lat_0=-90 +lon_0=0 +k=1 +units=m   |
+  |                                                                         |
+  | 2. QGIS will reproject the equirectangular raster on-the-fly.           |
+  | 3. Zoom to extent of the layer to see the polar cap.                    |
+  +-------------------------------------------------------------------------+
 
-  ┌─ TEMPORAL ANIMATION IN QGIS ────────────────────────────────────────────┐
-  │ QGIS-LTR ≥ 3.16 has a built-in Temporal Controller:                    │
-  │                                                                          │
-  │ 1. Load ALL 36 GeoTIFFs at once:                                        │
-  │    Layer → Add Layer → Add Raster Layer → select all .tif files         │
-  │                                                                          │
-  │ 2. For each layer, set its time properties:                              │
-  │    Layer → Properties → Temporal                                         │
-  │    Check: "Dynamic temporal control"                                     │
-  │    Layer temporal mode: "Fixed time range"                               │
-  │    Begin / End: enter the epoch time                                     │
-  │    (Use "1950-01-01" + epoch_Gyr×365.25×24×3600 seconds as offset)     │
-  │    NOTE: easier to use the NetCDF in QGIS (see below).                  │
-  │                                                                          │
-  │ 3. View → Panels → Temporal Controller                                  │
-  │    Set animation range and step → click Play                            │
-  │                                                                          │
-  │ EASIER: Load the NetCDF file instead:                                    │
-  │    Layer → Add Layer → Add Mesh Layer → select .nc file                │
-  │    QGIS reads the epoch_Gya dimension as the time axis automatically.   │
-  │    Temporal Controller will step through all 36 epochs natively.        │
-  └────────────────────────────────────────────────────────────────────────┘
+  +- TEMPORAL ANIMATION IN QGIS --------------------------------------------+
+  | QGIS-LTR >= 3.16 has a built-in Temporal Controller:                    |
+  |                                                                         |
+  | 1. Load ALL 36 GeoTIFFs at once:                                        |
+  |    Layer -> Add Layer -> Add Raster Layer -> select all .tif files      |
+  |                                                                         |
+  | 2. For each layer, set its time properties:                             |
+  |    Layer -> Properties -> Temporal                                      |
+  |    Check: "Dynamic temporal control"                                    |
+  |    Layer temporal mode: "Fixed time range"                              |
+  |    Begin / End: enter the epoch time                                    |
+  |    (Use "1950-01-01" + epoch_Gyrx365.25x24x3600 seconds as offset)      |
+  |    NOTE: easier to use the NetCDF in QGIS (see below).                  |
+  |                                                                         |
+  | 3. View -> Panels -> Temporal Controller                                |
+  |    Set animation range and step -> click Play                           |
+  |                                                                         |
+  | EASIER: Load the NetCDF file instead:                                   |
+  |    Layer -> Add Layer -> Add Mesh Layer -> select .nc file              |
+  |    QGIS reads the epoch_Gya dimension as the time axis automatically.   |
+  |    Temporal Controller will step through all 36 epochs natively.        |
+  +-------------------------------------------------------------------------+
 
-  ┌─ ANIMATE WITH THE PRE-RENDERED MP4 ────────────────────────────────────┐
-  │ The MP4 animation requires no QGIS — open with VLC, QuickTime, etc.    │
-  │ It shows: equirectangular global + north polar + south polar             │
-  │ simultaneously across all 36 epochs from −3.5 Gya → +6.5 Gya.         │
-  └────────────────────────────────────────────────────────────────────────┘
+  +- ANIMATE WITH THE PRE-RENDERED MP4 -------------------------------------+
+  | The MP4 animation requires no QGIS -- open with VLC, QuickTime, etc.    |
+  | It shows: equirectangular global + north polar + south polar            |
+  | simultaneously across all 36 epochs from -3.5 Gya -> +6.5 Gya.          |
+  +-------------------------------------------------------------------------+
 """)
 
 
-# ─── Entry point ─────────────────────────────────────────────────────────────
+# --- Entry point -------------------------------------------------------------
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(

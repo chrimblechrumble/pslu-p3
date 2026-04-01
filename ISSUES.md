@@ -36,21 +36,22 @@ from Nantes is either being used minimally or not not being used. Is VIMS data n
 ## Housekeeping
 
 ### Audit code for:
-- [ ] All comments and doc strings shouldn't use characters that are not available on a UK Mac keyboard. Make substitutions as necessary. For example, 
-  - [ ] the ° should be swapped to 'degrees'
-  - [ ] all greek letters α, β, Σ, λ in comments etc should be swaped for expanded names lambda etc. But keep the Greek
+- [x] All comments and doc strings shouldn't use characters that are not available on a UK Mac keyboard. Make substitutions as necessary. For example, 
+  - [x] the ° should be swapped to 'degrees'
+  - [x] the ≈ should be =~
+  - [x] all greek letters α, β, Σ, λ in comments etc should be swaped for expanded names lambda etc. But keep the Greek
   in all equations in thesis, obvs.
 - [ ] local variables without types. I still see many across the codebase
-- [ ] If the unit tests don't use fixture data that is used in the real pipekine, consider changing teh fixture (and 
+- [ ] If the unit tests don't use fixture data that is used in the real pipeline, consider changing teh fixture (and 
 getting rid of the data that is only used by fixtures)
 - [ ] Unused code. Pycharm reports a lot of declared variables that are unused
-- [ ] Comments that refer to bugs in the code that I've fixed should be removed. To be clear, keep comments that refer 
+- [x] Comments that refer to bugs in the code that I've fixed should be removed. To be clear, keep comments that refer 
 to data/library patching/manipulation
 - [ ] Add comments/references to any geometry processing
 - [ ] Create file-level constants for colours expressed as hexadecimals
 - [ ] All comments, methods, class names, variable names and documentation should use British English spelling. 
 - [ ] Is it possible to convert this project to snakemake?
-- [ ] add (c) line to all files and all terminal output, 
+- [x] add (c) line to all files and all terminal output, 
 something like (for code)
  
 

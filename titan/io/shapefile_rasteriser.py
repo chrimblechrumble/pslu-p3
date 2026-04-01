@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/io/shapefile_rasteriser.py
 =================================
@@ -20,30 +35,30 @@ resolution lake outlines with empty-basin distinction):
 Key format facts (verified by direct inspection of real shapefiles):
 
   CRS : GEOGCS["GCS_Titan_2000"], Titan sphere R=2,575,000 m
-        Longitude: EAST-positive, range −180° → +180°
+        Longitude: EAST-positive, range -180 deg -> +180 deg
         *** OPPOSITE to all raster products (which use west-positive) ***
 
   Geometry type : PolygonM (shape type 25 = polygon with measure coordinate)
         geopandas reads these correctly; the M coordinate is ignored.
 
   File structure (Lopes): ONE shapefile per terrain class
-        Craters.shp   → Meta_Terra = 'Cr'  integer_label = 1
-        Dunes.shp     → Meta_Terra = 'Dn'  integer_label = 2
-        Plains_3.shp  → Meta_Terra = 'Pl'  integer_label = 3
-        Basins.shp    → Meta_Terra = 'Ba'  integer_label = 4
-        Mountains.shp → Meta_Terra = 'Mt'  integer_label = 5
-        Labyrinth.shp → Meta_Terra = 'Lb'  integer_label = 6
-        Lakes.shp     → Meta_Terra = 'Lk'  integer_label = 7  (if present)
+        Craters.shp   -> Meta_Terra = 'Cr'  integer_label = 1
+        Dunes.shp     -> Meta_Terra = 'Dn'  integer_label = 2
+        Plains_3.shp  -> Meta_Terra = 'Pl'  integer_label = 3
+        Basins.shp    -> Meta_Terra = 'Ba'  integer_label = 4
+        Mountains.shp -> Meta_Terra = 'Mt'  integer_label = 5
+        Labyrinth.shp -> Meta_Terra = 'Lb'  integer_label = 6
+        Lakes.shp     -> Meta_Terra = 'Lk'  integer_label = 7  (if present)
 
-  Coordinate conversion — PROJ BYPASSED:
-        PROJ silently rejects west-positive longitudes > 180° in its
+  Coordinate conversion -- PROJ BYPASSED:
+        PROJ silently rejects west-positive longitudes > 180 deg in its
         longlat CRS, causing the entire east hemisphere to produce
         all-zeros.  Instead we apply the manual eqc formula to every vertex:
-            lon_west = (−lon_east) % 360
-            x_m = lon_west × (π/180) × R_titan
-            y_m = lat      × (π/180) × R_titan
+            lon_west = (-lon_east) % 360
+            x_m = lon_west x (pi/180) x R_titan
+            y_m = lat      x (pi/180) x R_titan
 
-Rasterisation priority (Lopes — drawn lowest to highest, higher overwrites):
+Rasterisation priority (Lopes -- drawn lowest to highest, higher overwrites):
         Dunes < Plains < Basins < Mountains < Labyrinth < Craters < Lakes
 
 References
@@ -76,8 +91,8 @@ logger: logging.Logger = logging.getLogger(__name__)
 # Lopes+2019 terrain class constants
 # ---------------------------------------------------------------------------
 
-#: Mapping from shapefile stem → (integer_label, Meta_Terra_code).
-#: Labels 1–7 are burned into the canonical geomorphology raster and must
+#: Mapping from shapefile stem -> (integer_label, Meta_Terra_code).
+#: Labels 1-7 are burned into the canonical geomorphology raster and must
 #: match ``configs/pipeline_config.py::TERRAIN_CLASSES``.
 SHAPEFILE_LAYERS: Final[Dict[str, Tuple[int, str]]] = {
     "Craters":   (1, "Cr"),
@@ -89,7 +104,7 @@ SHAPEFILE_LAYERS: Final[Dict[str, Tuple[int, str]]] = {
     "Lakes":     (7, "Lk"),
 }
 
-#: Draw order for Lopes rasterisation — lower index drawn first so higher
+#: Draw order for Lopes rasterisation -- lower index drawn first so higher
 #: priority classes overwrite lower ones.  Lakes (class 7) drawn last.
 RASTER_DRAW_ORDER: Final[List[str]] = [
     "Dunes", "Plains_3", "Basins", "Mountains", "Labyrinth", "Craters", "Lakes",
@@ -109,9 +124,9 @@ TERRAIN_NODATA: Final[int] = 0
 #: Expected layout::
 #:
 #:   data/raw/birch_polar_mapping/
-#:     birch_filled/      ← confirmed present-day liquid (Birch+2017)
-#:     birch_empty/       ← empty basins / paleo-lakes (Birch+2017)
-#:     palermo/           ← alternative mapping (Palermo+2022)
+#:     birch_filled/      <- confirmed present-day liquid (Birch+2017)
+#:     birch_empty/       <- empty basins / paleo-lakes (Birch+2017)
+#:     palermo/           <- alternative mapping (Palermo+2022)
 BIRCH_SUBDIR_FILLED:  Final[str] = "birch_filled"
 BIRCH_SUBDIR_EMPTY:   Final[str] = "birch_empty"
 BIRCH_SUBDIR_PALERMO: Final[str] = "palermo"
@@ -122,9 +137,9 @@ BIRCH_SUBDIR_PALERMO: Final[str] = "palermo"
 #: Class                   Value  Meaning
 #: ======================  =====  ===========================================
 #: ``POLAR_LAKE_NODATA``   0      Outside polar-mapping coverage
-#: ``POLAR_LAKE_FILLED``   1      Confirmed liquid — Birch+2017 filled
-#: ``POLAR_LAKE_EMPTY``    2      Empty basin / paleo-lake — Birch+2017
-#: ``POLAR_LAKE_PALERMO``  3      Confirmed liquid — Palermo+2022
+#: ``POLAR_LAKE_FILLED``   1      Confirmed liquid -- Birch+2017 filled
+#: ``POLAR_LAKE_EMPTY``    2      Empty basin / paleo-lake -- Birch+2017
+#: ``POLAR_LAKE_PALERMO``  3      Confirmed liquid -- Palermo+2022
 #: ======================  =====  ===========================================
 POLAR_LAKE_NODATA:   Final[int] = 0
 POLAR_LAKE_FILLED:   Final[int] = 1
@@ -140,28 +155,28 @@ def east_pos_to_west_pos_deg(lon_east: float) -> float:
     """
     Convert a single longitude from east-positive to west-positive convention.
 
-    Shapefiles use east-positive degrees (−180 → +180).
-    All raster products use west-positive degrees (0 → 360).
+    Shapefiles use east-positive deg (-180 -> +180).
+    All raster products use west-positive deg (0 -> 360).
 
     Parameters
     ----------
     lon_east:
-        Longitude in east-positive degrees.
+        Longitude in east-positive deg.
 
     Returns
     -------
     float
-        Equivalent longitude in west-positive degrees (0 → 360).
+        Equivalent longitude in west-positive deg (0 -> 360).
 
     Examples
     --------
     >>> east_pos_to_west_pos_deg(0.0)
     0.0
-    >>> east_pos_to_west_pos_deg(90.0)   # 90°E = 270°W
+    >>> east_pos_to_west_pos_deg(90.0)   # 90 degE = 270 degW
     270.0
-    >>> east_pos_to_west_pos_deg(-90.0)  # 90°W = 90°W
+    >>> east_pos_to_west_pos_deg(-90.0)  # 90 degW = 90 degW
     90.0
-    >>> east_pos_to_west_pos_deg(180.0)  # 180° = 180°
+    >>> east_pos_to_west_pos_deg(180.0)  # 180 deg = 180 deg
     180.0
     """
     return (-lon_east) % 360.0
@@ -173,7 +188,7 @@ def flip_geodataframe_longitude(
     """
     Convert all geometry coordinates from east-positive to west-positive.
 
-    Applies ``lon_west = (−lon_east) % 360`` to every vertex of every
+    Applies ``lon_west = (-lon_east) % 360`` to every vertex of every
     geometry in the GeoDataFrame.  Handles Point, LineString, Polygon,
     MultiPolygon, and PolygonM geometries.
 
@@ -255,24 +270,24 @@ class GeomorphologyRasteriser:
         **Bypass PROJ entirely** by manually applying the west-positive
         equirectangular projection formula to every geometry vertex:
 
-            x = lon_west_deg × (π/180) × R_titan
-            y = lat_deg       × (π/180) × R_titan
+            x = lon_west_deg x (pi/180) x R_titan
+            y = lat_deg       x (pi/180) x R_titan
 
-        where ``lon_west_deg = (−lon_east_deg) % 360``.
+        where ``lon_west_deg = (-lon_east_deg) % 360``.
 
         This is exact and avoids all PROJ/CRS issues:
 
-        - PROJ's longlat CRS rejects west-positive longitudes > 180°, causing
-          the east hemisphere (180–360°W) to produce all-zeros silently.
+        - PROJ's longlat CRS rejects west-positive longitudes > 180 deg, causing
+          the east hemisphere (180-360 degW) to produce all-zeros silently.
         - The GCS_Titan_2000 CRS embedded in the shapefiles is non-standard
           and PROJ may fail to recognise it, causing ``to_crs()`` to raise
           an exception that is silently skipped.
         - The manual formula is guaranteed correct: it matches the canonical
           grid's west-positive convention exactly (verified by unit tests).
 
-        **Known limitation — seam-straddling polygons:**
+        **Known limitation -- seam-straddling polygons:**
 
-        A polygon whose east-positive longitude range straddles 0°E (= 0°W)
+        A polygon whose east-positive longitude range straddles 0 degE (= 0 degW)
         will have vertices mapped to opposite sides of the canonical grid
         (near col 0 and near col ncols-1).  ``rasterio.rasterize()`` treats
         the polygon as a convex hull in projected metres and fills the interior,
@@ -280,9 +295,9 @@ class GeomorphologyRasteriser:
         small polygon.
 
         This is the same antimeridian problem that affects web mapping.  In
-        practice it affects only polygons whose longitude range crosses 0°E,
+        practice it affects only polygons whose longitude range crosses 0 degE,
         which includes any lake or terrain unit that straddles that meridian.
-        The poles are affected because the 0°E line passes through both polar
+        The poles are affected because the 0 degE line passes through both polar
         cap regions.  Large polygon datasets (Lopes, Birch) generally contain
         a handful of such features.
 
@@ -294,9 +309,9 @@ class GeomorphologyRasteriser:
         scientifically inconsequential at the 4490 m/px canonical resolution.
 
         Canonical grid coordinate convention (from CanonicalGrid):
-            west_m = 0          → col 0 = 0°W
-            x increases right   → increasing °W (west-positive)
-            col = x / dx_m      where x = lon_west_deg × (π/180) × R
+            west_m = 0          -> col 0 = 0 degW
+            x increases right   -> increasing  degW (west-positive)
+            col = x / dx_m      where x = lon_west_deg x (pi/180) x R
 
         Parameters
         ----------
@@ -312,7 +327,7 @@ class GeomorphologyRasteriser:
             Integer array of shape ``output_shape``, dtype int16.
             Values: 0=nodata, 1=Craters, 2=Dunes, 3=Plains, 4=Basins,
             5=Mountains, 6=Labyrinth, 7=Lakes.
-            Longitude convention: west-positive 0→360°W left to right.
+            Longitude convention: west-positive 0->360 degW left to right.
         """
         import math
         import geopandas as gpd
@@ -324,24 +339,24 @@ class GeomorphologyRasteriser:
         draw_order = layers if layers is not None else RASTER_DRAW_ORDER
         nrows, ncols = self.output_shape
 
-        # Scale factor: 1 degree → metres on the Titan sphere
+        # Scale factor: 1 degree -> metres on the Titan sphere
         deg_to_m = math.pi * TITAN_RADIUS_M / 180.0
 
         def _to_canonical_metres(
             lon_east_deg: float, lat_deg: float, *extra
         ) -> tuple:
             """
-            Convert one (lon_east°, lat°) vertex to canonical (x_m, y_m).
+            Convert one (lon_east deg, lat deg) vertex to canonical (x_m, y_m).
 
-            The canonical grid is west-positive: x = lon_west × deg_to_m.
-            lon_west = (−lon_east) % 360 maps any east-positive longitude
+            The canonical grid is west-positive: x = lon_west x deg_to_m.
+            lon_west = (-lon_east) % 360 maps any east-positive longitude
             into the [0, 360) west-positive range, then scales to metres.
 
             Examples
             --------
-            lon_east=0°E   → lon_west=0°W   → x=0 (col 0)
-            lon_east=90°E  → lon_west=270°W → x=3π/4*R (col 3*ncols//4)
-            lon_east=-90°E → lon_west=90°W  → x=π/4*R  (col ncols//4)
+            lon_east=0 degE   -> lon_west=0 degW   -> x=0 (col 0)
+            lon_east=90 degE  -> lon_west=270 degW -> x=3pi/4*R (col 3*ncols//4)
+            lon_east=-90 degE -> lon_west=90 degW  -> x=pi/4*R  (col ncols//4)
             """
             lon_west = (-lon_east_deg) % 360.0
             x = lon_west * deg_to_m
@@ -357,7 +372,7 @@ class GeomorphologyRasteriser:
                 continue
 
             label = SHAPEFILE_LAYERS.get(stem, (0, "?"))[0]
-            logger.info("Rasterising %s → class %d", stem, label)
+            logger.info("Rasterising %s -> class %d", stem, label)
 
             try:
                 gdf = gpd.read_file(shp)
@@ -392,7 +407,7 @@ class GeomorphologyRasteriser:
                 continue
 
             # Burn into the canvas using the canonical transform.
-            # The canonical transform maps (x_m, y_m) → (col, row).
+            # The canonical transform maps (x_m, y_m) -> (col, row).
             try:
                 burned = rasterize(
                     shapes=transformed_geoms,
@@ -471,7 +486,7 @@ def load_shapefile_west_positive(
     Returns
     -------
     geopandas.GeoDataFrame
-        GeoDataFrame with west-positive longitude (0 → 360°).
+        GeoDataFrame with west-positive longitude (0 -> 360 deg).
         Geometry type: Polygon (M-coordinate stripped).
     """
     import geopandas as gpd
@@ -500,7 +515,7 @@ def terrain_class_name(integer_label: int) -> str:
     Parameters
     ----------
     integer_label:
-        Integer from 0–7.  0 = nodata; 1–7 = terrain classes.
+        Integer from 0-7.  0 = nodata; 1-7 = terrain classes.
 
     Returns
     -------
@@ -527,7 +542,7 @@ def polar_lake_class_name(label: int) -> str:
     Parameters
     ----------
     label:
-        Integer polar-lake label (0–3) as stored in the canonical
+        Integer polar-lake label (0-3) as stored in the canonical
         polar-lake raster.
 
     Returns
@@ -567,10 +582,10 @@ class PolarLakeRasteriser:
 
     Output raster integer labels
     ----------------------------
-    POLAR_LAKE_NODATA  (0) — outside polar-mapping coverage
-    POLAR_LAKE_FILLED  (1) — confirmed present-day liquid (Birch+2017 filled)
-    POLAR_LAKE_EMPTY   (2) — empty basin / paleo-lake (Birch+2017 empty)
-    POLAR_LAKE_PALERMO (3) — confirmed liquid, Palermo+2022 alternative mapping
+    POLAR_LAKE_NODATA  (0) -- outside polar-mapping coverage
+    POLAR_LAKE_FILLED  (1) -- confirmed present-day liquid (Birch+2017 filled)
+    POLAR_LAKE_EMPTY   (2) -- empty basin / paleo-lake (Birch+2017 empty)
+    POLAR_LAKE_PALERMO (3) -- confirmed liquid, Palermo+2022 alternative mapping
 
     Draw order: empty basins first, then Birch filled, then Palermo.
     Palermo (label 3) therefore takes precedence over Birch filled (label 1)
@@ -582,7 +597,7 @@ class PolarLakeRasteriser:
         evaporites at the shoreline.  This is the environment proposed by
         Mayer & Nixon (2025) for vesicle / protocell formation.  These pixels
         are captured in the ``paleo_lake_indicator`` sub-component of
-        Feature 5 (surface–atmosphere interaction) and as a standalone
+        Feature 5 (surface-atmosphere interaction) and as a standalone
         feature in the future-epoch model.
 
     Parameters
@@ -622,7 +637,7 @@ class PolarLakeRasteriser:
         self.output_crs:       "rasterio.crs.CRS | str"     = output_crs
         self.titan_radius_m:   float                        = titan_radius_m
 
-    # ── public ───────────────────────────────────────────────────────────────
+    # -- public ---------------------------------------------------------------
 
     def is_available(self) -> bool:
         """
@@ -651,7 +666,7 @@ class PolarLakeRasteriser:
         """
         Load Birch/Palermo shapefiles and burn them into a polar-lake raster.
 
-        Each sub-directory is processed in draw order (empty → filled →
+        Each sub-directory is processed in draw order (empty -> filled ->
         Palermo) so higher-priority classes overwrite lower ones.
 
         Parameters
@@ -676,13 +691,13 @@ class PolarLakeRasteriser:
 
         if not self.is_available() and self.birch_dir is not None:
             logger.info(
-                "Birch dataset not available at %s — polar_lakes raster "
+                "Birch dataset not available at %s -- polar_lakes raster "
                 "will be all-zeros.  See INSTALL.md for download instructions.",
                 self.birch_dir,
             )
         elif self.birch_dir is None:
             logger.info(
-                "birch_dir not configured — polar_lakes raster will be "
+                "birch_dir not configured -- polar_lakes raster will be "
                 "all-zeros (no Birch data)."
             )
 
@@ -698,17 +713,17 @@ class PolarLakeRasteriser:
                     continue
                 subdir: Path = self.birch_dir / subdir_name
                 if not subdir.exists():
-                    logger.warning(
+                    logger.debug(
                         "Birch sub-directory absent, skipping: %s", subdir
                     )
                     continue
                 shapefiles: List[Path] = sorted(subdir.glob("*.shp"))
                 if not shapefiles:
-                    logger.warning("No .shp files in %s", subdir)
+                    logger.debug("No .shp files in %s", subdir)
                     continue
                 logger.info(
                     "Rasterising Birch layer '%s' (label=%d) "
-                    "from %d file(s)…",
+                    "from %d file(s)...",
                     subdir_name, label, len(shapefiles),
                 )
                 canvas = self._burn_layer(canvas, shapefiles, label)
@@ -727,7 +742,7 @@ class PolarLakeRasteriser:
 
         return canvas
 
-    # ── internal helpers ──────────────────────────────────────────────────────
+    # -- internal helpers ------------------------------------------------------
 
     def _burn_layer(
         self,
@@ -765,7 +780,7 @@ class PolarLakeRasteriser:
         def _to_canonical(
             lon_east: float, lat: float, *extra: float
         ) -> Tuple[float, ...]:
-            """Convert (lon_east°, lat°) → canonical west-positive metres."""
+            """Convert (lon_east deg, lat deg) -> canonical west-positive metres."""
             return ((-lon_east) % 360.0 * deg_to_m, lat * deg_to_m) + extra
 
         all_geoms: List[Tuple["shapely.geometry.base.BaseGeometry", int]] = []
@@ -801,7 +816,7 @@ class PolarLakeRasteriser:
 
         if not all_geoms:
             logger.warning(
-                "No valid geometries for label %d — canvas unchanged", label
+                "No valid geometries for label %d -- canvas unchanged", label
             )
             return canvas
 

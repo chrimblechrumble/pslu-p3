@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 tests/test_vims_io.py
 ======================
@@ -6,22 +21,22 @@ that are NOT URL helpers (those are in test_vims_urls.py).
 
 Coverage:
   VIMSFootprintIndex
-    load()                    — requires pyarrow (skipif absent)
-    df property               — in-memory
-    cubes_covering_region()   — in-memory
-    get_download_urls()       — in-memory
-    coverage_map()            — in-memory  (north-up, normalisation, shape)
-    best_resolution_map()     — in-memory  (min-res, NaN coverage, north-up)
-    flyby_count_map()         — in-memory  (distinct flybys, north-up)
-    summary()                 — in-memory
+    load()                    -- requires pyarrow (skipif absent)
+    df property               -- in-memory
+    cubes_covering_region()   -- in-memory
+    get_download_urls()       -- in-memory
+    coverage_map()            -- in-memory  (north-up, normalisation, shape)
+    best_resolution_map()     -- in-memory  (min-res, NaN coverage, north-up)
+    flyby_count_map()         -- in-memory  (distinct flybys, north-up)
+    summary()                 -- in-memory
 
   VIMSCubeDownloader
-    download_cube()           — mocked HTTP (unittest.mock)
-    download_batch()          — mocked HTTP
-    download_preview()        — mocked HTTP
-    _fetch()                  — mocked HTTP
+    download_cube()           -- mocked HTTP (unittest.mock)
+    download_batch()          -- mocked HTTP
+    download_preview()        -- mocked HTTP
+    _fetch()                  -- mocked HTTP
 
-  read_navigation_cube()      — requires rasterio (skipif absent)
+  read_navigation_cube()      -- requires rasterio (skipif absent)
 
 Synthetic parquet files and mock HTTP responses are used throughout.
 No real Cassini data or network access is required.
@@ -325,25 +340,25 @@ class TestCoverageMap:
         assert abs(out.max() - 1.0) < 1e-5
 
     def test_north_up_row0_is_north(self) -> None:
-        """Row 0 corresponds to the north (+90°). Footprint at lat=+80 → top rows."""
+        """Row 0 corresponds to the north (+90 deg). Footprint at lat=+80 -> top rows."""
         df = make_footprint_df(n=1)
         df["lon"] = 10.0
         df["lat"] = 80.0
         idx = make_index(df)
         out = idx.coverage_map(18, 36)
-        northern_rows = out[:3, :]    # rows 0-2: lat 90°→60°
-        southern_rows = out[12:, :]   # rows 12-17: lat ~20°→-90°
-        assert northern_rows.sum() > 0, "Footprint at +80° should land in top rows"
+        northern_rows = out[:3, :]    # rows 0-2: lat 90 deg->60 deg
+        southern_rows = out[12:, :]   # rows 12-17: lat ~20 deg->-90 deg
+        assert northern_rows.sum() > 0, "Footprint at +80 deg should land in top rows"
         assert southern_rows.sum() == 0
 
     def test_south_footprint_in_bottom_rows(self) -> None:
-        """Footprint at lat=−80° ends up in the bottom rows."""
+        """Footprint at lat=-80 deg ends up in the bottom rows."""
         df = make_footprint_df(n=1)
         df["lon"] = 180.0
         df["lat"] = -80.0
         idx = make_index(df)
         out = idx.coverage_map(18, 36)
-        assert out[15:, :].sum() > 0, "lat=−80 should be in bottom rows"
+        assert out[15:, :].sum() > 0, "lat=-80 should be in bottom rows"
         assert out[:3, :].sum() == 0
 
     def test_empty_df_all_zeros(self) -> None:
@@ -379,7 +394,7 @@ class TestBestResolutionMap:
         assert out.dtype == np.float32
 
     def test_uncovered_pixels_are_nan(self) -> None:
-        """Pixels with no observations → NaN."""
+        """Pixels with no observations -> NaN."""
         df = make_footprint_df(n=1)
         df["lon"] = 10.0; df["lat"] = 10.0; df["res"] = 5.0
         idx = make_index(df)
@@ -407,7 +422,7 @@ class TestBestResolutionMap:
             f"Expected min resolution 5.0, got {finite.min()}"
 
     def test_north_up_orientation(self) -> None:
-        """Footprint at lat=+75° lands in the top rows (row 0 = +90°)."""
+        """Footprint at lat=+75 deg lands in the top rows (row 0 = +90 deg)."""
         df = pd.DataFrame({
             "id": ["a"], "flyby": ["TA"],
             "obs_start": pd.to_datetime(["2004-10-26"]),
@@ -417,7 +432,7 @@ class TestBestResolutionMap:
         idx = make_index(df)
         out = idx.best_resolution_map(18, 36)
         assert np.any(np.isfinite(out[:4, :])), \
-            "lat=+75° footprint should appear in rows 0-3 (north)"
+            "lat=+75 deg footprint should appear in rows 0-3 (north)"
         assert not np.any(np.isfinite(out[14:, :])), \
             "No footprints near south"
 
@@ -459,7 +474,7 @@ class TestFlybyCountMap:
         assert zero_fraction > 0.9
 
     def test_counts_distinct_flybys(self) -> None:
-        """Two rows from same flyby in one cell → count = 1, not 2."""
+        """Two rows from same flyby in one cell -> count = 1, not 2."""
         df = pd.DataFrame({
             "id": ["a", "b"], "flyby": ["TA", "TA"],
             "obs_start": pd.to_datetime(["2004-10-26"] * 2),
@@ -485,10 +500,10 @@ class TestFlybyCountMap:
         })
         idx = make_index(df)
         out = idx.flyby_count_map(18, 36)
-        assert out.max() >= 2, "Two different flybys should give count ≥ 2"
+        assert out.max() >= 2, "Two different flybys should give count >= 2"
 
     def test_north_up_orientation(self) -> None:
-        """Footprint at lat=+80° lands in northern rows."""
+        """Footprint at lat=+80 deg lands in northern rows."""
         df = pd.DataFrame({
             "id": ["a"], "flyby": ["TA"],
             "obs_start": pd.to_datetime(["2004-10-26"]),
@@ -554,7 +569,7 @@ def _make_mock_response(content: bytes = b"FAKE_DATA", status: int = 200,
 
 
 class TestVIMSCubeDownloaderFetch:
-    """Tests for VIMSCubeDownloader._fetch() — the raw HTTP layer."""
+    """Tests for VIMSCubeDownloader._fetch() -- the raw HTTP layer."""
 
     def test_fetch_writes_file(self, tmp_path: Path) -> None:
         """_fetch writes content to dest."""
@@ -741,9 +756,9 @@ def _make_synthetic_nav_cube(path: Path, nrows: int = 4, ncols: int = 8) -> Any:
 
     Band 1: Latitude       (-90 to +90, varies by row)
     Band 2: Longitude E    (-180 to +180)
-    Band 3: Incidence      (constant 30°)
-    Band 4: Emission       (constant 10°)
-    Band 5: Phase          (constant 40°)
+    Band 3: Incidence      (constant 30 deg)
+    Band 4: Emission       (constant 10 deg)
+    Band 5: Phase          (constant 40 deg)
     Band 6: Resolution     (constant 5.0 km/px)
     """
     import rasterio
@@ -812,7 +827,7 @@ class TestReadNavigationCube:
 
     @_NEED_RASTERIO
     def test_lat_in_range(self, tmp_path: Path) -> None:
-        """Latitude values are in [−90, +90]."""
+        """Latitude values are in [-90, +90]."""
         nav = tmp_path / "N1234_ir.cub"
         _make_synthetic_nav_cube(nav)
         result = read_navigation_cube(nav)
@@ -836,7 +851,7 @@ class TestReadNavigationCube:
 
     @_NEED_RASTERIO
     def test_lon_west_is_neg_lon_east_mod_360(self, tmp_path: Path) -> None:
-        """lon_west = (−lon_east) % 360 for all finite pixels."""
+        """lon_west = (-lon_east) % 360 for all finite pixels."""
         nav = tmp_path / "N1234_ir.cub"
         _make_synthetic_nav_cube(nav)
         result = read_navigation_cube(nav)
@@ -863,7 +878,7 @@ class TestVIMSParquetIntegration:
     Integration tests against a real VIMS footprint parquet file.
 
     These tests run against either the full catalogue (~227 MB, ~5.4M rows)
-    or the 1,000-row development sample (43 KB) — both are accepted.
+    or the 1,000-row development sample (43 KB) -- both are accepted.
     Skipped automatically when no parquet is found in tests/fixtures/vims/.
     """
 
@@ -911,7 +926,7 @@ class TestVIMSParquetIntegration:
           - correct shape
           - values in [0, 1]
           - at least some non-zero coverage
-          - north-up orientation: lat=+70° coverage in top rows
+          - north-up orientation: lat=+70 deg coverage in top rows
         """
         idx = VIMSFootprintIndex(vims_parquet_path)
         out = idx.coverage_map(nrows=18, ncols=36)
@@ -919,15 +934,15 @@ class TestVIMSParquetIntegration:
         assert out.shape == (18, 36)
         assert out.min() >= 0.0
         assert out.max() <= 1.0 + 1e-6
-        assert out.max() > 0.0, "Coverage map is all zeros — check parquet content"
+        assert out.max() > 0.0, "Coverage map is all zeros -- check parquet content"
 
-        # North polar region (rows 0-3, lat >60°) should have high coverage
+        # North polar region (rows 0-3, lat >60 deg) should have high coverage
         # because VIMS observed Titan's north polar lakes extensively
         north_coverage = out[:3, :].mean()
         south_coverage = out[15:, :].mean()
         # North pole has more observations than south for most of the mission
         # (this may not hold for a 1000-row sample, so only assert if full file)
-        if vims_parquet_path.stat().st_size > 1_000_000:  # >1 MB → not sample
+        if vims_parquet_path.stat().st_size > 1_000_000:  # >1 MB -> not sample
             assert north_coverage > south_coverage, \
                 "Expected higher north-polar VIMS coverage (lakes region)"
 

@@ -13,6 +13,8 @@ Although this project refers to many research papers, they are not presented her
 
 The current posterior-probability maps for different epochs are presented [here](key_epochs_poster.png) .
 
-The current posterior-probability video across epochs is presented [here](docs/titan_habitability_animation.mp4) 
+The current posterior-probability video across epochs: 
+
+https://github.com/chrimblechrumble/pslu-p3/blob/main/titan_habitability_animation.mp4
 
 Use of this code is subject to the license in [LICENSE.md](LICENSE.md). It is GPL v3.

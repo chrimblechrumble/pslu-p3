@@ -1,7 +1,7 @@
 # Titan Habitability Pipeline - Outstanding Issues in current commit
 
 ## Improvements
-- [ ] cirs_temperature is based on present day only. What can be done for modelling other epochs?
+- [x] cirs_temperature is based on present day only. What can be done for modelling other epochs?
 - [ ] how to use the /palermo mappings/shapefiles. Which ones are they in the Birch dataset?
 
 ## Video/static frames

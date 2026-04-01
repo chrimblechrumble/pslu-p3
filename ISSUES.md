@@ -32,6 +32,7 @@ change is two frames later.
 is not dotted (see e.g. frame 65). There is inconsistency going on. 
 - [ ] Investigate how VIMS parquet file is being used; it's just an index. The code to pull in actual cubes 
 from Nantes is either being used minimally or not not being used. Is VIMS data not useful?
+- [ ] What does ' organic flux to ocean ~1 elephant/year' mean in the subsurface_ocean prior_mean?
 
 ## Housekeeping
 

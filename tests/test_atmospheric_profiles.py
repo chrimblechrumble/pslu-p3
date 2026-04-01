@@ -35,9 +35,6 @@ from titan.atmospheric_profiles import (
     jennings_surface_temperature,
     jennings_temperature_map,
     jennings_temperature_grid,
-    schinder_temperature_at_altitude,
-    schinder_mean_profile,
-    SCHINDER_PROFILES,
     HASI_NEAR_SURFACE,
     _TITAN_EQUINOX_YEAR,
 )
@@ -221,128 +218,17 @@ class TestJenningsFormula:
 
 # ============================================================================
 # 2.  Schinder et al. (2011) radio occultation profiles
+
 # ============================================================================
-
-class TestSchinderProfiles:
-    """Tests for the embedded Schinder et al. (2011) T(z) profiles."""
-
-    def test_all_four_soundings_present(self) -> None:
-        expected = {"T12_ingress", "T12_egress", "T14_ingress", "T14_egress"}
-        assert set(SCHINDER_PROFILES.keys()) == expected
-
-    def test_each_profile_has_required_keys(self) -> None:
-        for name, prof in SCHINDER_PROFILES.items():
-            for key in ("latitude", "local_time", "altitude_km", "T_K", "P_mbar"):
-                assert key in prof, f"Profile {name} missing key '{key}'"
-
-    def test_altitude_arrays_are_monotonically_increasing(self) -> None:
-        for name, prof in SCHINDER_PROFILES.items():
-            alts = prof["altitude_km"]
-            assert all(a < b for a, b in zip(alts, alts[1:])), (
-                f"Altitudes not monotone in {name}"
-            )
-
-    def test_all_profiles_span_0_to_300km(self) -> None:
-        for name, prof in SCHINDER_PROFILES.items():
-            assert prof["altitude_km"][0]  == 0.0,   f"{name}: should start at 0 km"
-            assert prof["altitude_km"][-1] == 300.0, f"{name}: should end at 300 km"
-
-    def test_array_lengths_match(self) -> None:
-        for name, prof in SCHINDER_PROFILES.items():
-            n = len(prof["altitude_km"])
-            assert len(prof["T_K"])   == n, f"{name}: T_K length mismatch"
-            assert len(prof["P_mbar"]) == n, f"{name}: P_mbar length mismatch"
-
-    def test_surface_temperatures_near_93K(self) -> None:
-        """Surface temperatures (0 km) should all be ~93 K."""
-        for name, prof in SCHINDER_PROFILES.items():
-            T_surf = prof["T_K"][0]
-            assert 91.5 <= T_surf <= 94.5, (
-                f"{name}: surface T={T_surf:.2f} K, expected ~93 K"
-            )
-
-    def test_latitudes_correct(self) -> None:
-        """Check published latitude values from Table 1 of Schinder 2011."""
-        assert abs(SCHINDER_PROFILES["T12_ingress"]["latitude"] - 31.4) < 0.1
-        assert abs(SCHINDER_PROFILES["T12_egress" ]["latitude"] - 52.8) < 0.1
-        assert abs(SCHINDER_PROFILES["T14_ingress"]["latitude"] - 32.7) < 0.1
-        assert abs(SCHINDER_PROFILES["T14_egress" ]["latitude"] - 34.3) < 0.1
-
-    def test_tropopause_temperatures_near_70K(self) -> None:
-        """Tropopause (~40 km) should be ~70 K for all soundings."""
-        for name, prof in SCHINDER_PROFILES.items():
-            alts = prof["altitude_km"]
-            T_at_40 = np.interp(40.0, alts, prof["T_K"])
-            assert 68.0 <= T_at_40 <= 72.5, (
-                f"{name}: T at 40 km = {T_at_40:.2f} K, expected ~70 K"
-            )
-
-    def test_stratopause_temperatures_near_185K(self) -> None:
-        """Stratopause (300 km starting value from CIRS) should be ~185 K."""
-        for name, prof in SCHINDER_PROFILES.items():
-            T_300 = prof["T_K"][-1]
-            assert abs(T_300 - 185.0) < 1.0, (
-                f"{name}: T at 300 km = {T_300:.2f} K, expected 185 K"
-            )
-
-    def test_pressure_monotonically_decreasing(self) -> None:
-        for name, prof in SCHINDER_PROFILES.items():
-            P = prof["P_mbar"]
-            assert all(a > b for a, b in zip(P, P[1:])), (
-                f"Pressure not monotone decreasing in {name}"
-            )
-
-    def test_surface_pressure_near_1500_mbar(self) -> None:
-        """Surface pressure ~1470-1500 mbar for Titan (Fulchignoni 2005)."""
-        for name, prof in SCHINDER_PROFILES.items():
-            P_surf = prof["P_mbar"][0]
-            assert 1450 <= P_surf <= 1510, (
-                f"{name}: surface P={P_surf:.1f} mbar, expected ~1470-1500"
-            )
-
-    def test_T12_egress_is_coldest_at_surface(self) -> None:
-        """
-        T12 egress probes 52.8 degS -- the highest latitude of the four soundings.
-        Should give the coldest surface temperature (~92.5 K).
-        """
-        T_surfaces = {
-            name: prof["T_K"][0] for name, prof in SCHINDER_PROFILES.items()
-        }
-        assert T_surfaces["T12_egress"] == min(T_surfaces.values()), (
-            f"T12 egress (52.8 degS) should be coldest: {T_surfaces}"
-        )
-
-    def test_interpolation_within_range(self) -> None:
-        T = schinder_temperature_at_altitude(50.0, "T14_ingress")
-        assert 68 <= T <= 73, f"T at 50 km expected ~70 K, got {T:.2f}"
-
-    def test_interpolation_out_of_range_returns_nan(self) -> None:
-        T = schinder_temperature_at_altitude(350.0, "T12_ingress")
-        assert math.isnan(T), "Alt>300 km should return NaN"
-
-        T = schinder_temperature_at_altitude(-5.0, "T12_ingress")
-        assert math.isnan(T), "Negative alt should return NaN"
-
-    def test_mean_profile_shape_and_values(self) -> None:
-        alts, T_mean = schinder_mean_profile()
-        assert alts.shape == T_mean.shape
-        assert T_mean.dtype == np.float32
-        # Surface mean should be ~93 K
-        assert 91.5 <= float(T_mean[0]) <= 94.5
-        # Tropopause mean should be ~70 K
-        T_tropo = float(np.interp(40.0, alts, T_mean))
-        assert 68 <= T_tropo <= 72
-
-    def test_custom_altitude_grid_for_mean_profile(self) -> None:
-        custom_alts = np.array([0.0, 10.0, 40.0, 100.0, 200.0])
-        alts_out, T_mean = schinder_mean_profile(custom_alts)
-        assert np.allclose(alts_out, custom_alts)
-        assert len(T_mean) == len(custom_alts)
-        # 0 km ~93 K, 40 km ~70 K, 200 km ~170 K
-        assert 91 <= float(T_mean[0]) <= 95
-        assert 68 <= float(T_mean[2]) <= 73
-        assert 160 <= float(T_mean[4]) <= 180
-
+# 2.  Cross-source consistency
+# ============================================================================
+# Note: The Schinder et al. (2011) radio occultation T(z) profile data were
+# removed from atmospheric_profiles.py because vertical soundings at four
+# southern mid-latitude points cannot produce the 2-D surface map the pipeline
+# requires.  The one scientifically useful check those profiles enabled --
+# confirming Jennings gives a physically plausible surface temperature at the
+# same location and epoch -- is preserved below using the published value
+# directly.
 
 # ============================================================================
 # 3.  HASI near-surface profile
@@ -373,17 +259,26 @@ class TestHASIProfile:
 class TestCrossSourceConsistency:
     """Cross-checks that the three data sources agree in their overlap."""
 
-    def test_jennings_and_schinder_agree_at_surface_31S(self) -> None:
+    def test_jennings_agrees_with_schinder_surface_t12_ingress(self) -> None:
         """
-        Schinder T12 ingress (31.4 degS) gives ~93.1 K at surface.
-        Jennings at 2006.21 (T12 flyby date: 19 March 2006) at 31.4 degS:
-        should agree within +/-1 K.
+        Cross-check: Jennings (2019) surface T at 31.4 degS in 2006 should
+        agree with the independently measured value from Schinder et al. (2011)
+        radio occultation T12 ingress sounding.
+
+        Published value: T12 ingress surface (31.4 degS, T12 flyby 19 Mar 2006)
+        = 93.14 K  (Schinder 2011, Icarus 215, Table 2, altitude = 0 km).
+
+        Jennings is fit to CIRS broadband brightness temperatures; Schinder uses
+        radio occultation refractivity.  Agreement within 1.5 K confirms both
+        datasets describe the same physical surface temperature.
         """
-        T_schinder = SCHINDER_PROFILES["T12_ingress"]["T_K"][0]
-        T_jennings = jennings_surface_temperature(-31.4, 2006.21)
-        assert abs(T_schinder - T_jennings) < 1.5, (
-            f"T12 ingress surface: Schinder={T_schinder:.2f}, "
-            f"Jennings={T_jennings:.2f}, diff={abs(T_schinder-T_jennings):.2f} K"
+        # Hard-coded from Schinder 2011 Icarus 215 Table 2 (altitude = 0 km)
+        T_schinder_surface: float = 93.14  # K, T12 ingress, 31.4 degS
+        T_jennings: float = jennings_surface_temperature(-31.4, 2006.21)
+        assert abs(T_schinder_surface - T_jennings) < 1.5, (
+            f"Jennings={T_jennings:.2f} K disagrees with Schinder T12 ingress "
+            f"surface value {T_schinder_surface:.2f} K by "
+            f"{abs(T_schinder_surface-T_jennings):.2f} K (tolerance 1.5 K)"
         )
 
     def test_jennings_and_hasi_agree_at_10S_2005(self) -> None:

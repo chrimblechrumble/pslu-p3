@@ -1,19 +1,34 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 tests/test_shapefile_rasteriser.py
 ====================================
 Unit tests for titan/io/shapefile_rasteriser.py.
 
 Covers every public function and class:
-  east_pos_to_west_pos_deg()    — pure Python, no deps
-  terrain_class_name()          — pure Python, no deps
-  SHAPEFILE_LAYERS catalogue    — constants, no deps
-  RASTER_DRAW_ORDER             — constants, no deps
-  flip_geodataframe_longitude() — requires geopandas (skipif absent)
-  GeomorphologyRasteriser       — requires geopandas + rasterio (skipif absent)
-  load_shapefile_west_positive()— requires geopandas (skipif absent)
+  east_pos_to_west_pos_deg()    -- pure Python, no deps
+  terrain_class_name()          -- pure Python, no deps
+  SHAPEFILE_LAYERS catalogue    -- constants, no deps
+  RASTER_DRAW_ORDER             -- constants, no deps
+  flip_geodataframe_longitude() -- requires geopandas (skipif absent)
+  GeomorphologyRasteriser       -- requires geopandas + rasterio (skipif absent)
+  load_shapefile_west_positive()-- requires geopandas (skipif absent)
 
 Synthetic shapefiles are created in temporary directories for tests
-that require geopandas/rasterio — no real Cassini data needed.
+that require geopandas/rasterio -- no real Cassini data needed.
 """
 
 from __future__ import annotations
@@ -66,13 +81,13 @@ def _all_xs(geom: Any) -> list:
             xs.extend(_all_xs(part))   # recurse into sub-geometries
         return xs
     else:
-        # Point, LineString, etc. — return empty list
+        # Point, LineString, etc. -- return empty list
         return []
 
 
 def _make_polygon_gdf(lon_east: float, lat: float, size: float = 5.0,
                        meta_terra: str = "Cr") -> Any:
-    """Create a single-polygon GeoDataFrame in east-positive degrees."""
+    """Create a single-polygon GeoDataFrame in east-positive deg."""
     geopandas = pytest.importorskip("geopandas")
     from shapely.geometry import Polygon
     poly = Polygon([
@@ -110,7 +125,7 @@ def _write_shapefile(td: Path, stem: str, lon_east: float, lat: float,
 # ===========================================================================
 
 class TestEastToWestConversion:
-    """Exhaustive tests for the east-positive → west-positive conversion."""
+    """Exhaustive tests for the east-positive -> west-positive conversion."""
 
     def test_prime_meridian(self) -> None:
         assert east_pos_to_west_pos_deg(0.0) == pytest.approx(0.0)
@@ -134,26 +149,26 @@ class TestEastToWestConversion:
         assert east_pos_to_west_pos_deg(-45.0) == pytest.approx(45.0)
 
     def test_kraken_mare(self) -> None:
-        """Kraken Mare is ~50°E → 310°W (west-positive)."""
+        """Kraken Mare is ~50 degE -> 310 degW (west-positive)."""
         assert east_pos_to_west_pos_deg(50.0) == pytest.approx(310.0)
 
     def test_huygens_landing(self) -> None:
-        """Huygens landing is at 192.3°W (west-positive).
-        192°W = 168°E (east-positive): (−168) % 360 = 192°W."""
+        """Huygens landing is at 192.3 degW (west-positive).
+        192 degW = 168 degE (east-positive): (-168) % 360 = 192 degW."""
         assert east_pos_to_west_pos_deg(168.0) == pytest.approx(192.0)
 
     def test_selk_crater(self) -> None:
-        """Selk crater (Dragonfly target) is at 199°W (west-positive).
-        199°W = 161°E (east-positive): (−161) % 360 = 199°W."""
+        """Selk crater (Dragonfly target) is at 199 degW (west-positive).
+        199 degW = 161 degE (east-positive): (-161) % 360 = 199 degW."""
         assert east_pos_to_west_pos_deg(161.0) == pytest.approx(199.0)
 
     def test_output_always_in_range(self) -> None:
         for v in np.linspace(-180.0, 180.0, 721):
             w = east_pos_to_west_pos_deg(float(v))
-            assert 0.0 <= w < 360.0, f"Out of range: lon_east={v} → {w}"
+            assert 0.0 <= w < 360.0, f"Out of range: lon_east={v} -> {w}"
 
     def test_double_application_is_self_inverse(self) -> None:
-        """(−(−lon) % 360) = lon % 360 — applying twice returns to start."""
+        """(-(-lon) % 360) = lon % 360 -- applying twice returns to start."""
         for lon in (-170.0, -90.0, 0.0, 45.0, 90.0, 165.0):
             w1 = east_pos_to_west_pos_deg(lon)
             w2 = east_pos_to_west_pos_deg(w1)
@@ -165,7 +180,7 @@ class TestEastToWestConversion:
         assert result == pytest.approx(360.0 - 123.456, abs=1e-9)
 
     def test_exactly_360_wraps_to_zero(self) -> None:
-        """360°E maps to 0°W."""
+        """360 degE maps to 0 degW."""
         assert east_pos_to_west_pos_deg(360.0) == pytest.approx(0.0)
 
 
@@ -277,7 +292,7 @@ class TestFlipGeoDataFrameLongitude:
 
     @_NEED_GEOPANDAS
     def test_point_90E_becomes_270W(self) -> None:
-        """Polygon centred at 90°E → vertices near 270°W."""
+        """Polygon centred at 90 degE -> vertices near 270 degW."""
         from titan.io.shapefile_rasteriser import flip_geodataframe_longitude
         gdf = _make_polygon_gdf(lon_east=90.0, lat=0.0, size=1.0)
         flipped = flip_geodataframe_longitude(gdf)
@@ -291,7 +306,7 @@ class TestFlipGeoDataFrameLongitude:
         gdf = _make_polygon_gdf(lon_east=30.0, lat=10.0, size=5.0)
         flipped = flip_geodataframe_longitude(gdf)
         xs = _all_xs(flipped.geometry.iloc[0])
-        # 30±5°E → 325–335°W
+        # 30+/-5 degE -> 325-335 degW
         assert all(320 <= x <= 340 for x in xs), f"Unexpected lons: {xs}"
 
     @_NEED_GEOPANDAS
@@ -307,7 +322,7 @@ class TestFlipGeoDataFrameLongitude:
 
     @_NEED_GEOPANDAS
     def test_antimeridian_crossing_valid(self) -> None:
-        """Polygon near −180°E produces valid west-positive coords."""
+        """Polygon near -180 degE produces valid west-positive coords."""
         from titan.io.shapefile_rasteriser import flip_geodataframe_longitude
         gdf = _make_polygon_gdf(lon_east=-178.0, lat=10.0, size=3.0)
         flipped = flip_geodataframe_longitude(gdf)
@@ -379,7 +394,7 @@ class TestLoadShapefileWestPositive:
 
     @_NEED_GEOPANDAS
     def test_unknown_stem_gets_label_zero(self) -> None:
-        """Unrecognised shapefile stem → terrain_label = 0."""
+        """Unrecognised shapefile stem -> terrain_label = 0."""
         from titan.io.shapefile_rasteriser import load_shapefile_west_positive
         with tempfile.TemporaryDirectory() as td:
             shp = _write_shapefile(Path(td), "UnknownLayer", lon_east=0.0,
@@ -468,7 +483,7 @@ class TestGeomorphologyRasteriser:
         nrows, ncols = 18, 36
         transform, crs = self._make_transform_and_crs(nrows, ncols)
         with tempfile.TemporaryDirectory() as td:
-            # Tiny polygon — most pixels should stay nodata
+            # Tiny polygon -- most pixels should stay nodata
             _write_shapefile(Path(td), "Craters", lon_east=0.0, lat=0.0, size=0.1)
             r = GeomorphologyRasteriser(Path(td), (nrows, ncols), transform, crs)
             canvas = r.rasterise(layers=["Craters"])
@@ -506,11 +521,11 @@ class TestGeomorphologyRasteriser:
 
 
 # ===========================================================================
-# 7b. Rasteriser longitude correctness — the key regression tests.
+# 7b. Rasteriser longitude correctness -- the key regression tests.
 #
 #     These tests catch the bug where polygons in the east hemisphere
-#     (0–180°E = 180–360°W) were silently producing all-zero output because
-#     PROJ rejected west-positive longitudes > 180° in its longlat CRS.
+#     (0-180 degE = 180-360 degW) were silently producing all-zero output because
+#     PROJ rejected west-positive longitudes > 180 deg in its longlat CRS.
 #
 #     The fix rasterises in native east-positive coordinates, then converts
 #     the output array to west-positive via flip + roll.
@@ -524,19 +539,19 @@ class TestRasteriserLongitudeCorrectness:
     because the rasteriser used PROJ to reproject shapefile coordinates to
     the canonical CRS, but PROJ silently failed in two ways:
 
-    1. PROJ's longlat CRS rejects west-positive longitudes > 180° (the
-       0–180°E hemisphere maps to 180–360°W, which exceeds PROJ's range).
+    1. PROJ's longlat CRS rejects west-positive longitudes > 180 deg (the
+       0-180 degE hemisphere maps to 180-360 degW, which exceeds PROJ's range).
     2. The non-standard GCS_Titan_2000 CRS embedded in the shapefiles was
        not recognised by PROJ, causing ``to_crs()`` to raise an exception
        that was silently caught and skipped (``continue``).
 
     The fix bypasses PROJ entirely using the exact west-positive eqc formula:
-        x = lon_west_deg × (π/180) × R_titan
-        y = lat_deg       × (π/180) × R_titan
-    where lon_west = (−lon_east) % 360.
+        x = lon_west_deg x (pi/180) x R_titan
+        y = lat_deg       x (pi/180) x R_titan
+    where lon_west = (-lon_east) % 360.
 
     These tests verify:
-      1. Polygons in the east hemisphere (0–180°E = 180–360°W) ARE burned.
+      1. Polygons in the east hemisphere (0-180 degE = 180-360 degW) ARE burned.
       2. Polygons land in the CORRECT west-positive column.
       3. The output is never all-zeros when valid shapefiles are provided.
       4. Both hemispheres are populated when both have polygons.
@@ -556,7 +571,7 @@ class TestRasteriserLongitudeCorrectness:
         from titan.io.shapefile_rasteriser import GeomorphologyRasteriser
 
         m_per_deg = 2_575_000.0 * math.pi / 180.0
-        # West-positive canonical transform: west edge at 0°W
+        # West-positive canonical transform: west edge at 0 degW
         transform = from_origin(
             west=0.0,
             north=90.0 * m_per_deg,
@@ -575,17 +590,17 @@ class TestRasteriserLongitudeCorrectness:
     @_NEED_GEO_RIO
     def test_east_hemisphere_polygon_produces_nonzero_output(self, tmp_path: Path) -> None:
         """
-        Regression: a polygon at +90°E (= 270°W) must burn non-zero pixels.
+        Regression: a polygon at +90 degE (= 270 degW) must burn non-zero pixels.
 
         Before the fix, this produced all-zeros because PROJ rejected
-        west-positive longitude 270° (> 180°) during reprojection.
+        west-positive longitude 270 deg (> 180 deg) during reprojection.
         """
         from titan.io.shapefile_rasteriser import GeomorphologyRasteriser
 
         nrows, ncols = 18, 36
         shp_dir = tmp_path / "shp"
         shp_dir.mkdir()
-        # Place a large polygon at +90°E = 270°W
+        # Place a large polygon at +90 degE = 270 degW
         _write_shapefile(shp_dir, "Craters", lon_east=90.0, lat=0.0, size=20.0)
 
         r = self._make_rasteriser(nrows, ncols, td=shp_dir)
@@ -593,7 +608,7 @@ class TestRasteriserLongitudeCorrectness:
 
         n_burned = int(np.sum(canvas == 1))
         assert n_burned > 0, (
-            f"East-hemisphere polygon at 90°E produced zero burned pixels. "
+            f"East-hemisphere polygon at 90 degE produced zero burned pixels. "
             f"This indicates the PROJ longitude-range bug is present. "
             f"Canvas unique values: {np.unique(canvas)}"
         )
@@ -601,7 +616,7 @@ class TestRasteriserLongitudeCorrectness:
     @_NEED_GEO_RIO
     def test_west_hemisphere_polygon_produces_nonzero_output(self, tmp_path: Path) -> None:
         """
-        Polygon at −90°E (= 90°W) must also burn correctly (sanity check).
+        Polygon at -90 degE (= 90 degW) must also burn correctly (sanity check).
         """
         from titan.io.shapefile_rasteriser import GeomorphologyRasteriser
 
@@ -615,17 +630,17 @@ class TestRasteriserLongitudeCorrectness:
 
         n_burned = int(np.sum(canvas == 2))  # Dunes = label 2
         assert n_burned > 0, (
-            f"West-hemisphere polygon at -90°E produced zero burned pixels. "
+            f"West-hemisphere polygon at -90 degE produced zero burned pixels. "
             f"Canvas unique values: {np.unique(canvas)}"
         )
 
     @_NEED_GEO_RIO
     def test_east_polygon_lands_in_correct_west_positive_column(self, tmp_path: Path) -> None:
         """
-        A polygon at 90°E must land in the 270°W region of the output.
+        A polygon at 90 degE must land in the 270 degW region of the output.
 
         In west-positive convention:
-          270°W = column index round(270/360 * ncols) = 3*ncols//4
+          270 degW = column index round(270/360 * ncols) = 3*ncols//4
 
         The polygon should be in the right three-quarters of the array,
         not in the left half (which would indicate a mirroring error).
@@ -635,7 +650,7 @@ class TestRasteriserLongitudeCorrectness:
         nrows, ncols = 18, 36
         shp_dir = tmp_path / "shp"
         shp_dir.mkdir()
-        # Polygon at 90°E (= 270°W): should land at col ~3*ncols/4 = col 27
+        # Polygon at 90 degE (= 270 degW): should land at col ~3*ncols/4 = col 27
         _write_shapefile(shp_dir, "Craters", lon_east=90.0, lat=0.0, size=10.0)
 
         r = self._make_rasteriser(nrows, ncols, td=shp_dir)
@@ -644,38 +659,38 @@ class TestRasteriserLongitudeCorrectness:
         burned_cols = np.where(canvas == 1)[1]  # column indices of burned pixels
         assert len(burned_cols) > 0, "No pixels burned"
 
-        # 270°W should be in the right half (col >= ncols//2)
+        # 270 degW should be in the right half (col >= ncols//2)
         median_col = int(np.median(burned_cols))
         assert median_col >= ncols // 2, (
-            f"Polygon at 90°E (= 270°W) landed at median column {median_col}, "
-            f"but expected >= {ncols//2} (right half = 180–360°W). "
+            f"Polygon at 90 degE (= 270 degW) landed at median column {median_col}, "
+            f"but expected >= {ncols//2} (right half = 180-360 degW). "
             f"This indicates an incorrect roll direction or offset."
         )
         # More specifically, should be near 3*ncols//4
         expected_col = round(270 / 360 * ncols)
         assert abs(median_col - expected_col) <= 3, (
-            f"Polygon at 270°W: median col {median_col}, expected ~{expected_col}"
+            f"Polygon at 270 degW: median col {median_col}, expected ~{expected_col}"
         )
 
     @_NEED_GEO_RIO
     def test_prime_meridian_polygon_lands_at_column_zero(self, tmp_path: Path) -> None:
         """
-        A polygon placed *just west* of the 0°W prime meridian must land at
+        A polygon placed *just west* of the 0 degW prime meridian must land at
         or near column 0 (the left edge of the west-positive raster).
 
         WHY lon_east = -2, NOT lon_east = 0
         ------------------------------------
-        The canonical grid runs from 0°W (col 0) to 360°W (col ncols, wraps
-        back to col 0).  A polygon centred at 0°E (= 0°W) with any non-zero
-        width *straddles the seam*: vertices at −size° map to ~0°W (col 0)
-        and vertices at +size° map to ~360°W (col ncols-1).
+        The canonical grid runs from 0 degW (col 0) to 360 degW (col ncols, wraps
+        back to col 0).  A polygon centred at 0 degE (= 0 degW) with any non-zero
+        width *straddles the seam*: vertices at -size deg map to ~0 degW (col 0)
+        and vertices at +size deg map to ~360 degW (col ncols-1).
 
         Rasterio's rasterize() treats polygon vertices as a convex hull in
         projected metres.  When the two sets of vertices are near opposite
         edges of the grid (col 0 and col ncols-1), the convex hull spans
-        almost the entire canvas and rasterio fills the interior — i.e. the
+        almost the entire canvas and rasterio fills the interior -- i.e. the
         whole grid except the narrow lake polygon itself.  The median of the
-        burned columns is then ~ncols/2 ≈ 17, which looks like a bug but is
+        burned columns is then ~ncols/2 =~ 17, which looks like a bug but is
         actually correct rasterio behaviour for a seam-straddling polygon.
 
         This is the same antimeridian / dateline problem familiar from web
@@ -686,27 +701,27 @@ class TestRasteriserLongitudeCorrectness:
 
         The correct test fixture is a polygon that lies *entirely* on one side
         of the seam, and is large enough to cover at least one pixel.  The
-        18×36 test grid has 10°/pixel resolution, so any polygon narrower than
-        ~10° will rasterise to zero pixels.
+        18x36 test grid has 10 deg/pixel resolution, so any polygon narrower than
+        ~10 deg will rasterise to zero pixels.
 
-        Here we use lon_east = -15° (= 15°W) with size = 10°, giving a polygon
-        spanning 5°W to 25°W = cols 0.5 to 2.5.  This burns 2 pixels near the
-        left edge of the grid, is well clear of the 0°W seam, and the median
-        burned column is expected to be ≤ 3.
+        Here we use lon_east = -15 deg (= 15 degW) with size = 10 deg, giving a polygon
+        spanning 5 degW to 25 degW = cols 0.5 to 2.5.  This burns 2 pixels near the
+        left edge of the grid, is well clear of the 0 degW seam, and the median
+        burned column is expected to be <= 3.
         """
         from titan.io.shapefile_rasteriser import GeomorphologyRasteriser
 
         nrows, ncols = 18, 36
         shp_dir = tmp_path / "shp"
         shp_dir.mkdir()
-        # The 18×36 test grid has resolution 10°/pixel.  A polygon must span
-        # at least ~10° to reliably burn at least one pixel.
+        # The 18x36 test grid has resolution 10 deg/pixel.  A polygon must span
+        # at least ~10 deg to reliably burn at least one pixel.
         #
-        # We use lon_east=-15°, size=10°:
-        #   vertices at −25°E and −5°E
-        #   → lon_west 5°W and 25°W  (cols 0.5 → 2.5)
-        #   → spans 20° = 2 full pixels near the left edge (col 0–2)
-        #   → does NOT straddle the 0°W seam (both vertices have lon_west < 30°)
+        # We use lon_east=-15 deg, size=10 deg:
+        #   vertices at -25 degE and -5 degE
+        #   -> lon_west 5 degW and 25 degW  (cols 0.5 -> 2.5)
+        #   -> spans 20 deg = 2 full pixels near the left edge (col 0-2)
+        #   -> does NOT straddle the 0 degW seam (both vertices have lon_west < 30 deg)
         _write_shapefile(shp_dir, "Craters", lon_east=-15.0, lat=0.0, size=10.0)
 
         r = self._make_rasteriser(nrows, ncols, td=shp_dir)
@@ -716,11 +731,11 @@ class TestRasteriserLongitudeCorrectness:
         assert len(burned_cols) > 0, "No pixels burned"
 
         median_col = int(np.median(burned_cols))
-        # 5°W–25°W maps to cols 0.5–2.5, so median should be col 1 or 2.
+        # 5 degW-25 degW maps to cols 0.5-2.5, so median should be col 1 or 2.
         # Allow up to col 3 for rasterisation edge tolerance.
         assert median_col <= 3 or median_col >= ncols - 3, (
-            f"Polygon at 5–25°W (lon_east=-15°) landed at median col {median_col}, "
-            f"expected col 0–3 (left edge near 0°W). "
+            f"Polygon at 5-25 degW (lon_east=-15 deg) landed at median col {median_col}, "
+            f"expected col 0-3 (left edge near 0 degW). "
             f"Check the lon-flip formula: (-lon_east) % 360 for negative lon_east "
             f"should give a small positive west-positive longitude."
         )
@@ -730,21 +745,21 @@ class TestRasteriserLongitudeCorrectness:
         """
         Regression: document (not fix) the seam-straddling behaviour.
 
-        A polygon centred exactly at 0°E with size ≥ 5° straddles the 0°W
+        A polygon centred exactly at 0 degE with size >= 5 deg straddles the 0 degW
         seam.  Rasterio fills the convex hull interior, which spans most of
         the canvas.  The median burned column is therefore near ncols//2,
         not near 0 as one might naively expect.
 
         This test pins that behaviour so that any future seam-splitting fix
         can update the assertion rather than silently regressing.
-        Note: no fix is expected — this test documents a known limitation.
+        Note: no fix is expected -- this test documents a known limitation.
         """
         from titan.io.shapefile_rasteriser import GeomorphologyRasteriser
 
         nrows, ncols = 18, 36
         shp_dir = tmp_path / "shp"
         shp_dir.mkdir()
-        # Polygon at 0°E, size=10° → vertices at 350°W and 10°W → straddles seam
+        # Polygon at 0 degE, size=10 deg -> vertices at 350 degW and 10 degW -> straddles seam
         _write_shapefile(shp_dir, "Craters", lon_east=0.0, lat=0.0, size=10.0)
 
         r = self._make_rasteriser(nrows, ncols, td=shp_dir)
@@ -760,7 +775,7 @@ class TestRasteriserLongitudeCorrectness:
         assert 10 <= median_col <= ncols - 10, (
             f"Seam-straddling behaviour changed: median col {median_col}. "
             f"If this polygon now lands near col 0, seam-splitting has been "
-            f"implemented — update this test accordingly."
+            f"implemented -- update this test accordingly."
         )
 
     @_NEED_GEO_RIO
@@ -776,9 +791,9 @@ class TestRasteriserLongitudeCorrectness:
         nrows, ncols = 18, 36
         shp_dir = tmp_path / "shp"
         shp_dir.mkdir()
-        # West hemisphere: -90°E = 90°W = left quarter
+        # West hemisphere: -90 degE = 90 degW = left quarter
         _write_shapefile(shp_dir, "Craters",  lon_east=-90.0, lat=0.0, size=15.0)
-        # East hemisphere: +90°E = 270°W = right three-quarters
+        # East hemisphere: +90 degE = 270 degW = right three-quarters
         _write_shapefile(shp_dir, "Dunes",    lon_east= 90.0, lat=0.0, size=15.0)
 
         r = self._make_rasteriser(nrows, ncols, td=shp_dir)
@@ -788,11 +803,11 @@ class TestRasteriserLongitudeCorrectness:
         n_dunes   = int(np.sum(canvas == 2))
 
         assert n_craters > 0, (
-            f"West-hemisphere Craters polygon (at -90°E = 90°W) not burned. "
+            f"West-hemisphere Craters polygon (at -90 degE = 90 degW) not burned. "
             f"Canvas unique values: {np.unique(canvas)}"
         )
         assert n_dunes > 0, (
-            f"East-hemisphere Dunes polygon (at +90°E = 270°W) not burned. "
+            f"East-hemisphere Dunes polygon (at +90 degE = 270 degW) not burned. "
             f"Canvas unique values: {np.unique(canvas)}. "
             f"This is the primary regression: east hemisphere was all-zeros."
         )
@@ -825,7 +840,7 @@ class TestRasteriserLongitudeCorrectness:
         Unit test for the manual eqc formula used inside rasterise().
 
         Verifies: x = lon_west * deg_to_m, col = x / dx
-        where lon_west = (-lon_east) % 360 and deg_to_m = π*R/180.
+        where lon_west = (-lon_east) % 360 and deg_to_m = pi*R/180.
 
         This tests the PROJ-free formula that replaces the previous
         PROJ-based reprojection which silently failed for east hemisphere
@@ -845,18 +860,18 @@ class TestRasteriserLongitudeCorrectness:
                 return x / dx
 
             tests = [
-                ( 0.0,   0,          "0°E = 0°W"),
-                (-90.0,  ncols // 4, "-90°E = 90°W"),
-                ( 180.0, ncols // 2, "180°E = 180°W"),
-                ( 90.0,  round(270 / 360 * ncols) % ncols, "90°E = 270°W"),
-                (-45.0,  round(45 / 360 * ncols),  "-45°E = 45°W"),
-                ( 45.0,  round(315 / 360 * ncols) % ncols, "45°E = 315°W"),
+                ( 0.0,   0,          "0 degE = 0 degW"),
+                (-90.0,  ncols // 4, "-90 degE = 90 degW"),
+                ( 180.0, ncols // 2, "180 degE = 180 degW"),
+                ( 90.0,  round(270 / 360 * ncols) % ncols, "90 degE = 270 degW"),
+                (-45.0,  round(45 / 360 * ncols),  "-45 degE = 45 degW"),
+                ( 45.0,  round(315 / 360 * ncols) % ncols, "45 degE = 315 degW"),
             ]
 
             for lon_east, exp_col, desc in tests:
                 got = col_for_lon_east(lon_east)
                 assert abs(got - exp_col) <= 1.0, (
-                    f"ncols={ncols}: {desc} → col {got:.1f}, "
+                    f"ncols={ncols}: {desc} -> col {got:.1f}, "
                     f"expected {exp_col}"
                 )
 
@@ -887,7 +902,7 @@ class TestShapefileIntegration:
         from rasterio.transform import from_origin
         from titan.io.shapefile_rasteriser import GeomorphologyRasteriser
 
-        nrows, ncols = 36, 72  # ~5° resolution
+        nrows, ncols = 36, 72  # ~5 deg resolution
         m_per_deg = 2_575_000.0 * math.pi / 180.0
         transform = from_origin(
             west=0.0,
@@ -910,17 +925,17 @@ class TestShapefileIntegration:
         assert canvas.dtype == import_numpy().int16
 
         # Real craters exist globally; at least one pixel should be labeled.
-        # At 5° resolution (~225 km/px) only the largest craters (Menrva, 425 km)
+        # At 5 deg resolution (~225 km/px) only the largest craters (Menrva, 425 km)
         # are guaranteed to hit a pixel.  If zero craters appear, it may indicate
-        # a CRS mismatch — emit a warning rather than failing, so the test
+        # a CRS mismatch -- emit a warning rather than failing, so the test
         # still catches shape/dtype regressions.
         n_crater = int(import_numpy().sum(canvas == 1))
         if n_crater == 0:
             import warnings
             warnings.warn(
-                "No crater pixels at 5°/px resolution — "
+                "No crater pixels at 5 deg/px resolution -- "
                 "craters may be smaller than one pixel or a CRS issue exists. "
-                "Run at 1° resolution to verify.",
+                "Run at 1 deg resolution to verify.",
                 stacklevel=2,
             )
 
@@ -967,7 +982,7 @@ class TestPolarLakeRasteriser:
     """
     Tests for the Birch+2017 / Palermo+2022 PolarLakeRasteriser.
 
-    All tests use synthetic shapefiles and temporary directories — no real
+    All tests use synthetic shapefiles and temporary directories -- no real
     Birch data is required.
 
     Key behaviours verified:
@@ -1030,7 +1045,7 @@ class TestPolarLakeRasteriser:
             output_crs=crs,
         )
 
-    # ── is_available ──────────────────────────────────────────────────────────
+    # -- is_available ----------------------------------------------------------
 
     @_NEED_GEO_RIO
     def test_is_available_false_when_dir_none(self) -> None:
@@ -1074,7 +1089,7 @@ class TestPolarLakeRasteriser:
         r = self._make_rasteriser(tmp_path)
         assert r.is_available()
 
-    # ── all-zeros fallback ────────────────────────────────────────────────────
+    # -- all-zeros fallback ----------------------------------------------------
 
     @_NEED_GEO_RIO
     def test_returns_all_zeros_when_unavailable(self, tmp_path: Path) -> None:
@@ -1084,7 +1099,7 @@ class TestPolarLakeRasteriser:
         canvas = r.rasterise()
         assert np.all(canvas == POLAR_LAKE_NODATA)
 
-    # ── label burning ─────────────────────────────────────────────────────────
+    # -- label burning ---------------------------------------------------------
 
     @_NEED_GEO_RIO
     def test_filled_label_burned_from_birch_filled(self, tmp_path: Path) -> None:
@@ -1102,7 +1117,7 @@ class TestPolarLakeRasteriser:
                              include_palermo=False)
 
         assert np.any(canvas == POLAR_LAKE_FILLED), (
-            "No filled-lake pixels (label 1) found — "
+            "No filled-lake pixels (label 1) found -- "
             "Birch filled layer was not burned."
         )
         assert not np.any(canvas == 2), "Empty-basin label should not appear."
@@ -1146,7 +1161,7 @@ class TestPolarLakeRasteriser:
             "No Palermo pixels (label 3) found."
         )
 
-    # ── draw order ────────────────────────────────────────────────────────────
+    # -- draw order ------------------------------------------------------------
 
     @_NEED_GEO_RIO
     def test_palermo_overwrites_birch_filled(self, tmp_path: Path) -> None:
@@ -1205,21 +1220,21 @@ class TestPolarLakeRasteriser:
         canvas = r.rasterise(include_filled=True, include_empty=True,
                              include_palermo=False)
 
-        # Birch filled drawn after empty → empty pixels overwritten
+        # Birch filled drawn after empty -> empty pixels overwritten
         assert not np.any(canvas == POLAR_LAKE_EMPTY), (
             "Empty (2) should be overwritten by filled (1)."
         )
         assert np.any(canvas == POLAR_LAKE_FILLED)
 
-    # ── east hemisphere placement ─────────────────────────────────────────────
+    # -- east hemisphere placement ---------------------------------------------
 
     @_NEED_GEO_RIO
     def test_east_hemisphere_lake_placed_correctly(self, tmp_path: Path) -> None:
         """
-        A lake at +90°E (= 270°W) must appear in the right three-quarters
+        A lake at +90 degE (= 270 degW) must appear in the right three-quarters
         of the raster, not in the left half.
 
-        Regression: the manual lon flip (−lon_east) % 360 must correctly
+        Regression: the manual lon flip (-lon_east) % 360 must correctly
         place east-hemisphere shapefiles.
         """
         from titan.io.shapefile_rasteriser import (
@@ -1227,7 +1242,7 @@ class TestPolarLakeRasteriser:
         )
         filled_dir = tmp_path / BIRCH_SUBDIR_FILLED
         filled_dir.mkdir()
-        # 90°E = 270°W — should be in the right three-quarters of the raster
+        # 90 degE = 270 degW -- should be in the right three-quarters of the raster
         gdf = self._make_lake_gdf(lon_east=90.0, lat=0.0, size=15.0)
         gdf.to_file(filled_dir / "east_lake.shp")
 
@@ -1239,13 +1254,13 @@ class TestPolarLakeRasteriser:
         filled_cols = np.where(canvas == POLAR_LAKE_FILLED)[1]
         assert len(filled_cols) > 0, "No filled pixels burned."
         median_col = int(np.median(filled_cols))
-        # 270°W should be in the right half (col >= ncols//2)
+        # 270 degW should be in the right half (col >= ncols//2)
         assert median_col >= ncols // 2, (
-            f"Lake at 90°E (=270°W) landed at median col {median_col}, "
+            f"Lake at 90 degE (=270 degW) landed at median col {median_col}, "
             f"expected >= {ncols // 2}.  lon-flip bug may be present."
         )
 
-    # ── write GeoTIFF ─────────────────────────────────────────────────────────
+    # -- write GeoTIFF ---------------------------------------------------------
 
     @_NEED_GEO_RIO
     def test_writes_valid_geotiff(self, tmp_path: Path) -> None:

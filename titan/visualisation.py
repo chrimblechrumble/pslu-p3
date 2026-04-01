@@ -1,13 +1,28 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/visualisation.py
 =======================
-Stage 5 — Visualisation.
+Stage 5 -- Visualisation.
 
 Produces publication-quality figures and interactive maps from the
 canonical data stack, feature maps, and Bayesian inference results.
 
 All maps use Titan's SimpleCylindrical projection and display longitude
-in west-positive convention (0→360°W) to match the data products.
+in west-positive convention (0->360 degW) to match the data products.
 
 Output formats
 --------------
@@ -44,12 +59,12 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Named geographic features  (lon_W°, lat°)
+# Named geographic features  (lon_W deg, lat deg)
 # ---------------------------------------------------------------------------
 
 #: Full catalogue of named geographic features on Titan.
 #:
-#: Each entry is ``name → (lon_W°, lat°, category)`` where category is one of:
+#: Each entry is ``name -> (lon_W deg, lat deg, category)`` where category is one of:
 #:
 #: ``"sea"``
 #:     Major hydrocarbon seas (maria).
@@ -72,17 +87,17 @@ logger = logging.getLogger(__name__)
 #: To customise which labels appear, pass a subset to
 #: :class:`TitanMapPlotter` via ``feature_categories`` or ``feature_names``.
 TITAN_FEATURES: Dict[str, Tuple[float, float, str]] = {
-    # ── Hydrocarbon seas (maria) ─────────────────────────────────────────────
-    "Kraken Mare":   (310.0,  68.0, "sea"),    # largest, ~400,000 km²
+    # -- Hydrocarbon seas (maria) ---------------------------------------------
+    "Kraken Mare":   (310.0,  68.0, "sea"),    # largest, ~400,000 km^2
     "Ligeia Mare":   ( 78.0,  79.0, "sea"),    # second largest, liquid methane-rich
     "Punga Mare":    ( 17.0,  85.0, "sea"),    # northernmost major sea
-    # ── Hydrocarbon lakes (lacus) ────────────────────────────────────────────
+    # -- Hydrocarbon lakes (lacus) --------------------------------------------
     "Ontario Lacus": (180.0, -72.0, "lake"),   # largest southern hemisphere lake
-    # ── Terrain regions ──────────────────────────────────────────────────────
+    # -- Terrain regions ------------------------------------------------------
     "Xanadu":        (100.0,  -5.0, "terrain"),  # bright radar/IR region, water-ice
     "Shangri-La":    (160.0,  -5.0, "terrain"),  # large equatorial dune sea
     "Belet":         (250.0,   5.0, "terrain"),  # equatorial dune sea
-    # ── Mission sites ────────────────────────────────────────────────────────
+    # -- Mission sites --------------------------------------------------------
     "Huygens":       (192.0, -10.2, "mission"),  # ESA probe landing site, Jan 2005
     "Selk (DFly)":   (199.0,   5.0, "mission"),  # NASA Dragonfly target, ~80 km crater
 }
@@ -148,11 +163,11 @@ def _base_map(
         Matplotlib interpolation mode (``"nearest"`` for feature maps,
         ``"bilinear"`` for smooth posterior maps).
     feature_names:
-        Passed to :func:`_add_feature_labels` — explicit list of names to show.
+        Passed to :func:`_add_feature_labels` -- explicit list of names to show.
     feature_categories:
-        Passed to :func:`_add_feature_labels` — filter labels by category.
+        Passed to :func:`_add_feature_labels` -- filter labels by category.
     category_styles:
-        Passed to :func:`_add_feature_labels` — override per-category style.
+        Passed to :func:`_add_feature_labels` -- override per-category style.
 
     Returns
     -------
@@ -218,10 +233,10 @@ def _add_feature_labels(
         List of category strings to include: ``"sea"``, ``"lake"``,
         ``"terrain"``, ``"mission"``.  If ``None``, all categories are shown.
         Ignored when ``feature_names`` is explicitly provided.
-        Example: ``["sea", "lake"]``  — show only liquid bodies.
+        Example: ``["sea", "lake"]``  -- show only liquid bodies.
     category_styles:
         Override the default per-category appearance.  Dict maps category
-        name → dict with keys ``"color"``, ``"marker"``, ``"fontsize"``.
+        name -> dict with keys ``"color"``, ``"marker"``, ``"fontsize"``.
         Merged with :data:`CATEGORY_STYLES`; only specified keys are overridden.
         Example: ``{"mission": {"color": "red"}}``
     """
@@ -281,7 +296,7 @@ class TitanMapPlotter:
         Example: ``["sea", "lake"]`` shows only liquid bodies.
         Ignored when ``feature_names`` is explicitly provided.
     category_styles:
-        Override default per-category appearance.  Dict maps category →
+        Override default per-category appearance.  Dict maps category ->
         ``{"color": ..., "marker": ..., "fontsize": ...}``.
         Merged with :data:`CATEGORY_STYLES`.
 
@@ -325,7 +340,7 @@ class TitanMapPlotter:
         self.feature_categories = feature_categories
         self.category_styles    = category_styles
 
-    # ── Fig 1: Posterior mean (± uncertainty panel) ────────────────────────
+    # -- Fig 1: Posterior mean (+/- uncertainty panel) ------------------------
 
     def plot_posterior(
         self,
@@ -358,10 +373,10 @@ class TitanMapPlotter:
         if out_path:
             Path(out_path).parent.mkdir(parents=True, exist_ok=True)
             fig.savefig(out_path, dpi=self.dpi, bbox_inches="tight")
-            logger.info("Posterior map → %s", out_path)
+            logger.info("Posterior map -> %s", out_path)
         return fig
 
-    # ── Fig 2: 8-panel feature maps ───────────────────────────────────────
+    # -- Fig 2: 8-panel feature maps ---------------------------------------
 
     def plot_features(
         self,
@@ -411,10 +426,10 @@ class TitanMapPlotter:
         if out_path:
             Path(out_path).parent.mkdir(parents=True, exist_ok=True)
             fig.savefig(out_path, dpi=self.dpi, bbox_inches="tight")
-            logger.info("Feature maps → %s", out_path)
+            logger.info("Feature maps -> %s", out_path)
         return fig
 
-    # ── Fig 3: Feature importances ────────────────────────────────────────
+    # -- Fig 3: Feature importances ----------------------------------------
 
     def plot_importances(
         self,
@@ -455,7 +470,7 @@ class TitanMapPlotter:
             fig.savefig(out_path, dpi=self.dpi, bbox_inches="tight")
         return fig
 
-    # ── Fig 4: Top sites ──────────────────────────────────────────────────
+    # -- Fig 4: Top sites --------------------------------------------------
 
     def plot_top_sites(
         self,
@@ -489,7 +504,7 @@ class TitanMapPlotter:
         if out_path:
             Path(out_path).parent.mkdir(parents=True, exist_ok=True)
             fig.savefig(out_path, dpi=self.dpi, bbox_inches="tight")
-            logger.info("Top sites → %s", out_path)
+            logger.info("Top sites -> %s", out_path)
         return fig
 
 
@@ -553,7 +568,7 @@ def plot_interactive(
         out_path = Path("outputs/posterior_interactive.html")
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     fig.write_html(str(out_path))
-    logger.info("Interactive map → %s", out_path)
+    logger.info("Interactive map -> %s", out_path)
 
 
 # ---------------------------------------------------------------------------

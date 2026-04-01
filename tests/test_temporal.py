@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 tests/test_temporal.py
 =======================
@@ -67,7 +82,7 @@ def run(name: str, fn: Callable[..., Any]) -> None:
 def make_synthetic_stack(nrows: int=18, ncols: int=36) -> "xr.Dataset":
     """
     Build a minimal xr.Dataset with synthetic data for feature testing.
-    Small grid (18×36) for speed.
+    Small grid (18x36) for speed.
     """
     import xarray as xr
     rng = np.random.default_rng(42)
@@ -116,7 +131,7 @@ class TinyGrid:
     def lat_centres_deg(self) -> np.ndarray: return np.linspace(90, -90, self.nrows)
     def lon_centres_deg(self) -> np.ndarray: return np.linspace(0, 360, self.ncols, endpoint=False)
     def empty(self) -> "xr.DataArray": return np.full((self.nrows, self.ncols), np.nan, dtype=np.float32)
-    def __repr__(self) -> str: return f"TinyGrid(18×36)"
+    def __repr__(self) -> str: return f"TinyGrid(18x36)"
 
 TINY = TinyGrid()
 SYNTH = make_synthetic_stack(nrows=18, ncols=36)
@@ -187,7 +202,7 @@ for fn in [test_present_feature_count, test_past_feature_count,
 
 def test_present_priors_sum_to_1() -> None:
     p = get_prior_set(TemporalMode.PRESENT)
-    p.validate()  # raises if not 1.0 ± 0.01
+    p.validate()  # raises if not 1.0 +/- 0.01
     assert abs(sum(p.weights) - 1.0) < 0.011
 
 def test_past_priors_sum_to_1() -> None:
@@ -225,7 +240,7 @@ def test_past_organic_lower_than_present() -> None:
     present_m = dict(zip(present.feature_names, present.prior_means))
     assert past_m["organic_abundance"] < present_m["organic_abundance"], (
         "PAST organic_abundance should be lower than PRESENT "
-        "(fewer Gyr of UV photolysis → less tholins)"
+        "(fewer Gyr of UV photolysis -> less tholins)"
     )
 
 def test_future_water_ammonia_high() -> None:
@@ -284,8 +299,8 @@ def test_proximity_map_peak_near_site() -> None:
     max_idx = np.unravel_index(result.argmax(), result.shape)
     lon_at_max = TINY.lon_centres_deg()[max_idx[1]]
     lat_at_max = TINY.lat_centres_deg()[max_idx[0]]
-    assert abs(lon_at_max - 180.0) < 30.0, f"Max lon {lon_at_max:.1f}° far from 180°W"
-    assert abs(lat_at_max - 0.0) < 20.0, f"Max lat {lat_at_max:.1f}° far from equator"
+    assert abs(lon_at_max - 180.0) < 30.0, f"Max lon {lon_at_max:.1f} deg far from 180 degW"
+    assert abs(lat_at_max - 0.0) < 20.0, f"Max lat {lat_at_max:.1f} deg far from equator"
 
 def test_proximity_with_diameter_scaling() -> None:
     sites = [(100.0, 20.0, 400.0, "big_crater"), (200.0, -20.0, 40.0, "small")]
@@ -503,7 +518,7 @@ def test_d1_past_epoch_passed_to_extractor() -> None:
 
 
 def test_d2_future_window_defaults() -> None:
-    """D2: default near-future window is 100–400 Myr."""
+    """D2: default near-future window is 100-400 Myr."""
     from configs.pipeline_config import HabitabilityWindowConfig
     cfg = HabitabilityWindowConfig()
     assert cfg.future_window_min_myr == 100.0
@@ -515,7 +530,7 @@ def test_d2_uniform_warming_default_true() -> None:
     from configs.pipeline_config import HabitabilityWindowConfig
     cfg = HabitabilityWindowConfig()
     assert cfg.assume_uniform_warming is True, (
-        "Uniform warming must default to True — it is an explicit documented "
+        "Uniform warming must default to True -- it is an explicit documented "
         "assumption (D2). Users must actively opt out via --no-uniform-warming."
     )
 
@@ -537,7 +552,7 @@ def test_d2_future_window_configurable() -> None:
 
 
 def test_d2_window_width_affects_weight() -> None:
-    """D2: narrower window → higher temporal prior weight (uniform density)."""
+    """D2: narrower window -> higher temporal prior weight (uniform density)."""
     from configs.pipeline_config import HabitabilityWindowConfig
     narrow = HabitabilityWindowConfig(future_window_min_myr=100, future_window_max_myr=200)
     wide   = HabitabilityWindowConfig(future_window_min_myr=100, future_window_max_myr=600)
@@ -563,7 +578,7 @@ def test_d3_subsurface_ocean_prior_default_is_0pt03() -> None:
     cfg = BayesianPriorConfig()
     assert cfg.prior_mean_subsurface_ocean == 0.03, (
         "D3: subsurface_ocean prior must default to 0.03 per Neish et al. "
-        "(2024) — organic flux to ocean ~one elephant/year."
+        "(2024) -- organic flux to ocean ~one elephant/year."
     )
 
 
@@ -588,7 +603,7 @@ def test_d3_prior_passed_to_extractor() -> None:
 
 
 def test_d3_prior_affects_subsurface_ocean_feature() -> None:
-    """D3: higher prior → higher mean subsurface_ocean feature values."""
+    """D3: higher prior -> higher mean subsurface_ocean feature values."""
     ext_low  = TemporalFeatureExtractor(TINY, TemporalMode.PRESENT,
                                         subsurface_ocean_base_prior=0.01)
     ext_high = TemporalFeatureExtractor(TINY, TemporalMode.PRESENT,
@@ -711,7 +726,7 @@ def test_future_mean_posterior_higher_than_present() -> None:
     Global mean P(habitable) should be higher in FUTURE than PRESENT.
 
     Scientific basis: Lorenz et al. (1997) predict global water-ammonia
-    oceans at 200K with abundant organic substrate → higher habitability
+    oceans at 200K with abundant organic substrate -> higher habitability
     than the current cold, HC-lake-only environment.
     """
     from titan.bayesian.temporal_inference import run_temporal_inference
@@ -730,7 +745,7 @@ def test_future_mean_posterior_higher_than_present() -> None:
 
     assert mean_f > mean_p, (
         f"FUTURE mean posterior ({mean_f:.3f}) should exceed "
-        f"PRESENT mean ({mean_p:.3f}) — red giant scenario has "
+        f"PRESENT mean ({mean_p:.3f}) -- red giant scenario has "
         f"global ocean and vast organic stockpile (Lorenz 1997)"
     )
 
@@ -776,11 +791,11 @@ print(f"\n{'='*62}")
 print(f"  TEMPORAL TESTS: {len(PASS)} passed  {len(FAIL)} failed")
 print(f"{'='*62}")
 for n in PASS:
-    print(f"  ✓  {n}")
+    print(f"  [OK]  {n}")
 if FAIL:
     print()
     for n, tb in FAIL:
-        print(f"\n  ✗  {n}")
+        print(f"\n  [FAIL]  {n}")
         for line in tb.strip().split('\n')[-5:]:
             print(f"     {line}")
 print(f"{'='*62}")

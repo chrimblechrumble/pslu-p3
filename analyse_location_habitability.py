@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 analyse_location_habitability.py
 =================================
@@ -10,7 +25,7 @@ Each location's feature values are computed by:
   2. Applying time-scaling functions grounded in published models to each feature.
   3. Running the same Bayesian Beta-update used in the main pipeline.
 
-The result is a 36-epoch × 10-location habitability matrix, saved as:
+The result is a 36-epoch x 10-location habitability matrix, saved as:
   outputs/diagnostics/location_habitability_timeseries.csv
   outputs/diagnostics/location_habitability_timeseries.png
   outputs/diagnostics/location_habitability_spider.png
@@ -19,12 +34,12 @@ Run from the project root:
     python analyse_location_habitability.py
 
 References for time-scaling models:
-  Lorenz et al. (1997) GRL 24, 2905  —  red-giant window
-  Schroder & Connon Smith (2008) MNRAS 386, 155  —  solar luminosity evolution
-  O'Brien et al. (2005) Icarus 173, 243  —  impact flux decay
-  Lavvas et al. (2011) Icarus 215, 732  —  organic deposition rate
-  Strobel (2010) Icarus 208, 878  —  H2/C2H2 flux (present)
-  Madan et al. (2026) Icarus  —  impact melt amino acid synthesis
+  Lorenz et al. (1997) GRL 24, 2905  --  red-giant window
+  Schroder & Connon Smith (2008) MNRAS 386, 155  --  solar luminosity evolution
+  O'Brien et al. (2005) Icarus 173, 243  --  impact flux decay
+  Lavvas et al. (2011) Icarus 215, 732  --  organic deposition rate
+  Strobel (2010) Icarus 208, 878  --  H2/C2H2 flux (present)
+  Madan et al. (2026) Icarus  --  impact melt amino acid synthesis
 """
 
 from __future__ import annotations
@@ -39,10 +54,18 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.lines import Line2D
+print(
+    "Titan Habitability Pipeline  Copyright (C) 2025/2026  Chris Meadows\n"
+    "This program comes with ABSOLUTELY NO WARRANTY; for details, see the\n"
+    "README.md at the project root.\n"
+    "This is free software, and you are welcome to redistribute it\n"
+    "under certain conditions; see the LICENSE.md file at the project\n"
+    "root for details.\n"
+)
 
 sys.path.insert(0, '.')
 
-# ─── Constants ────────────────────────────────────────────────────────────────
+# --- Constants ----------------------------------------------------------------
 
 TITAN_RADIUS_M = 2_575_000.0
 
@@ -56,12 +79,12 @@ def solar_luminosity_ratio(t_gyr_from_now: float) -> float:
     t_gyr_from_now: positive = future, negative = past.
 
     Main sequence (t < 5 Gya from now):
-        L ≈ L_0 * (1 + 0.0092 * (t_now - t_past)) using Ribas (2010) fit
+        L =~ L_0 * (1 + 0.0092 * (t_now - t_past)) using Ribas (2010) fit
         where t_now = 4.57 Gya is the Sun's current age.
 
     Red giant ramp (5 < t < 7.6 Gya from now):
         Rapid rise to ~2700 L_sun at peak; habitability window (>2.7 L_sun) is
-        approx 5.1 – 5.8 Gya from now (Lorenz et al. 1997).
+        approx 5.1 - 5.8 Gya from now (Lorenz et al. 1997).
     """
     age_now_gyr = 4.57    # Sun's current age in Gyr
     age = age_now_gyr + t_gyr_from_now  # Sun's age at this epoch
@@ -71,8 +94,8 @@ def solar_luminosity_ratio(t_gyr_from_now: float) -> float:
 
     if t_gyr_from_now <= 5.0:
         # Main sequence: empirical fit to Baraffe et al. / Ribas (2010)
-        # L(t_gya_from_now) ≈ L_0 * exp(0.025 * (t_gyr_from_now))
-        # More accurately: L_sun(age) ≈ 1 / (1 - 0.10 * (1 - age/5.0))
+        # L(t_gya_from_now) =~ L_0 * exp(0.025 * (t_gyr_from_now))
+        # More accurately: L_sun(age) =~ 1 / (1 - 0.10 * (1 - age/5.0))
         # i.e. 30% fainter at ZAMS (age=0), increasing to L_0 at age=4.57
         zams_faint = 0.72  # L at ZAMS relative to present
         L = zams_faint + (1.0 - zams_faint) * (age / age_now_gyr) ** 0.9
@@ -82,7 +105,7 @@ def solar_luminosity_ratio(t_gyr_from_now: float) -> float:
     # ~5 Gya: starts subgiant brightening (~1.1 L_sun)
     # ~5.1 Gya: Titan surface T crosses water-ammonia eutectic (2.7 L_sun)
     # ~5.4 Gya: peak RGB tip (1000-2700 L_sun, but models vary greatly)
-    # After ~5.8 Gya: helium flash, brief dimming, AGB → planetary nebula
+    # After ~5.8 Gya: helium flash, brief dimming, AGB -> planetary nebula
     t_after_ms = t_gyr_from_now - 5.0   # Gyr into red giant phase
     if t_after_ms < 0.1:
         return 1.0 + 17.0 * t_after_ms  # rapid ramp
@@ -96,16 +119,16 @@ def solar_luminosity_ratio(t_gyr_from_now: float) -> float:
         return 0.8  # post-RGB/AGB dim phase
 
 # Titan surface temperature as function of solar luminosity
-# T_surface ∝ L^0.25 (grey-body approximation, ignoring atmosphere change)
+# T_surface proportional to L^0.25 (grey-body approximation, ignoring atmosphere change)
 T_SURFACE_PRESENT_K = 93.65
 
 def titan_surface_temp_K(t_gyr_from_now: float) -> float:
     L = solar_luminosity_ratio(t_gyr_from_now)
     return T_SURFACE_PRESENT_K * L ** 0.25
 
-WATER_AMMONIA_EUTECTIC_K = 176.0  # K — melting point of 32% NH3 solution
+WATER_AMMONIA_EUTECTIC_K = 176.0  # K -- melting point of 32% NH3 solution
 
-# ─── Top 10 Locations ─────────────────────────────────────────────────────────
+# --- Top 10 Locations ---------------------------------------------------------
 
 LOCATIONS = [
     # (name, lon_W_deg, lat_deg, short_label)
@@ -121,7 +144,7 @@ LOCATIONS = [
     ("Hotei Arcus",           78.0, -20.0,  "Hotei"),
 ]
 
-# ─── Epoch axis ───────────────────────────────────────────────────────────────
+# --- Epoch axis ---------------------------------------------------------------
 
 def make_epoch_axis() -> np.ndarray:
     """36-point axis in Gya from now (negative=past, positive=future)."""
@@ -136,7 +159,7 @@ def make_epoch_axis() -> np.ndarray:
 
 EPOCHS = make_epoch_axis()
 
-# ─── Feature time-evolution models ────────────────────────────────────────────
+# --- Feature time-evolution models --------------------------------------------
 
 class LocationFeatures:
     """
@@ -156,21 +179,21 @@ class LocationFeatures:
         self.lat: float = lat
         self.f0: dict[str, float] = present_features   # baseline (present epoch)
 
-    # ── Individual feature time models ────────────────────────────────────────
+    # -- Individual feature time models ----------------------------------------
 
     def _liquid_hydrocarbon(self, t: float) -> float:
         """
-        Present: f0 value (0 for equatorial, 0.4–0.7 for lake margins).
+        Present: f0 value (0 for equatorial, 0.4-0.7 for lake margins).
         Past: low (lakes are geologically young; polar condensation only
               established over last ~1 Gyr; impact-melt water brief).
         Future: high while T < methane boiling point, then 0 when solar
                 evaporation drives off the atmosphere (~+5.4 Gya).
-        Red giant: water ocean globally → 1.0.
+        Red giant: water ocean globally -> 1.0.
         """
         T = titan_surface_temp_K(t)
 
         if T >= WATER_AMMONIA_EUTECTIC_K:
-            # Global water-ammonia ocean — all surfaces are 'wet'
+            # Global water-ammonia ocean -- all surfaces are 'wet'
             return 1.0
 
         f_present = self.f0.get('liquid_hydrocarbon', 0.0)
@@ -200,8 +223,8 @@ class LocationFeatures:
 
     def _organic_abundance(self, t: float) -> float:
         """
-        Tholins accumulate roughly linearly at ~5e-14 g/cm²/s (Lavvas 2011).
-        At present (4.57 Gya into solar system), the layer is ~1–10 km deep.
+        Tholins accumulate roughly linearly at ~5e-14 g/cm^2/s (Lavvas 2011).
+        At present (4.57 Gya into solar system), the layer is ~1-10 km deep.
         Relative stockpile scales with time since atmosphere-forming epoch.
 
         In the red-giant future, tholins dissolve in the global ocean,
@@ -219,7 +242,7 @@ class LocationFeatures:
             return 0.0  # no atmosphere yet
 
         # Scale linearly relative to present accumulation
-        frac = min(t_elapsed / t_atm_gyr, 2.5)  # cap at 2.5× present
+        frac = min(t_elapsed / t_atm_gyr, 2.5)  # cap at 2.5x present
 
         organic = f_present * frac
 
@@ -233,17 +256,17 @@ class LocationFeatures:
         """
         C2H2 + H2 flux driven by UV photolysis, scales with solar UV flux.
 
-        Young Sun UV model (Ribas et al. 2010): L_UV ∝ t_age^{-1.0...-0.5}
+        Young Sun UV model (Ribas et al. 2010): L_UV proportional to t_age^{-1.0...-0.5}
         depending on waveband. At t=0 (present), uv_factor = 1.0 by definition.
-        At t = -3.5 Gya, UV is ~2.4× present (FUV band).
+        At t = -3.5 Gya, UV is ~2.4x present (FUV band).
 
         Formula: uv_factor = (1 + |t|)^0.57
-          → continuous through t = 0 (both sides give 1.0 at t = 0)
-          → t = -3.5 Gya: 2.36×  (within Ribas 2010 range)
-          → t = +5.0 Gya: 2.78×  (UV rises briefly on red-giant ramp,
+          -> continuous through t = 0 (both sides give 1.0 at t = 0)
+          -> t = -3.5 Gya: 2.36x  (within Ribas 2010 range)
+          -> t = +5.0 Gya: 2.78x  (UV rises briefly on red-giant ramp,
                            then collapses as star expands and cools)
 
-        Old formula (1 + 0.5)^0.3 = 0.81 at t→0⁻ caused a visible jump
+        Old formula (1 + 0.5)^0.3 = 0.81 at t->0^- caused a visible jump
         of ~0.19 at the present epoch. This formula eliminates that.
         """
         f_present = self.f0.get('acetylene_energy', 0.35)
@@ -339,7 +362,7 @@ class LocationFeatures:
         if T >= WATER_AMMONIA_EUTECTIC_K:
             return 1.0  # ocean IS the surface
 
-        # Past: more radiogenic heat → more cryovolcanism → higher surface expression
+        # Past: more radiogenic heat -> more cryovolcanism -> higher surface expression
         if t < -2.0:
             heat_factor = 2.5
         elif t < -1.0:
@@ -366,16 +389,16 @@ class LocationFeatures:
         reaching ~3 (clipped to 1.0), then jumped to 0 for t>=0.
 
         At t=0 this gives:
-          lhb_peak = 0.40 * exp(-0.5 * (3.8/0.5)^2) ≈ 1.2e-22 ≈ 0
-          bg       = 0.10 * exp(-3.8/0.8) = 0.10 * 0.0085 ≈ 0.001
-          total    ≈ 0.001  (essentially zero, as expected)
+          lhb_peak = 0.40 * exp(-0.5 * (3.8/0.5)^2) =~ 1.2e-22 =~ 0
+          bg       = 0.10 * exp(-3.8/0.8) = 0.10 * 0.0085 =~ 0.001
+          total    =~ 0.001  (essentially zero, as expected)
         """
         is_crater_site = 'crater' in self.name.lower() or 'menrva' in self.name.lower()
 
-        t_lhb = -3.8    # Gya — LHB peak
-        tau   = 0.8     # Gyr — melt availability decay timescale
+        t_lhb = -3.8    # Gya -- LHB peak
+        tau   = 0.8     # Gyr -- melt availability decay timescale
 
-        # Gaussian LHB peak (width 0.5 Gyr covers -2.8 to -4.8 Gya at 2σ)
+        # Gaussian LHB peak (width 0.5 Gyr covers -2.8 to -4.8 Gya at 2sigma)
         lhb_peak = 0.40 * math.exp(-0.5 * ((t - t_lhb) / 0.5) ** 2)
 
         # Background: symmetric exponential decay away from LHB on both sides.
@@ -388,7 +411,7 @@ class LocationFeatures:
 
         return float(base)
 
-    # ── Feature vector at epoch t ──────────────────────────────────────────────
+    # -- Feature vector at epoch t ----------------------------------------------
 
     def features_at_epoch(self, t: float) -> dict[str, float]:
         """Return the full feature dict at epoch t (Gya from now)."""
@@ -404,7 +427,7 @@ class LocationFeatures:
             'impact_melt_bonus':       self._impact_melt_bonus(t),
         }
 
-# ─── Bayesian inference ───────────────────────────────────────────────────────
+# --- Bayesian inference -------------------------------------------------------
 
 # Weights (must sum to ~1.0; impact_melt_bonus uses remaining weight)
 FEATURE_WEIGHTS = {
@@ -457,7 +480,7 @@ def bayesian_posterior(features: dict[str, float]) -> tuple[float, float, float]
     lo, hi = dist.interval(0.94)
     return float(mean), float(lo), float(hi)
 
-# ─── Load present-epoch features from canonical TIFs ─────────────────────────
+# --- Load present-epoch features from canonical TIFs -------------------------
 
 def load_present_features(lon_W: float, lat: float) -> dict[str, float]:
     """
@@ -541,7 +564,7 @@ def load_present_features(lon_W: float, lat: float) -> dict[str, float]:
                     col = int(round(lon_W / 360.0 * ncols)) % ncols
                     row = int(round((90.0 - lat) / 180.0 * nrows))
                     row = max(0, min(nrows - 1, row))
-                    # Sample 5×5 neighbourhood to reduce pixel noise
+                    # Sample 5x5 neighbourhood to reduce pixel noise
                     r0, r1 = max(0, row-2), min(nrows, row+3)
                     c0, c1 = max(0, col-2), min(ncols, col+3)
                     arr = src.read(1)[r0:r1, c0:c1].astype(np.float32)
@@ -557,7 +580,7 @@ def load_present_features(lon_W: float, lat: float) -> dict[str, float]:
                 pass
 
     if n_loaded >= 6:
-        print(f"  Loaded {n_loaded}/8 features from TIFs for ({lon_W}°W, {lat}°)")
+        print(f"  Loaded {n_loaded}/8 features from TIFs for ({lon_W} degW, {lat} deg)")
         # Fill any missing
         key = (lon_W, lat)
         if key in defaults_by_location:
@@ -572,11 +595,11 @@ def load_present_features(lon_W: float, lat: float) -> dict[str, float]:
         return defaults_by_location[key].copy()
 
     # Generic fallback
-    print(f"  WARNING: no TIFs and no defaults for ({lon_W}°W, {lat}°) — using global means")
+    print(f"  WARNING: no TIFs and no defaults for ({lon_W} degW, {lat} deg) -- using global means")
     return {k: PRIOR_MEANS[k] for k in PRIOR_MEANS if k != 'impact_melt_bonus'}
 
 
-# ─── Main analysis ────────────────────────────────────────────────────────────
+# --- Main analysis ------------------------------------------------------------
 
 def run_analysis() -> None:
     try:
@@ -595,7 +618,7 @@ def run_analysis() -> None:
         present_f = load_present_features(lon_W, lat)
         loc_objects.append(LocationFeatures(name, lon_W, lat, present_f))
 
-    print(f"\nComputing habitability across {len(EPOCHS)} epochs × {len(LOCATIONS)} locations...")
+    print(f"\nComputing habitability across {len(EPOCHS)} epochs x {len(LOCATIONS)} locations...")
 
     # Result arrays
     means = np.zeros((len(EPOCHS), len(LOCATIONS)))
@@ -630,7 +653,7 @@ def run_analysis() -> None:
             writer.writerow(row)
     print(f"  Saved: {csv_path}")
 
-    # ── Plot 1: Main timeseries ────────────────────────────────────────────────
+    # -- Plot 1: Main timeseries ------------------------------------------------
     colours = plt.cm.tab10(np.linspace(0, 1, 10))
     labels  = [loc[3] for loc in LOCATIONS]
 
@@ -708,7 +731,7 @@ def run_analysis() -> None:
     plt.close()
     print(f"  Saved: {out1}")
 
-    # ── Plot 2: Epoch snapshots ────────────────────────────────────────────────
+    # -- Plot 2: Epoch snapshots ------------------------------------------------
     # Show bar charts at 6 key epochs
     key_epochs = [-3.5, -1.0, 0.0, 1.0, 5.2, 6.0]
     key_labels  = ['LHB\n(-3.5 Gya)', 'Mid-past\n(-1.0 Gya)',
@@ -750,7 +773,7 @@ def run_analysis() -> None:
     plt.close()
     print(f"  Saved: {out2}")
 
-    # ── Plot 3: Feature breakdown at present (heatmap) ────────────────────────
+    # -- Plot 3: Feature breakdown at present (heatmap) ------------------------
     feature_names = list(FEATURE_WEIGHTS.keys())
     feat_short = [f.replace('_', ' ').replace('hydrocarbon','HC')
                    .replace('abundance','abund').replace('interaction','interact')
@@ -758,7 +781,7 @@ def run_analysis() -> None:
                    .replace('geomorphologic','geomorph').replace('subsurface','subsfc')
                    .replace('impact melt bonus','impact melt') for f in feature_names]
 
-    # Build matrix: locations × features
+    # Build matrix: locations x features
     feat_matrix = np.zeros((len(loc_objects), len(feature_names)))
     posteriors  = []
     for j, loc in enumerate(loc_objects):

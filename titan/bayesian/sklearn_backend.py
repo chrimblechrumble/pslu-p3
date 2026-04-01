@@ -1,15 +1,30 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/bayesian/sklearn_backend.py
 ===================================
 Default Bayesian backend using scikit-learn.
 
-This backend implements a conjugate Beta–Bernoulli update that runs in
+This backend implements a conjugate Beta-Bernoulli update that runs in
 seconds on the full global grid without MCMC.  It is the default backend
 and is suitable for exploratory analysis and publication-quality maps.
 
 Mathematical model
 ------------------
-For each pixel i with feature vector D[i] ∈ [0,1]^F:
+For each pixel i with feature vector D[i] in [0,1]^F:
 
     Prior:   H ~ Beta(alpha_0, beta_0)
              where alpha_0 = mu_0 * kappa,  beta_0 = (1-mu_0) * kappa,
@@ -28,7 +43,7 @@ For each pixel i with feature vector D[i] ∈ [0,1]^F:
     95% CI:           Beta(alpha_i, beta_i).ppf([0.025, 0.975])
 
 This is the analytical conjugate update, not MCMC.  It is exact under
-the Beta–Bernoulli model and scales linearly with the number of pixels.
+the Beta-Bernoulli model and scales linearly with the number of pixels.
 
 References
 ----------
@@ -53,10 +68,10 @@ logger = logging.getLogger(__name__)
 
 class SklearnBayesianBackend(BayesianBackend):
     """
-    Conjugate Beta–Bernoulli Bayesian update (analytic, no MCMC).
+    Conjugate Beta-Bernoulli Bayesian update (analytic, no MCMC).
 
     This is the default backend.  It produces the exact posterior under
-    the Beta–Bernoulli likelihood model and runs in < 10 s on the full
+    the Beta-Bernoulli likelihood model and runs in < 10 s on the full
     global grid.
 
     Parameters
@@ -95,16 +110,16 @@ class SklearnBayesianBackend(BayesianBackend):
         BayesianResult
             Posterior mean, std, and 95% credible interval maps.
         """
-        logger.info("Running conjugate Beta–Bernoulli update (sklearn backend)…")
+        logger.info("Running conjugate Beta-Bernoulli update (sklearn backend)...")
 
-        # ── Flatten features ──────────────────────────────────────────────
+        # -- Flatten features ----------------------------------------------
         X, valid_idx = self._feature_matrix(features)
         # X shape: (N_valid, n_features), values in [0, 1]
         N, F = X.shape
         logger.info("  Valid pixels: %d / %d", N,
                     self.grid.nrows * self.grid.ncols)
 
-        # ── Prior parameters ──────────────────────────────────────────────
+        # -- Prior parameters ----------------------------------------------
         # Global prior: single Beta(alpha_0, beta_0) for H per pixel.
         # alpha_0, beta_0 are scalar (same prior for all pixels).
         mu_global = np.dot(
@@ -116,11 +131,11 @@ class SklearnBayesianBackend(BayesianBackend):
         beta_0  = float((1.0 - mu_global) * kappa)
 
         logger.info(
-            "  Prior: Beta(alpha=%.2f, beta=%.2f)  →  prior mean = %.3f",
+            "  Prior: Beta(alpha=%.2f, beta=%.2f)  ->  prior mean = %.3f",
             alpha_0, beta_0, alpha_0 / (alpha_0 + beta_0),
         )
 
-        # ── Bayesian update ───────────────────────────────────────────────
+        # -- Bayesian update -----------------------------------------------
         # For each feature f with weight w_f and observation D[i,f]:
         #   alpha[i] += w_f * D[i,f] * sharpness
         #   beta[i]  += w_f * (1-D[i,f]) * sharpness
@@ -137,7 +152,7 @@ class SklearnBayesianBackend(BayesianBackend):
             alpha_post += wf * d       * sharpness
             beta_post  += wf * (1 - d) * sharpness
 
-        # ── Posterior statistics ──────────────────────────────────────────
+        # -- Posterior statistics ------------------------------------------
         ab_sum = alpha_post + beta_post
 
         post_mean = alpha_post / ab_sum
@@ -155,7 +170,7 @@ class SklearnBayesianBackend(BayesianBackend):
             post_mean.min(), post_mean.max(), float(np.median(post_mean)),
         )
 
-        # ── Reconstruct full spatial maps ─────────────────────────────────
+        # -- Reconstruct full spatial maps ---------------------------------
         fill = float(alpha_0 / (alpha_0 + beta_0))  # prior mean for invalid px
 
         result = BayesianResult(

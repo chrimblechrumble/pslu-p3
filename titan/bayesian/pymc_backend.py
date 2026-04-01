@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/bayesian/pymc_backend.py
 ================================
@@ -67,7 +82,7 @@ class PyMCBayesianBackend(BayesianBackend):
     chains:
         Number of parallel chains.
     target_accept:
-        NUTS target acceptance rate (0.8–0.95 recommended).
+        NUTS target acceptance rate (0.8-0.95 recommended).
     """
 
     def __init__(
@@ -113,10 +128,10 @@ class PyMCBayesianBackend(BayesianBackend):
                 "PyMC backend requires: pip install pymc>=5.10 arviz>=0.18"
             ) from exc
 
-        logger.info("Running PyMC NUTS backend (n_mcmc_pixels=%d)…",
+        logger.info("Running PyMC NUTS backend (n_mcmc_pixels=%d)...",
                     self.n_mcmc_pixels)
 
-        # ── Sample valid pixels ───────────────────────────────────────────
+        # -- Sample valid pixels -------------------------------------------
         X_all, valid_idx = self._feature_matrix(features)
         N_valid = len(X_all)
         rng = np.random.default_rng(self.random_seed)
@@ -130,7 +145,7 @@ class PyMCBayesianBackend(BayesianBackend):
         M, F = X_sample.shape
         logger.info("  Sampling %d / %d valid pixels for MCMC", M, N_valid)
 
-        # ── Prior parameters ──────────────────────────────────────────────
+        # -- Prior parameters ----------------------------------------------
         mu_vec    = np.array(self.priors.prior_mean_vector(), dtype=np.float64)
         kappa     = float(self.priors.beta_concentration)
         weights   = np.array(self.priors.weight_vector(), dtype=np.float64)
@@ -141,7 +156,7 @@ class PyMCBayesianBackend(BayesianBackend):
         alpha_0   = mu_global * kappa
         beta_0    = (1.0 - mu_global) * kappa
 
-        # ── PyMC model ────────────────────────────────────────────────────
+        # -- PyMC model ----------------------------------------------------
         with pm.Model() as model:
             # Latent habitability per sampled pixel: H ~ Beta(alpha_0, beta_0)
             H = pm.Beta(
@@ -166,8 +181,8 @@ class PyMCBayesianBackend(BayesianBackend):
                     observed=np.clip(obs_f, 1e-6, 1.0 - 1e-6),
                 )
 
-            # ── Sample ───────────────────────────────────────────────────
-            logger.info("  Starting NUTS sampling (draws=%d, tune=%d, chains=%d)…",
+            # -- Sample ---------------------------------------------------
+            logger.info("  Starting NUTS sampling (draws=%d, tune=%d, chains=%d)...",
                         self.draws, self.tune, self.chains)
             trace = pm.sample(
                 draws=self.draws,
@@ -179,7 +194,7 @@ class PyMCBayesianBackend(BayesianBackend):
                 return_inferencedata=True,
             )
 
-        # ── Posterior statistics for sampled pixels ───────────────────────
+        # -- Posterior statistics for sampled pixels -----------------------
         H_samples = trace.posterior["H"].values  # (chains, draws, M)
         H_flat    = H_samples.reshape(-1, M)     # (chains*draws, M)
 
@@ -188,7 +203,7 @@ class PyMCBayesianBackend(BayesianBackend):
         post_lower_sample = np.percentile(H_flat, 2.5,  axis=0)
         post_upper_sample = np.percentile(H_flat, 97.5, axis=0)
 
-        # ── Interpolate back to full valid-pixel set ──────────────────────
+        # -- Interpolate back to full valid-pixel set ----------------------
         # Use nearest-neighbour in feature space (sklearn KNN)
         from sklearn.neighbors import KNeighborsRegressor
 

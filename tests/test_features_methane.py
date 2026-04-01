@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 tests/test_features_methane.py
 ================================
@@ -5,8 +20,8 @@ Tests for Feature 4 (_methane_cycle) after the cirs_temperature integration.
 
 The updated feature blends:
   vims_coverage      (0.50)
-  cirs_temperature   (0.25) — meridional |dT/dlat| gradient
-  lat_weight         (0.25) — Gaussian prior at ±45°
+  cirs_temperature   (0.25) -- meridional |dT/dlat| gradient
+  lat_weight         (0.25) -- Gaussian prior at +/-45 deg
 
 Tests verify correctness of each blend mode and the physical
 validity of the cirs_temperature gradient contribution.
@@ -50,7 +65,7 @@ def _stack(**layers) -> xr.Dataset:
         T = jennings_temperature_grid(lat_grid, 2011.0)
         dvs["cirs_temperature"] = _da(T, lats, lons)
     if "cirs_flat" in layers:
-        # Uniform temperature (no gradient → should not boost methane cycle)
+        # Uniform temperature (no gradient -> should not boost methane cycle)
         T_flat = np.full((nrows, ncols), 93.0, dtype=np.float32)
         dvs["cirs_temperature"] = _da(T_flat, lats, lons)
     return xr.Dataset(dvs)
@@ -134,14 +149,14 @@ class TestMethane_CycleCIRS:
         T = jennings_temperature_map(lats, 2011.0)
         dT = np.abs(np.gradient(T))
         # Gradient should be near-zero at the temperature peak and grow
-        # away from it — verify poles have higher gradient than equator
+        # away from it -- verify poles have higher gradient than equator
         assert dT[0] > dT[9] or dT[-1] > dT[9], (
             "Gradient should be larger at poles than at equator"
         )
 
     def test_flat_cirs_has_minimal_effect(self) -> None:
         """
-        A spatially uniform cirs_temperature has zero gradient → contributes
+        A spatially uniform cirs_temperature has zero gradient -> contributes
         nothing distinctive.  The result should be close to the VIMS-only case.
         """
         r_vims_only  = _compute(_stack(vims=True))
@@ -170,7 +185,7 @@ class TestMethane_CycleWeights:
         stack_vc   = _stack(vims=True, cirs=True)
         r_v  = _compute(stack_v)
         r_vc = _compute(stack_vc)
-        assert not np.allclose(r_v, r_vc), "Three-way blend ≠ two-way blend"
+        assert not np.allclose(r_v, r_vc), "Three-way blend != two-way blend"
 
     def test_three_way_is_bounded_by_components(self) -> None:
         """
@@ -184,19 +199,19 @@ class TestMethane_CycleWeights:
 
     def test_lat_prior_forms_gaussian_peaks(self) -> None:
         """
-        Pure lat prior should peak near ±45°, symmetric about equator.
+        Pure lat prior should peak near +/-45 deg, symmetric about equator.
         Peaks should be in mid-latitude rows, not at poles or equator.
         """
         result = _compute(xr.Dataset({}))
         nrows = result.shape[0]
         mid = nrows // 2
-        # Northern hemisphere rows (mid → end) should peak in the interior
+        # Northern hemisphere rows (mid -> end) should peak in the interior
         n_peak_row = mid + int(np.argmax(result[mid:, 0]))
         assert mid < n_peak_row < nrows - 1, (
             f"NH peak row {n_peak_row} should be between equator ({mid}) "
             f"and north pole ({nrows - 1})"
         )
-        # Southern hemisphere rows (0 → mid) should also peak in the interior
+        # Southern hemisphere rows (0 -> mid) should also peak in the interior
         s_peak_row = int(np.argmax(result[:mid, 0]))
         assert 0 < s_peak_row < mid, (
             f"SH peak row {s_peak_row} should be between south pole (0) "

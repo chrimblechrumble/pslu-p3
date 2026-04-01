@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/io/gtdr_reader.py
 ========================
@@ -9,37 +24,37 @@ Format details verified against actual label file GT0EB00N090_T077_V01.LBL:
   RECORD_TYPE    : FIXED_LENGTH
   RECORD_BYTES   : 1440
   LABEL_RECORDS  : 5
-  IMAGE start    : record 6  → byte offset = (6-1) × 1440 = 7200
+  IMAGE start    : record 6  -> byte offset = (6-1) x 1440 = 7200
   LINES          : 360  (latitude rows)
-  LINE_SAMPLES   : 360  (longitude columns per tile = 180° at 2 ppd)
-  SAMPLE_TYPE    : PC_REAL  → IEEE-754 float32, little-endian
+  LINE_SAMPLES   : 360  (longitude columns per tile = 180 deg at 2 ppd)
+  SAMPLE_TYPE    : PC_REAL  -> IEEE-754 float32, little-endian
   SAMPLE_BITS    : 32
   SCALING_FACTOR : 1.0  (values are raw metres, no scaling needed)
   MISSING_CONSTANT: 16#FF7FFFFB# = -3.4028226550889045e+38
     NOTE: This is NOT a NaN. Must mask by exact value comparison.
   MAP_PROJECTION_TYPE : EQUIRECTANGULAR
   A_AXIS_RADIUS  : 2575.0 km
-  POSITIVE_LONGITUDE_DIRECTION : WEST (west-positive, 0→360°)
-  CENTER_LONGITUDE : 180.0°  (clon180 convention)
-  MAP_RESOLUTION : 2.0 ppd  →  0.5°/pixel  →  22.47 km/pixel
+  POSITIVE_LONGITUDE_DIRECTION : WEST (west-positive, 0->360 deg)
+  CENTER_LONGITUDE : 180.0 deg  (clon180 convention)
+  MAP_RESOLUTION : 2.0 ppd  ->  0.5 deg/pixel  ->  22.47 km/pixel
 
 Cornell archive product types (data.astro.cornell.edu/RADAR/DATA/GTDR/)
 ------------------------------------------------------------------------
 Files are stored gzip-compressed (.IMG.gz); this reader decompresses them
 transparently.  Both .IMG and .IMG.gz paths are accepted.
 
-  GT0ED00N{lon}_{flyby}_V01  — standard GTDR (sparse, altimetry + SARtopo only)
-  GTDED00N{lon}_{flyby}_V01  — Dense interpolated DEM (~90% global coverage)
-  GTBED00N{lon}_{flyby}_V01  — spherical harmonic / ellipsoid model
+  GT0ED00N{lon}_{flyby}_V01  -- standard GTDR (sparse, altimetry + SARtopo only)
+  GTDED00N{lon}_{flyby}_V01  -- Dense interpolated DEM (~90% global coverage)
+  GTBED00N{lon}_{flyby}_V01  -- spherical harmonic / ellipsoid model
 
 Each product has two half-globe tiles:
-  N090 tile: lon  0°W → 180°W
-  N270 tile: lon 180°W → 360°W
+  N090 tile: lon  0 degW -> 180 degW
+  N270 tile: lon 180 degW -> 360 degW
 
 Pipeline DEM priority (see preprocessing.py):
-  1. GTDE T126 (interpolated, ~90% global) — PREFERRED
+  1. GTDE T126 (interpolated, ~90% global) -- PREFERRED
   2. GT0E T126 (sparse, final mission coverage)
-  3. GT0E T077 (sparse, partial mission — legacy fallback)
+  3. GT0E T077 (sparse, partial mission -- legacy fallback)
 
 USGS gtdr-data.zip contains the same product set.
 
@@ -70,7 +85,7 @@ logger = logging.getLogger(__name__)
 # Constants from label file
 # ---------------------------------------------------------------------------
 
-#: Byte offset to the start of image data (5 label records × 1440 bytes).
+#: Byte offset to the start of image data (5 label records x 1440 bytes).
 GTDR_IMAGE_OFFSET: int = 7200
 
 #: PDS3 MISSING_CONSTANT as a float32 value.
@@ -179,14 +194,14 @@ def read_gtdr_img(
         ``.LBL`` file with the same stem as ``img_path``.
     replace_missing_with_nan:
         If True (default), replace the PDS3 MISSING_CONSTANT
-        (−3.4028×10³⁸) with ``np.nan``.
+        (-3.4028x10^3^8) with ``np.nan``.
 
     Returns
     -------
     data : np.ndarray
         2-D float32 array of shape (lines, line_samples).
-        Rows run north → south (row 0 = MAXIMUM_LATITUDE).
-        Columns run west → east in the west-positive convention
+        Rows run north -> south (row 0 = MAXIMUM_LATITUDE).
+        Columns run west -> east in the west-positive convention
         (col 0 = WESTERNMOST_LONGITUDE, increasing westward).
     meta : dict
         Label metadata from ``parse_gtdr_label()``.
@@ -215,7 +230,7 @@ def read_gtdr_img(
     elif img_path.suffix.lower() == ".gz":
         is_gzip = True
 
-    # Locate label — strip .gz suffix when looking for the companion .LBL
+    # Locate label -- strip .gz suffix when looking for the companion .LBL
     lbl_base = img_path.with_suffix("") if is_gzip else img_path
     if lbl_path is None:
         lbl_path = lbl_base.with_suffix(".LBL")
@@ -245,7 +260,7 @@ def read_gtdr_img(
     expected_bytes = lines * line_samples * 4  # float32 = 4 bytes
 
     if is_gzip:
-        # Decompress fully in memory — GTDR tiles are ≤15 MB uncompressed
+        # Decompress fully in memory -- GTDR tiles are <=15 MB uncompressed
         with gzip.open(img_path, "rb") as fh:
             file_bytes = fh.read()
         available = len(file_bytes) - offset
@@ -256,7 +271,7 @@ def read_gtdr_img(
 
     if available < expected_bytes:
         # Some GTDE files (e.g. T126 at 4 ppd) are slightly shorter than
-        # the label claims — the last few rows may be absent.  Clamp to
+        # the label claims -- the last few rows may be absent.  Clamp to
         # what is actually available rather than raising.
         actual_lines = available // (line_samples * 4)
         if actual_lines < 1:
@@ -289,7 +304,7 @@ def read_gtdr_img(
         # is -3.4028e38 which is a valid (very negative) float, not NaN.
         missing = meta["missing_constant_float32"]
         # Cast to float64 before the subtraction to avoid float32 overflow
-        # (missing ≈ -3.4e38, which is near the float32 min).
+        # (missing =~ -3.4e38, which is near the float32 min).
         # Suppress the "invalid value in cast" warning: the missing constant
         # itself is an extreme float32 value; the cast is intentional.
         with np.errstate(invalid='ignore'):
@@ -319,8 +334,8 @@ def mosaic_gtdr_tiles(
     """
     Merge eastern and western GTDR half-globe tiles into a single global array.
 
-    The eastern tile covers lon 0°–180°W (columns 0→359 in the mosaic).
-    The western tile covers lon 180°–360°W (columns 360→719 in the mosaic).
+    The eastern tile covers lon 0 deg-180 degW (columns 0->359 in the mosaic).
+    The western tile covers lon 180 deg-360 degW (columns 360->719 in the mosaic).
 
     Parameters
     ----------
@@ -335,8 +350,8 @@ def mosaic_gtdr_tiles(
     -------
     mosaic : np.ndarray
         Global array of shape (360, 720) at 2 ppd.
-        Longitude runs 0°W → 360°W left to right.
-        Latitude runs +90° → −90° top to bottom.
+        Longitude runs 0 degW -> 360 degW left to right.
+        Latitude runs +90 deg -> -90 deg top to bottom.
     meta : dict
         Merged metadata dict.
     """
@@ -345,7 +360,7 @@ def mosaic_gtdr_tiles(
 
     if east_data.shape != west_data.shape:
         # Both tiles are truncated, but by different amounts. The label's
-        # expected row count is the authority — pad the shorter tile with
+        # expected row count is the authority -- pad the shorter tile with
         # NaN rows at the bottom so the two halves can be concatenated.
         # This preserves geographic alignment (both tiles are north-up and
         # the truncation is always at the south end).

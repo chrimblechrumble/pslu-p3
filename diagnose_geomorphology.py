@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 diagnose_geomorphology.py
 =========================
@@ -23,8 +38,16 @@ out_dir.mkdir(parents=True, exist_ok=True)
 report = []
 R = lambda s: (report.append(s), print(s))
 
-# ── 1. Read the geomorphology raster ─────────────────────────────────────────
+# -- 1. Read the geomorphology raster -----------------------------------------
 import rasterio
+print(
+    "Titan Habitability Pipeline  Copyright (C) 2025/2026  Chris Meadows\n"
+    "This program comes with ABSOLUTELY NO WARRANTY; for details, see the\n"
+    "README.md at the project root.\n"
+    "This is free software, and you are welcome to redistribute it\n"
+    "under certain conditions; see the LICENSE.md file at the project\n"
+    "root for details.\n"
+)
 geo_path = Path('data/processed/geomorphology_canonical.tif')
 if not geo_path.exists():
     print("ERROR: geomorphology_canonical.tif not found")
@@ -38,7 +61,7 @@ with rasterio.open(geo_path) as src:
 R("=" * 60)
 R("GEOMORPHOLOGY RASTER PROBE")
 R("=" * 60)
-R(f"Shape: {nrows} rows × {ncols} cols")
+R(f"Shape: {nrows} rows x {ncols} cols")
 R(f"Transform: {transform}")
 
 # Class distribution
@@ -49,18 +72,18 @@ names = {0:'NoData', 1:'Craters', 2:'Dunes', 3:'Plains',
 for cls, cnt in zip(classes, counts):
     R(f"  Class {cls} ({names.get(int(cls),'?'):12s}): {cnt:>10,}  ({100*cnt/geo.size:.1f}%)")
 
-# ── 2. Check known feature locations ─────────────────────────────────────────
+# -- 2. Check known feature locations -----------------------------------------
 R("\n" + "=" * 60)
 R("KNOWN FEATURE LOCATION CHECK")
 R("=" * 60)
 R("Checking where dunes appear vs where they should be.")
 R("Equatorial dune belt known features:")
-R("  Belet:      ~250°W, equator (class 2 = Dunes)")
-R("  Shangri-La: ~155°W, equator (class 2 = Dunes)")
-R("  Aztlan:     ~315°W, equator (class 2 = Dunes)")
+R("  Belet:      ~250 degW, equator (class 2 = Dunes)")
+R("  Shangri-La: ~155 degW, equator (class 2 = Dunes)")
+R("  Aztlan:     ~315 degW, equator (class 2 = Dunes)")
 R("")
 
-# Find the equatorial band (lat ±15°)
+# Find the equatorial band (lat +/-15 deg)
 lat_centres = np.linspace(90 - 0.5*180/nrows, -90 + 0.5*180/nrows, nrows)
 lon_centres  = np.linspace(0.5*360/ncols, 360 - 0.5*360/ncols, ncols)
 eq_rows = np.where(np.abs(lat_centres) < 15)[0]
@@ -69,15 +92,15 @@ eq_rows = np.where(np.abs(lat_centres) < 15)[0]
 dune_cols_eq = np.where(geo[eq_rows[0]:eq_rows[-1]+1, :] == 2)
 if len(dune_cols_eq[1]) > 0:
     dune_lons = lon_centres[dune_cols_eq[1]]
-    R(f"Dune (class 2) pixels in ±15° equatorial belt:")
+    R(f"Dune (class 2) pixels in +/-15 deg equatorial belt:")
     R(f"  Count: {len(dune_lons)}")
-    R(f"  Longitude range: {dune_lons.min():.1f}°W – {dune_lons.max():.1f}°W")
+    R(f"  Longitude range: {dune_lons.min():.1f} degW - {dune_lons.max():.1f} degW")
     
     # Check specific longitude bands
     for band_name, lo, hi in [
-        ("Shangri-La zone (140-170°W)", 140, 170),
-        ("Belet zone      (230-265°W)", 230, 265),
-        ("Aztlan zone     (295-330°W)", 295, 330),
+        ("Shangri-La zone (140-170 degW)", 140, 170),
+        ("Belet zone      (230-265 degW)", 230, 265),
+        ("Aztlan zone     (295-330 degW)", 295, 330),
     ]:
         n_in_band = int(np.sum((dune_lons >= lo) & (dune_lons < hi)))
         R(f"  {band_name}: {n_in_band} dune pixels")
@@ -93,11 +116,11 @@ if len(dune_cols_eq[1]) > 0:
         R(f"  *** MIRROR CONFIRMED: right half is ~reflection of left ***")
         R(f"  *** Shapefile coordinate convention is WRONG in rasteriser ***")
     else:
-        R(f"  No strong mirror detected — coordinate conversion likely correct")
+        R(f"  No strong mirror detected -- coordinate conversion likely correct")
 else:
     R("WARNING: No dune pixels found in equatorial belt!")
 
-# ── 3. Check raw shapefile coordinates ────────────────────────────────────────
+# -- 3. Check raw shapefile coordinates ----------------------------------------
 R("\n" + "=" * 60)
 R("RAW SHAPEFILE COORDINATE CHECK")
 R("=" * 60)
@@ -123,13 +146,13 @@ if dunes_shp.exists():
         if all_lons:
             R(f"\nDunes.shp longitude range: {min(all_lons):.2f} to {max(all_lons):.2f}")
             if min(all_lons) < -90:
-                R("→ Coordinates are EAST-positive (-180 to +180) ✓")
+                R("-> Coordinates are EAST-positive (-180 to +180) [OK]")
             elif max(all_lons) > 180:
-                R("→ Coordinates are in 0-360 range")
+                R("-> Coordinates are in 0-360 range")
                 if min(all_lons) >= 0:
-                    R("→ This looks WEST-positive (0-360°W) — current formula negates wrongly!")
+                    R("-> This looks WEST-positive (0-360 degW) -- current formula negates wrongly!")
             else:
-                R("→ Coordinates in 0-180 range (ambiguous)")
+                R("-> Coordinates in 0-180 range (ambiguous)")
     except ImportError:
         R("geopandas not available for raw shapefile check")
     except Exception as e:
@@ -137,7 +160,7 @@ if dunes_shp.exists():
 else:
     R(f"Dunes.shp not found at {dunes_shp}")
 
-# ── 4. Visual output ──────────────────────────────────────────────────────────
+# -- 4. Visual output ----------------------------------------------------------
 fig, axes = plt.subplots(2, 2, figsize=(16, 8))
 fig.suptitle("Geomorphology Raster Diagnostic", fontsize=13)
 

@@ -1,24 +1,39 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 tests/test_features_organic.py
 ================================
-Unit tests for Feature 2 — ``organic_abundance``.
+Unit tests for Feature 2 -- ``organic_abundance``.
 
 Design
 ------
 Feature 2 uses two data sources:
 
-1. **VIMS+ISS mosaic** (primary) — 1.59/1.27 µm band ratio; spectroscopic
-   tholin proxy.  Covers ~50 % of the globe (roughly 0–180 °W).
+1. **VIMS+ISS mosaic** (primary) -- 1.59/1.27 umm band ratio; spectroscopic
+   tholin proxy.  Covers ~50 % of the globe (roughly 0-180  degW).
 
-2. **Geomorphology-class scores** (gap-fill) — maps each Lopes et al. (2019)
+2. **Geomorphology-class scores** (gap-fill) -- maps each Lopes et al. (2019)
    terrain class to a published organic-abundance value from
    :data:`titan.features.TERRAIN_ORGANIC_SCORES`.  Provides 100 % global
    coverage without any radiometric seam because no two different instruments
    are blended.
 
 ISS 938 nm broadband reflectance is intentionally NOT used as a gap-filler.
-Diagnostic testing showed that VIMS raw values (63–225, band ratio) and ISS
-raw values (0.040–0.085, reflectance) differ by a factor of ~3000, making
+Diagnostic testing showed that VIMS raw values (63-225, band ratio) and ISS
+raw values (0.040-0.085, reflectance) differ by a factor of ~3000, making
 any normalisation-based blending leave a hard visible seam at the coverage
 boundary.  The geomorphology-based approach is scientifically superior and
 seam-free because each terrain class carries a single, citable organic-
@@ -26,13 +41,13 @@ abundance value.
 
 Test categories
 ---------------
-* ``TestGeoOrganicConversion`` — unit tests for the
+* ``TestGeoOrganicConversion`` -- unit tests for the
   :func:`~titan.features._geo_class_to_organic` helper.
-* ``TestOrganicAbundancePrimary`` — VIMS-only and geo-only paths.
-* ``TestOrganicAbundanceCombined`` — combined VIMS + geomorphology.
-* ``TestOrganicAbundanceSeam`` — the original seam regression test,
+* ``TestOrganicAbundancePrimary`` -- VIMS-only and geo-only paths.
+* ``TestOrganicAbundanceCombined`` -- combined VIMS + geomorphology.
+* ``TestOrganicAbundanceSeam`` -- the original seam regression test,
   verifying that the geo gap-fill produces no visible discontinuity.
-* ``TestOrganicAbundanceFallback`` — coverage-density and all-NaN paths.
+* ``TestOrganicAbundanceFallback`` -- coverage-density and all-NaN paths.
 """
 
 from __future__ import annotations
@@ -47,17 +62,17 @@ from typing import Dict
 # Helpers
 # ---------------------------------------------------------------------------
 
-NROWS: int = 36   # 5° per pixel — small enough for fast tests
+NROWS: int = 36   # 5 deg per pixel -- small enough for fast tests
 NCOLS: int = 72
 
 
 def _lats() -> np.ndarray:
-    """Latitude centres (°), north to south."""
+    """Latitude centres (deg), north to south."""
     return np.linspace(-87.5, 87.5, NROWS)
 
 
 def _lons() -> np.ndarray:
-    """Longitude centres (°W), 0–360."""
+    """Longitude centres ( degW), 0-360."""
     return np.linspace(2.5, 357.5, NCOLS)
 
 
@@ -82,9 +97,9 @@ def _compute(stack: xr.Dataset) -> np.ndarray:
 
 
 def _make_vims_left_half(rng: np.random.Generator) -> np.ndarray:
-    """VIMS raw values covering left half only (0–180°W = cols 0..NCOLS//2-1).
+    """VIMS raw values covering left half only (0-180 degW = cols 0..NCOLS//2-1).
 
-    Values are ~120–180, simulating real VIMS band-ratio units.
+    Values are ~120-180, simulating real VIMS band-ratio units.
     """
     arr = np.full((NROWS, NCOLS), np.nan, dtype=np.float32)
     half = NCOLS // 2
@@ -93,14 +108,14 @@ def _make_vims_left_half(rng: np.random.Generator) -> np.ndarray:
 
 
 def _make_geo_full(class_id: int = 3) -> np.ndarray:
-    """Geomorphology raster — uniform ``class_id`` over the full globe."""
+    """Geomorphology raster -- uniform ``class_id`` over the full globe."""
     return np.full((NROWS, NCOLS), class_id, dtype=np.float32)
 
 
 def _make_geo_varied() -> np.ndarray:
     """Geomorphology raster with all terrain classes distributed spatially."""
     arr = np.zeros((NROWS, NCOLS), dtype=np.float32)
-    # Divide grid into 7 column bands, one per class 1–7
+    # Divide grid into 7 column bands, one per class 1-7
     band = NCOLS // 7
     for i, cls in enumerate(range(1, 8)):
         arr[:, i * band: (i + 1) * band] = float(cls)
@@ -155,7 +170,7 @@ class TestGeoOrganicConversion:
         """Terrain class IDs not in the table produce NaN and do not raise."""
         from titan.features import _geo_class_to_organic
         arr = np.array([[99]], dtype=np.int32)
-        # Must not raise — unknown classes are handled gracefully
+        # Must not raise -- unknown classes are handled gracefully
         result = _geo_class_to_organic(arr)
         assert np.isnan(result[0, 0]), (
             "Unknown class ID 99 should map to NaN, not a numeric value"
@@ -297,7 +312,7 @@ class TestOrganicAbundanceCombined:
         # VIMS region values should be >> 0.05 (not all equal to lake score)
         vims_region_mean = float(np.nanmean(result[:, :half]))
         assert vims_region_mean > 0.15, (
-            f"VIMS region mean {vims_region_mean:.3f} too low — "
+            f"VIMS region mean {vims_region_mean:.3f} too low -- "
             "may be overridden by geo-lake score (0.05)"
         )
 
@@ -368,7 +383,7 @@ class TestOrganicAbundanceSeam:
 
     def test_no_visible_seam_boundary_vs_interior_variation(self) -> None:
         """
-        Boundary jump must not exceed 3× the typical within-VIMS pixel-to-pixel
+        Boundary jump must not exceed 3x the typical within-VIMS pixel-to-pixel
         variation.  The geo-based gap-fill should produce smooth transitions.
         """
         vims = _make_vims_left_half(self.rng)
@@ -380,7 +395,7 @@ class TestOrganicAbundanceSeam:
         result = _compute(stack)
         half = NCOLS // 2
 
-        # Step at the boundary (last VIMS col → first geo col)
+        # Step at the boundary (last VIMS col -> first geo col)
         boundary_diff = float(np.nanmean(
             np.abs(result[:, half - 1] - result[:, half])
         ))
@@ -402,7 +417,7 @@ class TestOrganicAbundanceSeam:
     def test_gap_region_median_close_to_expected_class_score(self) -> None:
         """
         In the gap region, the median should match the terrain class score
-        to within ±0.05, confirming no hidden ISS blending is occurring.
+        to within +/-0.05, confirming no hidden ISS blending is occurring.
         """
         from titan.features import TERRAIN_ORGANIC_SCORES
         vims = _make_vims_left_half(self.rng)
@@ -417,7 +432,7 @@ class TestOrganicAbundanceSeam:
         expected   = TERRAIN_ORGANIC_SCORES[3]
         assert abs(gap_median - expected) < 0.05, (
             f"Gap median {gap_median:.3f} should equal plains score "
-            f"{expected:.3f} ± 0.05"
+            f"{expected:.3f} +/- 0.05"
         )
 
 

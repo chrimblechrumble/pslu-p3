@@ -1,3 +1,18 @@
+# Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
+# Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>
 """
 titan/bayesian/base.py
 ======================
@@ -22,9 +37,9 @@ The model is:
         (1 - H[i]) * sharpness + 0.5
     )
 
-    Posterior: P(H[i] | D[i,:]) ∝ P(D[i,:] | H[i]) * P(H[i])
+    Posterior: P(H[i] | D[i,:]) proportional to P(D[i,:] | H[i]) * P(H[i])
 
-Because the full MCMC is prohibitively expensive at 46080×23040 global
+Because the full MCMC is prohibitively expensive at 46080x23040 global
 pixels, all backends operate on a **vectorised approximate model** where:
 
   1. Features are pre-extracted to an (N, F) matrix (N pixels, F=8 features)
@@ -72,16 +87,16 @@ class BayesianResult:
     Attributes
     ----------
     posterior_mean:
-        E[H | D] — pixel-wise posterior mean habitability probability.
+        E[H | D] -- pixel-wise posterior mean habitability probability.
         This is the primary output for visualisation and publication.
     posterior_std:
-        Std[H | D] — posterior uncertainty (standard deviation).
+        Std[H | D] -- posterior uncertainty (standard deviation).
     posterior_lower:
         2.5th percentile of posterior (lower 95% credible interval bound).
     posterior_upper:
         97.5th percentile of posterior (upper 95% credible interval bound).
     prior_mean:
-        E[H] — prior mean map for comparison with posterior.
+        E[H] -- prior mean map for comparison with posterior.
     n_pixels_mcmc:
         Number of pixels used for MCMC inference (backends that subsample).
     backend:
@@ -230,8 +245,8 @@ class BayesianBackend(ABC):
         **Why impute rather than exclude?**
 
         The original approach (``valid = np.all(np.isfinite, axis=1)``) treats
-        a pixel as invalid if *any* feature is NaN.  This caused the 180–360°W
-        hemisphere — where the VIMS mosaic has no coverage — to be filled with
+        a pixel as invalid if *any* feature is NaN.  This caused the 180-360 degW
+        hemisphere -- where the VIMS mosaic has no coverage -- to be filled with
         the flat global prior mean rather than a posterior informed by the 7
         other features that *are* available there (geomorphology, topography,
         SAR, methane cycle, etc.).

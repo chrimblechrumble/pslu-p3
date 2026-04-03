@@ -309,7 +309,7 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
      "Solar UV climbing steadily on the main sequence. Polar lakes remain stable.\n"
      "Habitability drifts slightly upward as organic inventory grows."),
 
-    ( 4.00, 3.0,
+    ( 4.0667, 3.0,
      "SOLAR WARMING RAMP  (+4.0 Gya)  |  L☉ ≈ 1.3× present\n"
      "Lake surfaces begin evaporating. Methane cycle weakening.\n"
      "liquid_hydrocarbon + methane_cycle together weight 0.36 — both declining."),
@@ -319,7 +319,7 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
      "liquid_hydrocarbon → 0. Organic stockpile at 16 Gyr maximum.\n"
      "Surface is dry and cold. Local minimum before the red-giant transition."),
 
-    ( 5.15, 4.0,
+    ( 5.1333, 4.0,
      "EUTECTIC THRESHOLD CROSSED  (+5.1 Gya)  |  T_surface > 176 K\n"
      "Global water-ammonia ocean forms in < 1 Myr. Entire surface becomes liquid.\n"
      "Subsurface ocean merges with surface. Maximum organic concentration in solution."),
@@ -329,9 +329,9 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
      "All surfaces score ~0.47. 16 Gyr organic stockpile dissolved as bioavailable substrate.\n"
      "Water-ammonia chemistry enables terrestrial-analogue biochemistry."),
 
-    ( 6.50, 3.0,
-     "END OF HABITABLE WINDOW  (+6.5 Gya)  |  Sun enters AGB phase\n"
-     "Luminosity collapses post-RGB tip. Ocean may refreeze.\n"
+    ( 6.0, 3.0,
+     "END OF HABITABLE WINDOW  (+6.0 Gya)  |  Sun exits red-giant phase\n"
+     "Luminosity collapses from 600× to 0.8×. Ocean refreezes in < 1 Myr.\n"
      "Total red-giant habitable window: ~400 Myr."),
 ]
 
@@ -940,8 +940,13 @@ def render_frame(
     nrows, ncols = GRID_SHAPE
 
     # -- Colourmap ------------------------------------------------------------
+    # Both the equirectangular and polar panels use COLOUR_BACKGROUND for NaN
+    # pixels (missing data or outside-disc regions).  Using a solid colour
+    # rather than transparency guarantees the Agg backend produces the exact
+    # same colour as the figure background without compositing artefacts.
     cmap = matplotlib.colormaps["plasma"]
-    cmap.set_bad(color=COLOUR_SPACE)   # matplotlib keyword stays American English
+    cmap.set_bad(color=COLOUR_BACKGROUND)   # matplotlib keyword stays American English
+    cmap_polar = cmap.copy()               # identical -- both use background colour
     norm = mcolors.Normalize(vmin=VMIN, vmax=VMAX)   # matplotlib API
 
     T_surface = titan_temp_K(t)
@@ -1114,38 +1119,41 @@ def render_frame(
         return x_s, y_s
 
     # Longitude tick marks for polar caps (Snyder 1987 s.21 inverse).
-    # Ticks placed from r=0.93 to r=1.0; labels at r=0.82, 30 deg increments.
-    # Formula: x = r.sin(lon_W),  y = -r.cos(lon_W)  (0 degW at top, CW increasing)
+    # Ticks placed from r=1.0 (disc edge) outward to r=1.07; labels at r=1.17.
+    # 30 deg increments.  Formula: x = r.sin(lon_W), y = -r.cos(lon_W)
+    # (0 degW at top, clockwise increasing).
+    # The axes limits are expanded to (-1.28, 1.28) so the outside ticks and
+    # labels are not clipped.  The disc itself (r <= 1) is unchanged.
+    _DISC_LIM: float = 1.28   # axes half-range; must be > label radius (1.17)
+
     def _draw_polar_graticule(ax: "matplotlib.axes.Axes") -> None:
-        """Draw 30 deg longitude tick marks and labels around the polar disc."""
+        """Draw 30 deg longitude tick marks and labels outside the polar disc."""
         for lon_W_tick in range(0, 360, 30):
             lon_rad: float = math.radians(lon_W_tick)
             sin_l: float = math.sin(lon_rad)
             cos_l: float = math.cos(lon_rad)
-            # Tick line: inner r=0.93 to outer r=1.0
-            ax.plot([0.93 * sin_l, 1.0 * sin_l],
-                    [-0.93 * cos_l, -1.0 * cos_l],
-                    color=COLOUR_POLAR_RING, lw=1.0, alpha=0.8, zorder=5)
-            # Label text at r=0.82
+            # Tick stub: disc edge (r=1.0) to just outside (r=1.07)
+            ax.plot([1.00 * sin_l, 1.07 * sin_l],
+                    [-1.00 * cos_l, -1.07 * cos_l],
+                    color=COLOUR_POLAR_RING, lw=1.0, alpha=0.9, zorder=5)
+            # Label text at r=1.17, outside the disc
             lbl: str = f"{lon_W_tick}°" if lon_W_tick == 0 else f"{lon_W_tick}°W"
-            ax.text(0.82 * sin_l, -0.82 * cos_l, lbl,
+            ax.text(1.17 * sin_l, -1.17 * cos_l, lbl,
                     color=COLOUR_POLAR_RING, fontsize=6.0,
-                    ha="center", va="center", zorder=6,
-                    bbox=dict(boxstyle="square,pad=0.05",
-                              fc=COLOUR_BACKGROUND, ec="none", alpha=0.7))
+                    ha="center", va="center", zorder=6)
 
     # -- Centre: North polar cap (POLAR_CAP_EDGE_DEG deg - 90 degN) -----------------
     ax2 = fig.add_subplot(gs[0, 1], aspect="equal")
     ax2.set_facecolor(COLOUR_BACKGROUND)
     north_img = polar_reproject(posterior, north=True, size=500)
-    ax2.imshow(north_img, cmap=cmap, norm=norm,
+    ax2.imshow(north_img, cmap=cmap_polar, norm=norm,
                origin="upper", interpolation="lanczos",
                extent=[-1, 1, -1, 1])
     theta: np.ndarray = np.linspace(0, 2 * np.pi, 360)
     ax2.plot(np.cos(theta), np.sin(theta), color=COLOUR_POLAR_RING, lw=0.8, alpha=0.6)
-    # Use exact limits so the disc fills the subplot height (matching equirectangular)
-    ax2.set_xlim(-1.0, 1.0)
-    ax2.set_ylim(-1.0, 1.0)
+    # Expand limits beyond r=1 so outside tick marks and labels are visible
+    ax2.set_xlim(-_DISC_LIM, _DISC_LIM)
+    ax2.set_ylim(-_DISC_LIM, _DISC_LIM)
     ax2.axis("off")
     ax2.set_title(f"North polar cap  ({POLAR_CAP_EDGE_DEG:.0f}°–90°N)",
                   color="white", fontsize=10, pad=5)
@@ -1176,12 +1184,12 @@ def render_frame(
     ax3 = fig.add_subplot(gs[0, 2], aspect="equal")
     ax3.set_facecolor(COLOUR_BACKGROUND)
     south_img = polar_reproject(posterior, north=False, size=500)
-    ax3.imshow(south_img, cmap=cmap, norm=norm,
+    ax3.imshow(south_img, cmap=cmap_polar, norm=norm,
                origin="upper", interpolation="lanczos",
                extent=[-1, 1, -1, 1])
     ax3.plot(np.cos(theta), np.sin(theta), color=COLOUR_POLAR_RING, lw=0.8, alpha=0.6)
-    ax3.set_xlim(-1.0, 1.0)
-    ax3.set_ylim(-1.0, 1.0)
+    ax3.set_xlim(-_DISC_LIM, _DISC_LIM)
+    ax3.set_ylim(-_DISC_LIM, _DISC_LIM)
     ax3.axis("off")
     ax3.set_title(f"South polar cap  ({POLAR_CAP_EDGE_DEG:.0f}°–90°S)",
                   color="white", fontsize=10, pad=5)
@@ -1212,6 +1220,7 @@ def render_frame(
     # Placed well below GS_BOTTOM so the equirectangular x-axis label (at
     # ~y=0.268) and the colourbar top (y=0.170) have ~0.8" of clear space.
     cax = fig.add_axes([0.10, 0.178, 0.80, 0.022])
+    cax.set_facecolor(COLOUR_BACKGROUND)
     sm  = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     cb  = fig.colorbar(sm, cax=cax, orientation="horizontal")
     cb.set_label("P(habitable | features)", color="white", fontsize=11)
@@ -1272,6 +1281,7 @@ def render_frame(
 
     # -- Progress bar ----------------------------------------------------------
     bar_ax = fig.add_axes([0.10, 0.910, 0.80, 0.006])
+    bar_ax.set_facecolor(COLOUR_BACKGROUND)
     bar_ax.set_xlim(0, n_epochs)
     bar_ax.set_ylim(0, 1)
     bar_ax.barh(0.5, epoch_idx + 1, height=1.0, color=COLOUR_PROGRESS_BAR, alpha=0.7)

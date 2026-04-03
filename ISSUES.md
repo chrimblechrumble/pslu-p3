@@ -3,28 +3,29 @@
 ## Improvements
 - [x] cirs_temperature is based on present day only. What can be done for modelling other epochs?
 - [x] how to use the /palermo mappings/shapefiles. Which ones are they in the Birch dataset?
+- [ ] swap out sklearn for pymc or numpyro  
 
 ## Video/static frames
-- [ ] Use the same habitability scoring data for all three maps in the video. The habitability colouring of eg.g Ligeia is 
+- [x] Use the same habitability scoring data for all three maps in the video. The habitability colouring of eg.g Ligeia is 
 different on the equirectangular map vs the North Polar map. And if the same habitability scoring 
 data can being used, why cut off at +/- 50 degrees latitude on the North/Polar maps? That is, 
 we can use all data on all maps, do it, and all three maps should be cross-referenceable. 
 The underlying habitability data should be the same, and the maps are just views onto that data.
-- [ ] The longitude ticks/graticules for the north/south plots should be on the outside of the circumference, 
+- [x] The longitude ticks/graticules for the north/south plots should be on the outside of the circumference, 
 not on inside.
-- [ ] If we do not have +/- 0-40 polar data North and South, declare it. N/S animations should probably shrink
+- [x] If we do not have +/- 0-40 polar data North and South, declare it. N/S animations should probably shrink
 otherwise they give the impression all the data is there, when it isn't
-- [ ] Check that text changes match the frame of image changes, e.g. Red Giant Ramp image changes, but text 
+- [x] Check that text changes match the frame of image changes, e.g. Red Giant Ramp image changes, but text 
 change is two frames later.
-- [ ] Make video pausing on/off optional, with pausing off by default
+- [x] Make video pausing on/off optional, with pausing off by default
 - [ ] Cross reference that all downloaded map data is actually used. If not, why not and delete, or use it.
 - [ ] Check INSTALL instructions are correct; maybe script up the manual downloaders
 - [ ] Resolve use of GT2ED00N090_T126_V01 vs GT2ED00N090_T090_V01 data
 
 ## Other output
-- [ ] liquid_hydrocarbon.tif has some invalid values and does not render - check. 
+- [x] liquid_hydrocarbon.tif has some invalid values and does not render - check. 
 - [ ] organic_abundance.tif has an imbalance in resolution in E vs W hemispheres - can anything be done. 
-- [ ] why do the figure/* diagrams look different to the animation frames
+- [x] why do the figure/* diagrams look different to the animation frames
 - [ ] Fix framing in 'importances' pdf
 - [ ] Enumerate/give ordinals to 'top sites'
 - [ ] Change the 'interactive' map to include P

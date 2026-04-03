@@ -251,14 +251,21 @@ VMIN, VMAX = 0.10, 0.65
 
 def make_epoch_axis(n_limit: Optional[int] = None) -> np.ndarray:
     """
-    Build the ~71-point epoch axis, denser near key geological transitions.
+    Build the 72-point epoch axis, denser near key geological transitions.
 
     Segments are denser near:
       - LHB peak (-3.8 Gya)
       - Lake formation onset (-1.5 to -0.4 Gya)
       - Present epoch (-0.4 to +0.1 Gya)
+      - D2 near-future solar warming window (+0.250 Gya, explicit anchor)
       - Solar warming + lake evaporation (+3.8 to +5.0 Gya)
       - Water-ammonia eutectic crossing (+5.0 to +5.3 Gya)
+
+    The point +0.250 Gya is the centre of the D2 near-future habitability
+    window (100-400 Myr from now; Lorenz et al. 1997, Lunine & Lorenz 2009).
+    It is added explicitly so that ``full_inference`` mode can anchor the
+    NEAR_FUTURE pipeline run to an exact frame rather than the nearest
+    available point.
 
     Returns
     -------
@@ -270,6 +277,7 @@ def make_epoch_axis(n_limit: Optional[int] = None) -> np.ndarray:
         np.linspace(-3.00, -1.50,  8),   # early Titan
         np.linspace(-1.50, -0.40, 12),   # lake formation -- dense
         np.linspace(-0.40,  0.10,  8),   # near-present -- very dense
+        np.array([0.250]),               # D2 near-future anchor (exact)
         np.linspace( 0.10,  2.00,  8),   # near future
         np.linspace( 2.00,  3.80,  6),   # mid future
         np.linspace( 3.80,  5.00, 10),   # solar warming -- dense
@@ -320,12 +328,12 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
      "Surface is dry and cold. Local minimum before the red-giant transition."),
 
     ( 5.1333, 4.0,
-     "EUTECTIC THRESHOLD CROSSED  (+5.1 Gya)  |  T_surface > 176 K\n"
-     "Global water-ammonia ocean forms in < 1 Myr. Entire surface becomes liquid.\n"
+     "WATER-AMMONIA EUTECTIC CROSSED  (+5.1 Gya)  |  T_surface > 176 K\n"
+     "Global liquid water-ammonia ocean forms in < 1 Myr. Entire surface is now liquid.\n"
      "Subsurface ocean merges with surface. Maximum organic concentration in solution."),
 
     ( 5.50, 3.5,
-     "PEAK HABITABILITY  (+5.5 Gya)  |  Global ocean phase\n"
+     "PEAK HABITABILITY  (+5.5 Gya)  |  Global liquid water-ammonia ocean\n"
      "All surfaces score ~0.47. 16 Gyr organic stockpile dissolved as bioavailable substrate.\n"
      "Water-ammonia chemistry enables terrestrial-analogue biochemistry."),
 
@@ -581,9 +589,11 @@ def _synthetic_features() -> Dict[str, np.ndarray]:
 
 def load_present_features(feature_dir: Path) -> Dict[str, np.ndarray]:
     """
-    Load present-epoch feature GeoTIFFs.
+    Load present-epoch feature GeoTIFFs produced by run_pipeline.py.
 
-    Falls back to synthetic maps if real TIFs are not available.
+    Falls back to synthetic maps ONLY if real TIFs are not available.
+    When synthetic data is used, a prominent warning is printed and the
+    function returns a flag so callers can declare it in output metadata.
 
     Parameters
     ----------
@@ -594,18 +604,20 @@ def load_present_features(feature_dir: Path) -> Dict[str, np.ndarray]:
     -------
     Dict[str, np.ndarray]
         Feature name -> float32 array of shape GRID_SHAPE.
+        A key ``"_synthetic"`` with value ``True`` is added when synthetic
+        maps are returned, so callers can log and propagate this fact.
     """
     feature_names = list(WEIGHTS.keys())
     maps: Dict[str, np.ndarray] = {}
-    n_real = 0
+    n_real: int = 0
 
     for name in feature_names:
-        tif = feature_dir / f"{name}.tif"
+        tif: Path = feature_dir / f"{name}.tif"
         if tif.exists():
             try:
                 import rasterio
                 with rasterio.open(tif) as src:
-                    arr = src.read(1).astype(np.float32)
+                    arr: np.ndarray = src.read(1).astype(np.float32)
                     nd = src.nodata
                     if nd is not None:
                         arr[arr == nd] = np.nan
@@ -616,18 +628,41 @@ def load_present_features(feature_dir: Path) -> Dict[str, np.ndarray]:
                 print(f"  WARNING: failed to load {name}.tif: {exc}")
 
     if n_real >= 6:
-        print(f"  Loaded {n_real}/{len(feature_names)} feature TIFs from {feature_dir}")
-        # Fill any missing with priors
+        print(f"  Loaded {n_real}/{len(feature_names)} real feature TIFs "
+              f"from {feature_dir}")
+        # Fill any missing features with prior-mean constant maps
         for name in feature_names:
             if name not in maps:
-                maps[name] = np.full(GRID_SHAPE, PRIOR_MEANS[name], dtype=np.float32)
+                maps[name] = np.full(GRID_SHAPE, PRIOR_MEANS[name],
+                                     dtype=np.float32)
+                print(f"  INFO: {name}.tif missing -- "
+                      f"filled with prior mean {PRIOR_MEANS[name]:.3f}")
+        maps["_synthetic"] = False   # type: ignore[assignment]
         return maps
     else:
-        if n_real > 0:
-            print(f"  Only {n_real} TIFs found -- falling back to synthetic maps")
-        else:
-            print(f"  No feature TIFs found in {feature_dir} -- using synthetic maps")
-        return _synthetic_features()
+        # -- SYNTHETIC DATA FALLBACK -------------------------------------------
+        # This path is taken ONLY when real Cassini-derived feature TIFs are
+        # not present.  Synthetic maps are physically grounded heuristics based
+        # on known Titan geography; they are NOT observational data.
+        # Run run_pipeline.py --temporal-mode present first to generate real TIFs.
+        sep = "=" * 70
+        msg_lines = [
+            sep,
+            "  *** SYNTHETIC DATA MODE ***",
+            f"  Real feature TIFs not found in: {feature_dir}",
+            f"  Found {n_real}/{len(feature_names)} TIFs "
+            f"(need >= 6 to use real data).",
+            "  Falling back to SYNTHETIC feature maps.",
+            "  These are geography-based heuristics, NOT Cassini observations.",
+            "  To use real data: run run_pipeline.py --temporal-mode present",
+            "  then re-run this script.",
+            sep,
+        ]
+        for line in msg_lines:
+            print(line)
+        synth: Dict[str, np.ndarray] = _synthetic_features()
+        synth["_synthetic"] = True   # type: ignore[assignment]
+        return synth
 
 
 # --- Temporal scaling ---------------------------------------------------------
@@ -1371,6 +1406,470 @@ def render_poster(
     print(f"  Poster saved -> {out_path}")
 
 
+# --- Full-inference mode helpers ---------------------------------------------
+
+def load_anchor_posteriors(
+    pipeline_outputs_dir: Path,
+) -> Dict[str, np.ndarray]:
+    """
+    Load the five run_pipeline posterior_mean.npy arrays for full_inference mode.
+
+    Expected directory structure (output of run_pipeline.py --all-temporal-modes)::
+
+        <pipeline_outputs_dir>/
+          past/inference/posterior_mean.npy
+          lake_formation/inference/posterior_mean.npy
+          present/inference/posterior_mean.npy
+          near_future/inference/posterior_mean.npy
+          future/inference/posterior_mean.npy
+
+    Parameters
+    ----------
+    pipeline_outputs_dir:
+        Root outputs directory (default ``outputs/``).
+
+    Returns
+    -------
+    Dict mapping anchor name -> float32 posterior array, shape GRID_SHAPE.
+    Missing anchors are reported; at least ``present`` must be present.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the ``present`` anchor cannot be found (required for fallback).
+    """
+    anchors: Dict[str, np.ndarray] = {}
+    anchor_names = ["past", "lake_formation", "present", "near_future", "future"]
+    for name in anchor_names:
+        p = pipeline_outputs_dir / name / "inference" / "posterior_mean.npy"
+        if p.exists():
+            arr = np.load(p).astype(np.float32)
+            anchors[name] = arr
+            print(f"  Loaded anchor '{name}': {p}")
+        else:
+            print(f"  WARNING: anchor '{name}' not found at {p}")
+    if "present" not in anchors:
+        raise FileNotFoundError(
+            f"Required anchor 'present' not found in {pipeline_outputs_dir}. "
+            "Run: python run_pipeline.py --temporal-mode present"
+        )
+    return anchors
+
+
+def build_pchip_interpolator(
+    anchor_epochs: List[float],
+    anchor_posteriors: List[np.ndarray],
+) -> "scipy.interpolate.PchipInterpolator":
+    """
+    Build a per-pixel PCHIP (monotone cubic) interpolator over anchor posteriors.
+
+    Interpolation choice rationale
+    --------------------------------
+    PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) is used rather than
+    linear interpolation because:
+
+    1. Lake formation onset (PAST -> LAKE_FORMATION, -3.5 -> -1.0 Gya) follows
+       a sigmoidal growth pattern as cryovolcanic outgassing builds the methane
+       reservoir.  Linear interpolation underestimates mid-interval habitability.
+
+    2. PCHIP preserves monotonicity between anchor points -- it will not produce
+       spurious peaks or dips within an interval where both endpoints have the
+       same habitability direction.  This prevents the interpolation from
+       inventing false habitability maxima between anchors.
+
+    3. PCHIP does NOT extrapolate beyond the anchor range (clipped to anchor
+       endpoints), unlike cubic splines which can oscillate wildly.
+
+    The key non-monotonic trajectory (near_future -> red_giant, +0.25 -> +6.0
+    Gya) is EXCLUDED from interpolation deliberately.  That gap involves methane
+    evaporation (habitability falls), a dry period, and eutectic ocean formation
+    (habitability rises sharply) -- no interpolation scheme can represent this
+    without domain knowledge.  Frames in that gap use the ``modelled`` scalar
+    approach instead.  See generate_temporal_maps.py documentation.
+
+    Parameters
+    ----------
+    anchor_epochs:
+        Sorted list of epoch values in Gya (e.g. [-3.5, -1.0, 0.0, 0.25]).
+    anchor_posteriors:
+        Corresponding posterior arrays, each shape GRID_SHAPE.
+
+    Returns
+    -------
+    PchipInterpolator
+        Callable interp(t) -> float32 array of shape GRID_SHAPE.
+        Valid for t in [anchor_epochs[0], anchor_epochs[-1]].
+    """
+    from scipy.interpolate import PchipInterpolator
+    # Stack posteriors: shape (n_anchors, nrows*ncols)
+    nrows, ncols = GRID_SHAPE
+    n: int = len(anchor_epochs)
+    stacked: np.ndarray = np.stack(
+        [a.ravel().astype(np.float64) for a in anchor_posteriors], axis=0
+    )   # shape (n, nrows*ncols)
+    interp = PchipInterpolator(
+        np.array(anchor_epochs, dtype=np.float64),
+        stacked,
+        axis=0,
+        extrapolate=False,  # clip to [anchor_epochs[0], anchor_epochs[-1]]
+    )
+    return interp
+
+
+def interpolate_posterior_at_epoch(
+    interp: "scipy.interpolate.PchipInterpolator",
+    t: float,
+    anchor_lo: float,
+    anchor_hi: float,
+    output_shape: Optional[Tuple[int, int]] = None,
+) -> np.ndarray:
+    """
+    Evaluate the PCHIP interpolator at epoch *t* and return a clamped array.
+
+    Parameters
+    ----------
+    interp:
+        PchipInterpolator returned by :func:`build_pchip_interpolator`.
+    t:
+        Target epoch in Gya.
+    anchor_lo, anchor_hi:
+        The range of valid epochs for this interpolator.
+    output_shape:
+        (nrows, ncols) for the output array.  Defaults to ``GRID_SHAPE``.
+        Pass an explicit shape when using non-canonical arrays (e.g. in tests).
+
+    Returns
+    -------
+    np.ndarray
+        float32 array, shape *output_shape*, clamped to [0, 1].  NaN where
+        inputs were NaN.
+    """
+    shape: Tuple[int, int] = output_shape if output_shape is not None else GRID_SHAPE
+    t_clipped: float = float(np.clip(t, anchor_lo, anchor_hi))
+    result: np.ndarray = interp(t_clipped).reshape(shape).astype(np.float32)
+    result = np.clip(result, 0.0, 1.0)
+    return result
+
+
+def _build_pause_timing(
+    epochs: np.ndarray,
+    args: argparse.Namespace,
+) -> Tuple[Dict[int, Tuple[float, str]], float]:
+    """Build pause_idx dict and NORMAL_HOLD from args.pause flag."""
+    if args.pause:
+        print(f"  Pause events: {len(TRANSITION_EVENTS)}, target: ~60 s")
+        event_best: Dict[float, Tuple] = {}
+        for i, t in enumerate(epochs):
+            for et, hold, narr in TRANSITION_EVENTS:
+                if abs(t - et) < 0.06:
+                    if et not in event_best or abs(t - et) < abs(
+                        epochs[next(j for j, tt in enumerate(epochs)
+                                    if abs(tt - event_best[et][0]) < 1e-6)] - et
+                    ):
+                        event_best[et] = (t, narr, hold, i)
+        pause_idx: Dict[int, Tuple[float, str]] = {
+            idx: (hold, narr) for t, narr, hold, idx in event_best.values()
+        }
+        pause_total = sum(h for h, _ in pause_idx.values())
+        normal_hold = (60.0 - pause_total) / max(len(epochs) - len(pause_idx), 1)
+    else:
+        print("  Pausing disabled (use --pause to enable key-event captions)")
+        pause_idx   = {}
+        normal_hold = 60.0 / len(epochs)
+    return pause_idx, normal_hold
+
+
+def _encode_animation(
+    anim_dir: Path,
+    frames_dir: Path,
+    frame_paths: List[Path],
+    concat_lines: List[str],
+    suffix: str = "",
+) -> None:
+    """Write concat file and encode MP4 + GIF.  ``suffix`` is appended to filenames."""
+    import subprocess
+    concat_path = anim_dir / f"concat{suffix}.txt"
+    concat_path.write_text("\n".join(concat_lines) + "\n")
+    with open(concat_path, "a") as f:
+        f.write(f"file '{frame_paths[-1].resolve()}'\n")
+        f.write("duration 0.04\n")
+
+    mp4_path = anim_dir / f"titan_habitability_animation{suffix}.mp4"
+    r = subprocess.run([
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "-i", str(concat_path),
+        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+        "-c:v", "libx264", "-preset", "slow", "-crf", "17",
+        "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+        str(mp4_path),
+    ], capture_output=True, text=True)
+    if r.returncode == 0:
+        print(f"  MP4 -> {mp4_path}  ({mp4_path.stat().st_size/1e6:.1f} MB)")
+    else:
+        print(f"  ffmpeg MP4 failed:\n{r.stderr[-300:]}")
+
+    gif_path = anim_dir / f"titan_habitability_animation{suffix}.gif"
+    r2 = subprocess.run([
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "-i", str(concat_path),
+        "-vf", ("scale=900:-1:flags=lanczos,"
+                "split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]"
+                "paletteuse=dither=sierra2_4a"),
+        "-loop", "0", str(gif_path),
+    ], capture_output=True, text=True)
+    if r2.returncode == 0:
+        print(f"  GIF -> {gif_path}  ({gif_path.stat().st_size/1e6:.1f} MB)")
+    else:
+        print("  GIF encoding failed -- MP4 is the primary output")
+
+
+def _run_animation_modelled(
+    args:             argparse.Namespace,
+    epochs:           np.ndarray,
+    present:          Dict[str, np.ndarray],
+    using_synthetic:  bool,
+    anim_dir:         Path,
+    poster_dir:       Path,
+    epoch_map_cache:  Dict[float, np.ndarray],
+) -> None:
+    """
+    Render the MODELLED animation.
+
+    All frames are produced by scalar-scaling the present-epoch Cassini feature
+    TIFs via ``scale_features_to_epoch`` and running a uniform-prior Bayesian
+    update.  This is the original behaviour of generate_temporal_maps.py.
+
+    Outputs
+    -------
+    outputs/temporal_maps/animation/titan_habitability_animation.mp4
+    outputs/temporal_maps/animation/titan_habitability_animation.gif
+    """
+    import matplotlib.pyplot as plt
+
+    print(f"Rendering MODELLED animation ({len(epochs)} frames)...")
+    if using_synthetic:
+        print("  *** WARNING: SYNTHETIC DATA IN USE ***  see log above.")
+
+    frames_dir = anim_dir / "frames"
+    frames_dir.mkdir(exist_ok=True)
+
+    pause_idx, NORMAL_HOLD = _build_pause_timing(epochs, args)
+
+    concat_lines: List[str] = []
+    frame_paths:  List[Path] = []
+    current_narrative: str = ""
+
+    for i, t in enumerate(epochs):
+        event_data = pause_idx.get(i)
+        hold: float = event_data[0] if event_data else NORMAL_HOLD
+        if event_data:
+            current_narrative = event_data[1]
+
+        scaled    = scale_features_to_epoch(present, t)
+        posterior = bayesian_posterior_map(scaled)
+        frame_narrative = current_narrative if args.pause else ""
+        fig = render_frame(posterior, t, i, len(epochs),
+                           dpi=args.dpi, narrative=frame_narrative)
+
+        fpath = frames_dir / f"frame_{i:03d}.png"
+        fig.savefig(fpath, dpi=args.dpi, bbox_inches=None,
+                    facecolor=fig.get_facecolor())
+        plt.close(fig)
+        frame_paths.append(fpath)
+
+        concat_lines.append(f"file '{fpath.resolve()}'")
+        concat_lines.append(f"duration {hold:.4f}")
+
+        marker = " * PAUSE" if event_data else ""
+        if (i + 1) % 8 == 0 or i == len(epochs) - 1 or event_data:
+            print(f"  [{i+1:2d}/{len(epochs)}]  t={t:+6.3f} Gya  "
+                  f"hold={hold:.2f}s{marker}")
+
+    _encode_animation(anim_dir, frames_dir, frame_paths, concat_lines)
+
+
+def _run_animation_full_inference(
+    args:            argparse.Namespace,
+    epochs:          np.ndarray,
+    present:         Dict[str, np.ndarray],
+    using_synthetic: bool,
+    anim_dir:        Path,
+    poster_dir:      Path,
+) -> None:
+    """
+    Render the FULL_INFERENCE animation.
+
+    Scientific basis and declared assumptions
+    -----------------------------------------
+    This mode uses run_pipeline.py anchor posteriors wherever they exist,
+    and PCHIP interpolation between anchors for intermediate epochs.
+
+    ANCHOR EPOCHS AND SOURCES:
+      past          (-3.5 Gya): run_pipeline --temporal-mode past
+                                9-feature Bayesian inference (LHB era)
+      lake_formation(-1.0 Gya): run_pipeline --temporal-mode lake_formation
+                                9-feature inference (cryovolcanic onset)
+      present       ( 0.0 Gya): run_pipeline --temporal-mode present
+                                8-feature inference (Cassini calibration)
+      near_future   (+0.25 Gya): run_pipeline --temporal-mode near_future
+                                8-feature inference (D2 solar warming window)
+      future        (+6.0 Gya): run_pipeline --temporal-mode future
+                                8 transformed-feature inference (red giant)
+
+    INTERPOLATION BETWEEN ANCHORS:
+      Frames between adjacent anchors use PCHIP (monotone cubic) interpolation
+      of the posterior maps.  PCHIP preserves monotonicity within each interval
+      and does not extrapolate beyond the anchor range.
+
+      Intervals covered by PCHIP:
+        past -> lake_formation: -3.5 to -1.0 Gya  (sigmoidal lake growth)
+        lake_formation -> present: -1.0 to 0 Gya  (lake establishment)
+        present -> near_future:  0 to +0.25 Gya   (very small change)
+
+      ** EXCLUDED from interpolation (non-monotonic gap): **
+        near_future -> future: +0.25 to +6.0 Gya
+        This interval involves: lake evaporation (+4 Gya), dry period (+5 Gya),
+        eutectic crossing (+5.1 Gya), ocean peak (+5.5 Gya), ocean cooling (+6 Gya).
+        No interpolation scheme can represent this without domain knowledge.
+        Frames in this gap use the MODELLED scalar approach.
+
+      DECLARED ASSUMPTION: PCHIP interpolation is applied per-pixel to the
+      posterior arrays, not to the raw feature values.  The interpolated
+      posterior is not equivalent to running Bayesian inference at each
+      intermediate epoch with epoch-specific feature sets.  Frames produced
+      by interpolation are labelled [INTERPOLATED] in GeoTIFF metadata.
+
+    OUTPUTS:
+      outputs/temporal_maps/animation_full_inference/
+        titan_habitability_animation_full_inference.mp4
+        titan_habitability_animation_full_inference.gif
+
+    References
+    ----------
+    Tobie et al. (2006) Nature 440:61  -- lake_formation anchor basis
+    Lorenz, Lunine & McKay (1997) GRL 24:2905  -- near_future and future
+    Neish & Lorenz (2012) PSS 60:26  -- surface age context
+    """
+    import matplotlib.pyplot as plt
+
+    print(f"\nRendering FULL_INFERENCE animation ({len(epochs)} frames)...")
+    print("  Loading run_pipeline anchor posteriors...")
+
+    pipeline_out = Path(getattr(args, "pipeline_outputs", "outputs"))
+    try:
+        anchors = load_anchor_posteriors(pipeline_out)
+    except FileNotFoundError as exc:
+        print(f"\n  ERROR: {exc}")
+        print("  Run: python run_pipeline.py --all-temporal-modes  first.")
+        print("  Falling back to MODELLED mode for this run.\n")
+        _run_animation_modelled(args, epochs, present, using_synthetic,
+                                anim_dir.parent / "animation", anim_dir.parent,
+                                {})
+        return
+
+    # -- Anchor epoch -> posterior map -----------------------------------------
+    # Anchor epochs (Gya from present; negative = past)
+    # We only PCHIP-interpolate the well-constrained intervals.
+    PCHIP_ANCHOR_EPOCHS: List[float] = []
+    PCHIP_ANCHOR_POSTS:  List[np.ndarray] = []
+
+    anchor_epoch_map: Dict[str, float] = {
+        "past":           -3.5,
+        "lake_formation": -1.0,
+        "present":         0.0,
+        "near_future":    +0.250,
+    }
+    for name in ["past", "lake_formation", "present", "near_future"]:
+        if name in anchors:
+            PCHIP_ANCHOR_EPOCHS.append(anchor_epoch_map[name])
+            PCHIP_ANCHOR_POSTS.append(anchors[name])
+        else:
+            print(f"  WARNING: anchor '{name}' missing; interpolation may be coarser.")
+
+    # Need at least 2 points to interpolate
+    can_interpolate: bool = len(PCHIP_ANCHOR_EPOCHS) >= 2
+
+    if can_interpolate:
+        print(f"  Building PCHIP interpolator over "
+              f"{PCHIP_ANCHOR_EPOCHS[0]:+.2f} -> "
+              f"{PCHIP_ANCHOR_EPOCHS[-1]:+.2f} Gya "
+              f"({len(PCHIP_ANCHOR_EPOCHS)} anchors)...")
+        pchip = build_pchip_interpolator(PCHIP_ANCHOR_EPOCHS, PCHIP_ANCHOR_POSTS)
+        t_interp_lo = PCHIP_ANCHOR_EPOCHS[0]
+        t_interp_hi = PCHIP_ANCHOR_EPOCHS[-1]   # +0.25 Gya
+    else:
+        pchip = None
+        t_interp_lo = t_interp_hi = 0.0
+
+    # The near_future -> future gap uses modelled scalars
+    # The future anchor (+6 Gya) is used for frames near +6 Gya
+    future_post: Optional[np.ndarray] = anchors.get("future")
+    T_FUTURE_ANCHOR: float = 6.0   # Gya; frames within ±0.1 Gya use future anchor
+
+    fi_anim_dir = anim_dir.parent / "animation_full_inference"
+    frames_dir  = fi_anim_dir / "frames"
+    fi_anim_dir.mkdir(parents=True, exist_ok=True)
+    frames_dir.mkdir(exist_ok=True)
+
+    pause_idx, NORMAL_HOLD = _build_pause_timing(epochs, args)
+
+    concat_lines: List[str] = []
+    frame_paths:  List[Path] = []
+    current_narrative: str = ""
+
+    for i, t in enumerate(epochs):
+        event_data = pause_idx.get(i)
+        hold: float = event_data[0] if event_data else NORMAL_HOLD
+        if event_data:
+            current_narrative = event_data[1]
+
+        # -- Determine posterior source for this epoch -------------------------
+        source: str
+        if can_interpolate and t_interp_lo <= t <= t_interp_hi:
+            # PCHIP interpolation between past, lake_formation, present, near_future
+            posterior = interpolate_posterior_at_epoch(
+                pchip, t, t_interp_lo, t_interp_hi)
+            source = "INTERPOLATED_PCHIP"
+        elif future_post is not None and abs(t - T_FUTURE_ANCHOR) < 0.1:
+            # Exact future anchor ± 100 Myr
+            posterior = future_post
+            source = "ANCHOR_FUTURE"
+        else:
+            # Modelled scalars for the non-monotonic +0.25 -> +6 Gya gap
+            # (and any frames beyond the anchor ranges)
+            scaled    = scale_features_to_epoch(present, t)
+            posterior = bayesian_posterior_map(scaled)
+            source    = "MODELLED_SCALAR"
+
+        # Snap to exact anchor posteriors at anchor epochs (override interpolation)
+        for aname, aepoch in anchor_epoch_map.items():
+            if aname in anchors and abs(t - aepoch) < 1e-4:
+                posterior = anchors[aname]
+                source    = f"ANCHOR_{aname.upper()}"
+                break
+
+        frame_narrative = current_narrative if args.pause else ""
+        fig = render_frame(posterior, t, i, len(epochs),
+                           dpi=args.dpi, narrative=frame_narrative)
+
+        fpath = frames_dir / f"frame_{i:03d}.png"
+        fig.savefig(fpath, dpi=args.dpi, bbox_inches=None,
+                    facecolor=fig.get_facecolor())
+        plt.close(fig)
+        frame_paths.append(fpath)
+
+        concat_lines.append(f"file '{fpath.resolve()}'")
+        concat_lines.append(f"duration {hold:.4f}")
+
+        marker = " * PAUSE" if event_data else ""
+        if (i + 1) % 8 == 0 or i == len(epochs) - 1 or event_data:
+            print(f"  [{i+1:2d}/{len(epochs)}]  t={t:+6.3f} Gya  "
+                  f"hold={hold:.2f}s  [{source}]{marker}")
+
+    _encode_animation(fi_anim_dir, frames_dir, frame_paths,
+                      concat_lines, suffix="_full_inference")
+
+
 # --- Main --------------------------------------------------------------------
 
 def main(args: argparse.Namespace) -> None:
@@ -1409,7 +1908,12 @@ def main(args: argparse.Namespace) -> None:
     # Load present-epoch features once
     print("Loading present-epoch feature maps...")
     present = load_present_features(feat_dir)
-    print()
+    using_synthetic: bool = bool(present.pop("_synthetic", False))
+    if using_synthetic:
+        print("\n  NOTE: all habitability maps in this run are based on")
+        print("        SYNTHETIC (non-observational) feature data.\n")
+    else:
+        print("  Using REAL Cassini-derived feature maps.\n")
 
     has_rasterio = False
     try:
@@ -1448,12 +1952,14 @@ def main(args: argparse.Namespace) -> None:
                 arr      = posterior,
                 out_path = tif_path,
                 metadata = {
-                    "EPOCH_GYA":     f"{t:.4f}",
-                    "EPOCH_LABEL":   _epoch_label(t).replace("\n", " "),
-                    "PHASE":         phase,
-                    "SOLAR_L_RATIO": f"{solar_luminosity_ratio(t):.4f}",
-                    "SURFACE_TEMP_K":f"{T_s:.2f}",
-                    "CRS":           TITAN_CRS_PROJ4,
+                    "EPOCH_GYA":          f"{t:.4f}",
+                    "EPOCH_LABEL":        _epoch_label(t).replace("\n", " "),
+                    "PHASE":              phase,
+                    "SOLAR_L_RATIO":      f"{solar_luminosity_ratio(t):.4f}",
+                    "SURFACE_TEMP_K":     f"{T_s:.2f}",
+                    "CRS":                TITAN_CRS_PROJ4,
+                    "FEATURE_DATA_SOURCE": "SYNTHETIC" if using_synthetic
+                                           else "REAL_CASSINI",
                 },
             )
         else:
@@ -1461,12 +1967,15 @@ def main(args: argparse.Namespace) -> None:
             import json
             np.save(tif_path.with_suffix(".npy"), posterior)
             json.dump({
-                "epoch_Gya": t, "phase": phase,
-                "solar_L_ratio": solar_luminosity_ratio(t),
-                "surface_temp_K": T_s,
-                "crs": TITAN_CRS_PROJ4,
-                "shape": list(GRID_SHAPE),
-                "dtype": "float32",
+                "epoch_Gya":          t,
+                "phase":              phase,
+                "solar_L_ratio":      solar_luminosity_ratio(t),
+                "surface_temp_K":     T_s,
+                "crs":                TITAN_CRS_PROJ4,
+                "shape":              list(GRID_SHAPE),
+                "dtype":              "float32",
+                "feature_data_source": "SYNTHETIC" if using_synthetic
+                                       else "REAL_CASSINI",
             }, open(tif_path.with_suffix(".json"), "w"), indent=2)
 
     print()
@@ -1482,116 +1991,14 @@ def main(args: argparse.Namespace) -> None:
 
     # -- Animation -------------------------------------------------------------
     if not args.no_animation:
-        print(f"Rendering animation ({len(epochs)} unique frames)...")
-        print(f"  Pause events: {len(TRANSITION_EVENTS)}, target: ~60 s")
+        inference_mode: str = getattr(args, "inference_mode", "modelled")
 
-        frames_dir = anim_dir / "frames"
-        frames_dir.mkdir(exist_ok=True)
-
-        # Build per-epoch narrative and hold-time tables
-        NORMAL_HOLD: float = (60.0 - sum(h for _, h, _ in TRANSITION_EVENTS)) / max(
-            len(epochs) - len(TRANSITION_EVENTS), 1
-        )
-
-        # Map each event to the single closest epoch -- avoids pausing multiple
-        # adjacent frames when the dense axis has two epochs near the same event.
-        event_best: Dict[float, Tuple[float, str]] = {}
-        for i, t in enumerate(epochs):
-            for et, hold, narr in TRANSITION_EVENTS:
-                if abs(t - et) < 0.06:
-                    if et not in event_best or abs(t - et) < abs(
-                        epochs[next(j for j,tt in enumerate(epochs) if abs(tt - event_best[et][0]) < 1e-6)] - et
-                    ):
-                        event_best[et] = (t, narr, hold, i)
-        pause_idx: Dict[int, Tuple[float, str]] = {
-            idx: (hold, narr) for t, narr, hold, idx in event_best.values()
-        }
-        pause_total_s  = sum(h for h, _ in pause_idx.values())
-        n_normal_frames = len(epochs) - len(pause_idx)
-        NORMAL_HOLD = (60.0 - pause_total_s) / max(n_normal_frames, 1)
-
-        concat_lines: List[str] = []
-        frame_paths: List[Path] = []
-        current_narrative: str = ""   # persists across frames until next event
-
-        for i, t in enumerate(epochs):
-            event_data = pause_idx.get(i)
-            hold  = event_data[0] if event_data else NORMAL_HOLD
-            # Update the persistent narrative when a new event fires
-            if event_data:
-                current_narrative = event_data[1]
-
-            scaled    = scale_features_to_epoch(present, t)
-            posterior = bayesian_posterior_map(scaled)
-            # Pass current_narrative to every frame so text persists between events
-            fig       = render_frame(posterior, t, i, len(epochs),
-                                     dpi=args.dpi, narrative=current_narrative)
-
-            fpath = frames_dir / f"frame_{i:03d}.png"
-            fig.savefig(fpath, dpi=args.dpi,
-                        bbox_inches=None,   # fixed size -- NEVER tight-crop frames
-                        facecolor=fig.get_facecolor())
-            plt.close(fig)
-            frame_paths.append(fpath)
-
-            # ffmpeg concat entry
-            concat_lines.append(f"file '{fpath.resolve()}'")
-            concat_lines.append(f"duration {hold:.4f}")
-
-            marker: str = " * PAUSE" if event_data else ""
-            if (i + 1) % 8 == 0 or i == len(epochs) - 1 or event_data:
-                print(f"  [{i+1:2d}/{len(epochs)}]  t={t:+6.3f} Gya  "
-                      f"hold={hold:.2f}s{marker}")
-
-        # Write concat file
-        concat_path = anim_dir / "concat.txt"
-        concat_path.write_text("\n".join(concat_lines) + "\n")
-
-        # Repeat last frame entry (ffmpeg concat requires final duration workaround)
-        with open(concat_path, "a") as f:
-            f.write(f"file '{frame_paths[-1].resolve()}'\n")
-            f.write("duration 0.04\n")
-
-        import subprocess
-
-        mp4_path = anim_dir / "titan_habitability_animation.mp4"
-        ffmpeg_cmd = [
-            "ffmpeg", "-y",
-            "-f", "concat", "-safe", "0",
-            "-i", str(concat_path),
-            "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-            "-c:v", "libx264", "-preset", "slow",
-            "-crf", "17", "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart",
-            str(mp4_path),
-        ]
-        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
-        if result.returncode == 0:
-            sz = mp4_path.stat().st_size / 1e6
-            print(f"  MP4 saved -> {mp4_path}  ({sz:.1f} MB)")
+        if inference_mode == "full_inference":
+            _run_animation_full_inference(args, epochs, present, using_synthetic,
+                                          anim_dir, poster_dir)
         else:
-            print(f"  ffmpeg MP4 failed:\n{result.stderr[-400:]}")
-
-        # GIF from the same concat (lower resolution)
-        gif_path = anim_dir / "titan_habitability_animation.gif"
-        ffmpeg_gif = [
-            "ffmpeg", "-y",
-            "-f", "concat", "-safe", "0",
-            "-i", str(concat_path),
-            "-vf", (
-                "scale=900:-1:flags=lanczos,"
-                "split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]"
-                "paletteuse=dither=sierra2_4a"
-            ),
-            "-loop", "0",
-            str(gif_path),
-        ]
-        result2 = subprocess.run(ffmpeg_gif, capture_output=True, text=True)
-        if result2.returncode == 0:
-            sz2 = gif_path.stat().st_size / 1e6
-            print(f"  GIF saved -> {gif_path}  ({sz2:.1f} MB)")
-        else:
-            print(f"  GIF encoding failed -- MP4 is the primary output")
+            _run_animation_modelled(args, epochs, present, using_synthetic,
+                                    anim_dir, poster_dir, epoch_map_cache)
 
     # -- Summary and QGIS instructions -----------------------------------------
     print()
@@ -1699,6 +2106,9 @@ if __name__ == "__main__":
                    help="Present-epoch feature TIF directory")
     p.add_argument("--no-animation",  action="store_true",
                    help="Skip animation generation")
+    p.add_argument("--pause",         action="store_true",
+                   help="Pause at key geological events with narrative text "
+                        "(default: off; uniform hold time across all frames)")
     p.add_argument("--no-netcdf",     action="store_true",
                    help="Skip NetCDF stack output")
     p.add_argument("--epochs",        type=int, default=0,
@@ -1707,5 +2117,36 @@ if __name__ == "__main__":
                    help="Animation frames per second (default: 8)")
     p.add_argument("--dpi",           type=int, default=120,
                    help="Animation frame DPI (default: 120)")
+    p.add_argument(
+        "--inference-mode",
+        default="modelled",
+        choices=["modelled", "full_inference"],
+        help=(
+            "Video generation mode (default: modelled).\n"
+            "  modelled       -- current behaviour: scalar-scaling of present-epoch\n"
+            "                    feature TIFs propagates across all epochs.\n"
+            "                    Produces outputs/temporal_maps/animation/.\n"
+            "  full_inference -- five pipeline-anchor posteriors (past, lake_formation,\n"
+            "                    present, near_future, future) loaded from run_pipeline\n"
+            "                    outputs; PCHIP interpolation between anchors;\n"
+            "                    modelled scalars used for the near_future->red_giant\n"
+            "                    gap (+0.25->+6 Gya, non-monotonic trajectory).\n"
+            "                    Requires run_pipeline.py --all-temporal-modes first.\n"
+            "                    Produces outputs/temporal_maps/animation_full_inference/.\n"
+            "                    Declared assumption: PCHIP interpolation between anchors\n"
+            "                    at -3.5, -1.0, 0, +0.25 Gya. All interpolated frames\n"
+            "                    labelled [INTERPOLATED] in GeoTIFF metadata."
+        ),
+    )
+    p.add_argument(
+        "--pipeline-outputs",
+        default="outputs",
+        metavar="DIR",
+        help=(
+            "Root directory of run_pipeline.py outputs (default: outputs). "
+            "Used by --inference-mode full_inference to locate anchor posteriors "
+            "at <DIR>/past/inference/posterior_mean.npy etc."
+        ),
+    )
     args = p.parse_args()
     main(args)

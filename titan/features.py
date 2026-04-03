@@ -395,11 +395,11 @@ class FeatureExtractor:
 
         Data source priority
         --------------------
-        1. **Birch+2017 / Palermo+2022 polar lake raster** (``polar_lakes``
+        1. **Birch+2017 polar lake raster** (``polar_lakes``
            layer, class labels 1 and 3).
            Expert-mapped lake and sea outlines at Cassini SAR resolution,
            covering both polar regions.  Filled lake pixels score **1.0**
-           (confirmed liquid); Palermo pixels also score 1.0.
+           (confirmed liquid).
            This replaces the SAR proxy for the polar region where virtually
            all of Titan's liquid surface is found.
 
@@ -452,12 +452,12 @@ class FeatureExtractor:
         Stofan et al. (2007) Nature doi:10.1038/nature05608
         """
         from titan.io.shapefile_rasteriser import (
-            POLAR_LAKE_FILLED, POLAR_LAKE_PALERMO, POLAR_LAKE_EMPTY,
+            POLAR_LAKE_FILLED, POLAR_LAKE_EMPTY,
         )
 
         result: np.ndarray = nan.copy()
 
-        # -- Priority 1: Birch+2017 / Palermo+2022 polar lake raster ----------
+        # -- Priority 1: Birch+2017 polar lake raster --------------------------
         # These are expert-mapped outlines from the same Cassini SAR data,
         # providing binary 1.0 for confirmed liquid and 0.0 elsewhere in the
         # mapped region.  Supersedes both the Lopes class and the SAR proxy
@@ -465,9 +465,9 @@ class FeatureExtractor:
         if "polar_lakes" in stack:
             pl: np.ndarray = stack["polar_lakes"].values.astype(np.int16)
 
-            # Confirmed liquid: Birch filled (1) and Palermo (3)
+            # Confirmed liquid: Birch filled (1)
             birch_liquid: np.ndarray = (
-                (pl == POLAR_LAKE_FILLED) | (pl == POLAR_LAKE_PALERMO)
+                (pl == POLAR_LAKE_FILLED)
             ).astype(np.float32)
 
             # Confirmed non-liquid within Birch coverage area (any Birch pixel
@@ -480,10 +480,10 @@ class FeatureExtractor:
 
             result = np.where(np.isfinite(birch_result), birch_result, result)
             n_birch_liquid: int = int(
-                ((pl == POLAR_LAKE_FILLED) | (pl == POLAR_LAKE_PALERMO)).sum()
+                (pl == POLAR_LAKE_FILLED).sum()
             )
             logger.debug(
-                "_liquid_hydrocarbon: Birch/Palermo: %d liquid pixels", n_birch_liquid
+                "_liquid_hydrocarbon: Birch filled: %d liquid pixels", n_birch_liquid
             )
 
         # -- Priority 2: Lopes+2019 geomorphology lake class (label 7) --------
@@ -1033,7 +1033,7 @@ class FeatureExtractor:
         Lake margin source priority
         ---------------------------
         1. **Birch+2017 exact shorelines** (``polar_lakes`` layer, labels 1 & 3).
-           A dilation of the Birch/Palermo filled-lake pixels gives the precise
+           A dilation of the Birch+2017 filled-lake pixels gives the precise
            lake-margin zone where evaporation, condensation, and wave action
            concentrate amphiphiles and organics.  This replaces the Lopes
            dilation (which was zero because Lakes.shp was absent).
@@ -1088,7 +1088,7 @@ class FeatureExtractor:
         Birch et al. (2017) Icarus doi:10.1016/j.icarus.2017.01.032
         """
         from titan.io.shapefile_rasteriser import (
-            POLAR_LAKE_FILLED, POLAR_LAKE_PALERMO, POLAR_LAKE_EMPTY,
+            POLAR_LAKE_FILLED, POLAR_LAKE_EMPTY,
         )
 
         # -- Component weights -------------------------------------------------
@@ -1113,7 +1113,7 @@ class FeatureExtractor:
             weights.append(W_SLOPE)
 
         # -- 2. Lake margins ---------------------------------------------------
-        # Priority: Birch/Palermo exact shorelines -> Lopes geo class -> none
+        # Priority: Birch+2017 exact shorelines -> Lopes geo class -> none
         from scipy.ndimage import binary_dilation
 
         # Margin width: ~3 pixels = ~13 km, consistent with lake-margin
@@ -1124,10 +1124,10 @@ class FeatureExtractor:
         labyrinth_component: Optional[np.ndarray] = None
 
         if "polar_lakes" in stack:
-            # Birch/Palermo confirmed liquid pixels -> dilate to get margin zone
+            # Birch+2017 confirmed liquid pixels -> dilate to get margin zone
             pl: np.ndarray = stack["polar_lakes"].values.astype(np.int16)
             birch_liquid_mask: np.ndarray = (
-                (pl == POLAR_LAKE_FILLED) | (pl == POLAR_LAKE_PALERMO)
+                (pl == POLAR_LAKE_FILLED)
             ).astype(bool)
 
             if birch_liquid_mask.any():

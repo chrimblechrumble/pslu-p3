@@ -483,8 +483,8 @@ class DataPreprocessor:
         results.update(self._preprocess_geomorphology(overwrite))
         results.update(self._preprocess_channels(overwrite))
 
-        # Birch+2017 / Palermo+2022 polar lake shapefiles.
-        # Produces a dedicated polar-lake raster with filled/empty/Palermo
+        # Birch+2017 / Birch et al. (2017) polar lake shapefiles.
+        # Produces a dedicated polar-lake raster with filled/empty/Birch+2017
         # classes that improves Feature 1 (liquid_hydrocarbon) and Feature 5
         # (surface_atm_interaction) in the polar regions.
         # Silently produces all-zeros if the Birch dataset is not installed.
@@ -775,7 +775,7 @@ class DataPreprocessor:
         self, overwrite: bool
     ) -> Dict[str, Path]:
         """
-        Rasterise the Birch+2017 / Palermo+2022 polar lake shapefiles.
+        Rasterise the Birch+2017 / Birch et al. (2017) polar lake shapefiles.
 
         Produces ``data/processed/polar_lakes_canonical.tif`` -- a separate
         int16 raster with four classes:
@@ -786,11 +786,11 @@ class DataPreprocessor:
         NoData                 0      Outside polar-mapping coverage
         FilledLake_Birch       1      Confirmed liquid (Birch+2017 filled)
         EmptyBasin_Birch       2      Paleo-lake / empty basin (Birch+2017)
-        FilledLake_Palermo     3      Confirmed liquid (Palermo+2022)
+        FilledLake_Birch+2017     3      Confirmed liquid (Birch et al. (2017))
         =====================  =====  ========================================
 
         This raster is consumed by:
-          - ``Feature 1`` (liquid_hydrocarbon): Birch/Palermo filled pixels
+          - ``Feature 1`` (liquid_hydrocarbon): Birch/Birch+2017 filled pixels
             replace the SAR proxy in the polar region, giving expert-mapped
             lake boundaries instead of a backscatter threshold.
           - ``Feature 5`` (surface_atm_interaction): Birch shorelines give
@@ -807,7 +807,6 @@ class DataPreprocessor:
             data/raw/birch_polar_mapping/
               birch_filled/      <- Birch+2017 filled lake/sea .shp files
               birch_empty/       <- Birch+2017 empty basin .shp files
-              palermo/           <- Palermo+2022 .shp files
 
         Download:
             https://data.astro.cornell.edu/titan_polar_mapping_birch/
@@ -855,20 +854,17 @@ class DataPreprocessor:
                 "  https://data.astro.cornell.edu/titan_polar_mapping_birch/\n"
                 "  Extract and place sub-folders at:\n"
                 "  data/raw/birch_polar_mapping/birch_filled/\n"
-                "  data/raw/birch_polar_mapping/birch_empty/\n"
-                "  data/raw/birch_polar_mapping/palermo/",
+                "  data/raw/birch_polar_mapping/birch_empty/",
                 birch_dir,
             )
             return {}
 
         logger.info(
-            "Rasterising Birch+2017 / Palermo+2022 polar lake shapefiles "
-            "from %s ...", birch_dir,
+            "Rasterising Birch+2017 polar lake shapefiles from %s ...", birch_dir,
         )
         rasteriser.rasterise(
             include_filled  = True,
             include_empty   = True,
-            include_palermo = True,
             out_path        = out,
         )
         logger.info("Polar-lake raster: %s", out)

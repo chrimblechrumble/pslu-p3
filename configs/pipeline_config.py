@@ -1309,8 +1309,6 @@ class PipelineConfig:
                                  (confirmed present-day liquid surfaces)
               birch_empty/    <- El_NORTH.shp, El_SOUTH.shp, Em_SOUTH.shp
                                  (empty lake depressions and southern paleoseas)
-              palermo/        <- reserved; no matching public shapefiles
-                                 currently exist; silently skipped if absent
 
         Unit code meanings:
           Fl = Filled lake/sea (SAR-dark, confirmed present liquid)

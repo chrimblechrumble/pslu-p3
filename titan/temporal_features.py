@@ -775,6 +775,10 @@ class TemporalFeatureExtractor:
             return self._extract_present(stack)
         elif self.mode == TemporalMode.PAST:
             return self._extract_past(stack)
+        elif self.mode == TemporalMode.LAKE_FORMATION:
+            return self._extract_lake_formation(stack)
+        elif self.mode == TemporalMode.NEAR_FUTURE:
+            return self._extract_near_future(stack)
         elif self.mode == TemporalMode.FUTURE:
             return self._extract_future(stack)
         else:
@@ -815,6 +819,121 @@ class TemporalFeatureExtractor:
 
         return TemporalFeatureStack(
             mode=TemporalMode.PAST,
+            features=features,
+            grid=self.grid,
+        )
+
+    def _extract_lake_formation(self, stack: xr.Dataset) -> TemporalFeatureStack:
+        """
+        Extract LAKE_FORMATION features: 7 present-mode features + 2 new.
+
+        Scientific basis
+        ----------------
+        Default epoch: ~1.0 Gya before present.
+        Alternative epoch: ~0.5 Gya (Tobie et al. 2006 cryovolcanic outgassing
+        peak).  The two differ primarily in how much cryovolcanism was active
+        and how much of the present-day lake area had formed.
+
+        At 1.0 Gya:
+        - Cryovolcanic outgassing (Tobie et al. 2006 Nature 440:61) is actively
+          building toward its ~500 Mya peak.  Internal heat is still strong.
+        - Polar lakes are beginning to form but are sparse relative to present;
+          liquid_hydrocarbon estimated at ~10% of present-day lake coverage.
+        - The LHB is ~2.5 Gya in the past; SAR-bright crater annuli
+          (impact_melt_proxy) are heavily degraded (Neish & Lorenz 2012
+          PSJ 60:26 surface age ~200 Myr-1 Gyr).
+        - Organic accumulation: ~3.5 Gyr of UV photolysis; midway between
+          PAST (0.30) and PRESENT (0.70).
+
+        Feature set: same 9 features as PAST but with weights redistributed to
+        reflect the reduced impact_melt relevance and elevated cryovolcanic flux.
+        impact_melt_proxy weight = 0.02 (very low; LHB relics degraded).
+        cryovolcanic_flux weight  = 0.08 (high; activity actively building).
+
+        References
+        ----------
+        Tobie et al. (2006) Nature 440:61  doi:10.1038/nature04497
+            Episodic cryovolcanic outgassing: three episodes.  Most recent
+            peaked ~500 Mya, enabling present atmospheric methane.
+        Neish & Lorenz (2012) PSS 60:26  doi:10.1016/j.pss.2011.02.016
+            Titan surface age ~200 Myr-1 Gyr; most SAR features < 1 Gya old.
+        Lopes et al. (2007) Icarus 186:395  doi:10.1016/j.icarus.2006.09.006
+            Cryovolcanic candidate features from Cassini SAR.
+        """
+        extractor = self._get_present_extractor()
+        nan = np.full((self.grid.nrows, self.grid.ncols), np.nan, dtype=np.float32)
+
+        features = {
+            "liquid_hydrocarbon":       extractor._liquid_hydrocarbon(stack, nan),
+            "organic_abundance":        extractor._organic_abundance(stack, nan),
+            "acetylene_energy":         extractor._acetylene_energy(stack, nan),
+            "methane_cycle":            extractor._methane_cycle(stack, nan),
+            "surface_atm_interaction":  extractor._surface_atm_interaction(stack, nan),
+            "topographic_complexity":   extractor._topographic_complexity(stack, nan),
+            "geomorphologic_diversity": extractor._geomorphologic_diversity(stack, nan),
+            # impact_melt_proxy: LHB relics largely degraded at 1.0 Gya.
+            # Still computed from current SAR (same method as PAST) but carries
+            # very low weight in the Bayesian update (w=0.02 vs w=0.10 for PAST).
+            "impact_melt_proxy":        extract_impact_melt_proxy(stack, self.grid),
+            # cryovolcanic_flux: high weight (w=0.08).  At 1.0 Gya cryovolcanism
+            # is actively building toward its ~500 Mya Tobie et al. (2006) peak.
+            "cryovolcanic_flux":        extract_cryovolcanic_flux(stack, self.grid),
+        }
+
+        for name, arr in features.items():
+            pct = 100.0 * np.sum(np.isfinite(arr)) / arr.size
+            logger.info("[LAKE_FORMATION] Feature %-32s  valid=%.1f%%", name, pct)
+
+        return TemporalFeatureStack(
+            mode=TemporalMode.LAKE_FORMATION,
+            features=features,
+            grid=self.grid,
+        )
+
+    def _extract_near_future(self, stack: xr.Dataset) -> TemporalFeatureStack:
+        """
+        Extract NEAR_FUTURE features: same 8 as PRESENT.
+
+        Scientific basis
+        ----------------
+        Default epoch: +0.250 Gya from now (centre of D2 window, 100-400 Myr).
+        This is the same epoch as the near-future anchor in the video.
+
+        The near-future epoch uses the same Cassini feature maps as PRESENT
+        because:
+        - Solar luminosity at +250 Myr is only ~2.5% higher than today (Lorenz
+          et al. 1997 solar model).  This is within measurement uncertainty for
+          all spatially-resolved features.
+        - No GCM or spatially-resolved model of Titan at this epoch exists that
+          could produce different feature maps at SAR resolution.
+        - The feature VALUES are unchanged; the PRIOR MEANS differ to reflect:
+          * subsurface_ocean: raised from 0.03 to 0.08 (D2 solar warming
+            modestly increases ocean-surface exchange probability).
+          * methane_cycle: slightly lower (0.38 vs 0.40; minor depletion).
+          * All other prior means: unchanged from PRESENT.
+
+        This is an explicit, declared assumption.  See HabitabilityWindowConfig
+        (pipeline_config.py) for the D2 window parameters.
+
+        References
+        ----------
+        Lorenz, Lunine & McKay (1997) GRL 24:2905  doi:10.1029/97GL52843
+            Solar evolution model and surface temperature response.
+        Lunine & Lorenz (2009) Annual Rev. Earth Planet. Sci. 37:299
+            Review of Titan's long-term evolution.
+        Neish et al. (2024) Astrobiology  doi:10.1089/ast.2023.0055
+            Organic flux to subsurface ocean; constrains present baseline.
+        """
+        extractor = self._get_present_extractor()
+        feature_stack = extractor.extract(stack)
+        features = {n: getattr(feature_stack, n) for n in FEATURE_NAMES}
+
+        for name, arr in features.items():
+            pct = 100.0 * np.sum(np.isfinite(arr)) / arr.size
+            logger.info("[NEAR_FUTURE] Feature %-32s  valid=%.1f%%", name, pct)
+
+        return TemporalFeatureStack(
+            mode=TemporalMode.NEAR_FUTURE,
             features=features,
             grid=self.grid,
         )

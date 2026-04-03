@@ -37,7 +37,6 @@ outlines with confirmed-liquid vs empty-basin distinction):
   Pipeline directories:
     birch_filled/ <- Fl_NORTH.shp, Fl_SOUTH.shp  (confirmed liquid surfaces)
     birch_empty/  <- El_NORTH.shp, El_SOUTH.shp, Em_SOUTH.shp  (paleo-lakes / paleoseas)
-    palermo/      <- reserved; no matching public shapefiles currently exist
 
   Geomorphic unit codes used by the pipeline:
     Fl = Filled lake/sea (SAR-dark, confirmed present-day liquid)
@@ -131,7 +130,7 @@ TERRAIN_NODATA: Final[int] = 0
 
 
 # ---------------------------------------------------------------------------
-# Birch+2017 / Palermo+2022 polar-lake constants
+# Birch+2017 polar-lake constants
 # ---------------------------------------------------------------------------
 
 #: Sub-directory names under the Birch dataset root (``data/raw/birch_polar_mapping/``).
@@ -140,12 +139,10 @@ TERRAIN_NODATA: Final[int] = 0
 #: Expected layout::
 #:
 #:   data/raw/birch_polar_mapping/
-#:     birch_filled/      <- confirmed present-day liquid (Birch+2017)
-#:     birch_empty/       <- empty basins / paleo-lakes (Birch+2017)
-#:     palermo/           <- alternative mapping (Palermo+2022)
+#:     birch_filled/      <- confirmed present-day liquid (Birch+2017, Fl_NORTH/SOUTH)
+#:     birch_empty/       <- empty basins / paleo-lakes (Birch+2017, El_*/Em_SOUTH)
 BIRCH_SUBDIR_FILLED:  Final[str] = "birch_filled"
 BIRCH_SUBDIR_EMPTY:   Final[str] = "birch_empty"
-BIRCH_SUBDIR_PALERMO: Final[str] = "palermo"
 
 #: Integer labels for the polar-lake raster (independent of Lopes labels).
 #:
@@ -155,12 +152,10 @@ BIRCH_SUBDIR_PALERMO: Final[str] = "palermo"
 #: ``POLAR_LAKE_NODATA``   0      Outside polar-mapping coverage
 #: ``POLAR_LAKE_FILLED``   1      Confirmed liquid -- Birch+2017 filled
 #: ``POLAR_LAKE_EMPTY``    2      Empty basin / paleo-lake -- Birch+2017
-#: ``POLAR_LAKE_PALERMO``  3      Confirmed liquid -- Palermo+2022
 #: ======================  =====  ===========================================
 POLAR_LAKE_NODATA:   Final[int] = 0
 POLAR_LAKE_FILLED:   Final[int] = 1
 POLAR_LAKE_EMPTY:    Final[int] = 2
-POLAR_LAKE_PALERMO:  Final[int] = 3
 
 
 # ---------------------------------------------------------------------------
@@ -553,7 +548,7 @@ def terrain_class_name(integer_label: int) -> str:
 
 def polar_lake_class_name(label: int) -> str:
     """
-    Return the human-readable name for a Birch/Palermo polar-lake label.
+    Return the human-readable name for a Birch+2017 polar-lake label.
 
     Parameters
     ----------
@@ -574,20 +569,17 @@ def polar_lake_class_name(label: int) -> str:
     'FilledLake_Birch'
     >>> polar_lake_class_name(2)
     'EmptyBasin_Birch'
-    >>> polar_lake_class_name(3)
-    'FilledLake_Palermo'
     """
     _names: Dict[int, str] = {
         POLAR_LAKE_NODATA:   "NoData",
         POLAR_LAKE_FILLED:   "FilledLake_Birch",
         POLAR_LAKE_EMPTY:    "EmptyBasin_Birch",
-        POLAR_LAKE_PALERMO:  "FilledLake_Palermo",
     }
     return _names.get(label, f"Unknown({label})")
 
 
 # ---------------------------------------------------------------------------
-# Birch+2017 / Palermo+2022 polar lake rasteriser
+# Birch+2017 polar lake rasteriser
 # ---------------------------------------------------------------------------
 
 class PolarLakeRasteriser:
@@ -617,9 +609,6 @@ class PolarLakeRasteriser:
     POLAR_LAKE_NODATA  (0) -- outside polar-mapping coverage
     POLAR_LAKE_FILLED  (1) -- confirmed present-day liquid (Birch+2017 Fl_*)
     POLAR_LAKE_EMPTY   (2) -- empty basin / paleo-lake (Birch+2017 El_* and Em_*)
-    POLAR_LAKE_PALERMO (3) -- reserved; no matching public shapefiles currently
-                              exist.  The palermo/ sub-directory is silently
-                              skipped if absent.
 
     Draw order: empty basins first (label 2), then filled lakes (label 1).
     Filled overwrites empty where both datasets coincide.
@@ -637,8 +626,8 @@ class PolarLakeRasteriser:
     ----------
     birch_dir:
         Root directory of the Birch dataset.  Expected to contain
-        sub-directories ``birch_filled/``, ``birch_empty/``, and optionally
-        ``palermo/``.  Any absent sub-directory is silently skipped.
+        sub-directories ``birch_filled/`` and ``birch_empty/``.
+        Any absent sub-directory is silently skipped.
     output_shape:
         (nrows, ncols) of the canonical output raster.
     output_transform:
@@ -693,24 +682,20 @@ class PolarLakeRasteriser:
         self,
         include_filled:  bool            = True,
         include_empty:   bool            = True,
-        include_palermo: bool            = True,
         out_path:        Optional[Path]  = None,
     ) -> np.ndarray:
         """
-        Load Birch/Palermo shapefiles and burn them into a polar-lake raster.
+        Load Birch+2017 shapefiles and burn them into a polar-lake raster.
 
-        Each sub-directory is processed in draw order (empty -> filled ->
-        Palermo) so higher-priority classes overwrite lower ones.
+        Sub-directories are processed in draw order (empty first, then
+        filled) so filled lakes overwrite empty basins.
 
         Parameters
         ----------
         include_filled:
             Burn Birch+2017 filled lake/sea polygons (label 1).
         include_empty:
-            Burn Birch+2017 empty basin polygons (label 2).
-        include_palermo:
-            Burn Palermo+2022 sea polygons (label 3).
-        out_path:
+            Burn Birch+2017 empty basin polygons (label 2).        out_path:
             If provided, write the raster as a GeoTIFF.
 
         Returns
@@ -739,7 +724,6 @@ class PolarLakeRasteriser:
             tasks: List[Tuple[str, int, bool]] = [
                 (BIRCH_SUBDIR_EMPTY,   POLAR_LAKE_EMPTY,   include_empty),
                 (BIRCH_SUBDIR_FILLED,  POLAR_LAKE_FILLED,  include_filled),
-                (BIRCH_SUBDIR_PALERMO, POLAR_LAKE_PALERMO, include_palermo),
             ]
             for subdir_name, label, include in tasks:
                 if not include:

@@ -29,15 +29,13 @@ titan_pipeline/
         │   ├── Labyrinth.shp
         │   ├── Lakes.shp                           (optional but recommended)
         │   └── global_channels.shp                 Miller+2021 channels
-        └── birch_polar_mapping/                    Birch+2017 / Palermo+2022
+        └── birch_polar_mapping/                    Birch+2017 polar lake data
             ├── birch_filled/        ← confirmed present-day liquid surfaces
             │   ├── north_filled_lakes.shp   (any *.shp filename is fine)
             │   └── south_filled_lakes.shp
-            ├── birch_empty/         ← empty basins / paleo-lakes
+            └── birch_empty/         ← empty basins / paleo-lakes
             │   ├── north_empty_basins.shp
             │   └── ...
-            └── palermo/             ← Palermo+2022 alternative mapping
-                └── palermo_seas.shp
 ```
 
 ---
@@ -183,15 +181,12 @@ full_dataset/
         (fluvial channel network — NOT used by this pipeline)
 ```
 
-> **Note:** There is no `Palermo+2022/` folder in this dataset.
-> The `palermo/` pipeline sub-directory is reserved but currently unused.
 
 **Create the pipeline directory layout:**
 
 ```bash
 mkdir -p data/raw/birch_polar_mapping/birch_filled
 mkdir -p data/raw/birch_polar_mapping/birch_empty
-mkdir -p data/raw/birch_polar_mapping/palermo   # reserved; leave empty
 ```
 
 Define a path variable for convenience:
@@ -259,4 +254,4 @@ methane-cycle prior rather than lake or spectral data.
 | Version | Date       | Key changes |
 |---------|------------|-------------|
 | v1.0    | 2026-03    | Initial release — Lopes geomorphology, SAR, VIMS, GTDR |
-| v2.0    | 2026-03    | Birch+2017 / Palermo+2022 polar lake integration |
+| v2.0    | 2026-03    | Birch+2017 polar lake integration |

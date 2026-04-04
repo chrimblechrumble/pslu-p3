@@ -317,8 +317,8 @@ class TestPchipInterpolation:
         a0 = np.full((5, 5), 0.20, dtype=np.float32)
         a1 = np.full((5, 5), 0.40, dtype=np.float32)
         interp = build_pchip_interpolator([-3.5, 0.0], [a0, a1])
-        out0 = interpolate_posterior_at_epoch(interp, -3.5, -3.5, 0.0)
-        out1 = interpolate_posterior_at_epoch(interp, 0.0,  -3.5, 0.0)
+        out0 = interpolate_posterior_at_epoch(interp, -3.5, -3.5, 0.0, output_shape=(5, 5))
+        out1 = interpolate_posterior_at_epoch(interp, 0.0,  -3.5, 0.0, output_shape=(5, 5))
         np.testing.assert_allclose(out0, 0.20, atol=1e-5)
         np.testing.assert_allclose(out1, 0.40, atol=1e-5)
 
@@ -329,7 +329,7 @@ class TestPchipInterpolation:
         a0 = np.full((4, 4), 0.10, dtype=np.float32)
         a1 = np.full((4, 4), 0.50, dtype=np.float32)
         interp = build_pchip_interpolator([-2.0, 0.0], [a0, a1])
-        mid = interpolate_posterior_at_epoch(interp, -1.0, -2.0, 0.0)
+        mid = interpolate_posterior_at_epoch(interp, -1.0, -2.0, 0.0, output_shape=(4, 4))
         np.testing.assert_allclose(mid, 0.30, atol=1e-4)
 
     def test_output_clamped_to_unit_interval(self) -> None:
@@ -340,7 +340,7 @@ class TestPchipInterpolation:
         a1 = np.full((3, 3), 0.01, dtype=np.float32)
         a2 = np.full((3, 3), 0.00, dtype=np.float32)
         interp = build_pchip_interpolator([-1.0, 0.0, 1.0], [a0, a1, a2])
-        out = interpolate_posterior_at_epoch(interp, 0.5, -1.0, 1.0)
+        out = interpolate_posterior_at_epoch(interp, 0.5, -1.0, 1.0, output_shape=(3, 3))
         assert np.all(out >= 0.0)
         assert np.all(out <= 1.0)
 
@@ -354,7 +354,7 @@ class TestPchipInterpolation:
         raw = interp(2.0)
         # Our wrapper clips to [lo, hi] so the result equals the value at hi
         from generate_temporal_maps import interpolate_posterior_at_epoch
-        clipped = interpolate_posterior_at_epoch(interp, 2.0, 0.0, 1.0)
+        clipped = interpolate_posterior_at_epoch(interp, 2.0, 0.0, 1.0, output_shape=(3, 3))
         np.testing.assert_allclose(clipped, 0.40, atol=1e-4)
 
     def test_output_shape_matches_grid(self) -> None:
@@ -364,6 +364,7 @@ class TestPchipInterpolation:
         a0 = np.zeros(GRID_SHAPE, dtype=np.float32)
         a1 = np.ones(GRID_SHAPE,  dtype=np.float32)
         interp = build_pchip_interpolator([-1.0, 0.0], [a0, a1])
+        # No output_shape → defaults to GRID_SHAPE
         out = interpolate_posterior_at_epoch(interp, -0.5, -1.0, 0.0)
         assert out.shape == GRID_SHAPE
 
@@ -378,7 +379,8 @@ class TestPchipInterpolation:
         interp  = build_pchip_interpolator(epochs, arrs)
         test_epochs = np.linspace(-3.5, 0.25, 20)
         for t in test_epochs:
-            out = interpolate_posterior_at_epoch(interp, float(t), -3.5, 0.25)
+            out = interpolate_posterior_at_epoch(interp, float(t), -3.5, 0.25,
+                                                 output_shape=(3, 3))
             assert np.all(out >= 0.09), f"Below floor at t={t:.3f}: {out.min()}"
             assert np.all(out <= 0.41), f"Above ceil at t={t:.3f}: {out.max()}"
 
@@ -428,10 +430,11 @@ class TestTemporalFeatureExtractorDispatch:
         from titan.temporal_features import TemporalFeatureExtractor
         from configs.pipeline_config import HabitabilityWindowConfig
         from titan.preprocessing import CanonicalGrid
-        grid = CanonicalGrid(nrows=10, ncols=20,
-                             transform=None, crs="+proj=eqc +a=2575000")
+        # CanonicalGrid takes pixel_size_m (metres).  500 km/px gives a
+        # ~16 x 32 grid -- small enough for fast tests.
+        grid = CanonicalGrid(pixel_size_m=500_000)
         window = HabitabilityWindowConfig()
-        return TemporalFeatureExtractor(mode=mode, grid=grid, window=window)
+        return TemporalFeatureExtractor(mode=mode, grid=grid, window_config=window)
 
     def test_lake_formation_dispatch_exists(self) -> None:
         ext = self._make_extractor(TemporalMode.LAKE_FORMATION)
@@ -445,8 +448,7 @@ class TestTemporalFeatureExtractorDispatch:
         from titan.temporal_features import TemporalFeatureExtractor
         from configs.pipeline_config import HabitabilityWindowConfig
         from titan.preprocessing import CanonicalGrid
-        grid = CanonicalGrid(nrows=4, ncols=8,
-                             transform=None, crs="+proj=eqc +a=2575000")
+        grid = CanonicalGrid(pixel_size_m=500_000)
         ext = TemporalFeatureExtractor.__new__(TemporalFeatureExtractor)
         ext.mode   = "bogus_mode"   # type: ignore[assignment]
         ext.grid   = grid

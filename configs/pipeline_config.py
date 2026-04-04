@@ -279,48 +279,48 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
         # The reader accepts both .IMG and .IMG.gz (Cornell distributes .gz).
 
         # -- GTDE: Dense interpolated DEM (PREFERRED, ~90% global) ------------
-        "gtde_east": DatasetSpec(
-            name="gtde_east",
+        "gtie_east": DatasetSpec(
+            name="gtie_east",
             description=(
-                "GTDE east tile -- Dense spline-interpolated global DEM. "
+                "GTIE east tile -- Dense spline-interpolated global DEM. "
                 "~90% of Titan's surface with valid elevation data. "
                 "lon 0-180 degW (N090). 2 ppd (22.47 km/px). "
                 "Corlies et al. (2017); through flyby T126 (final mission). "
-                "From Cornell eCommons (distributed as GTDED00N090_T126_V01.IMG.gz)."
+                "Interpolated elevation DEM (GTIE product, metres). From Cornell eCommons. WARNING: do NOT use GTDED -- that product contains distance-to-nearest-measurement values (km), not elevation. Note: distributed with south truncation (~48S coverage); Corlies 2017 CUB gap-filler compensates."
             ),
-            url="https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTDED00N090_T126_V01.IMG.gz",
-            local_filename="GTDED00N090_T126_V01.IMG",
+            url="https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTIED00N090_T126_V01.IMG.gz",
+            local_filename="GTIED00N090_T126_V01.IMG",
             file_format="pds3_img",
             nodata_value=GTDR_MISSING_CONSTANT,
             units="metres (height above 2575 km sphere)",
             citation="Corlies2017Titan",
             manual_instructions=(
                 "Download and gunzip from Cornell:\n"
-                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTDED00N090_T126_V01.IMG.gz\n"
-                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTDED00N090_T126_V01.LBL\n"
+                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTIED00N090_T126_V01.IMG.gz\n"
+                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTIED00N090_T126_V01.LBL\n"
                 "Or extract from USGS gtdr-data.zip:\n"
                 "  http://astropedia.astrogeology.usgs.gov/download/Titan/Cassini/GTDR/gtdr-data.zip\n"
                 "Note: the pipeline also accepts .IMG.gz directly (auto-decompresses)."
             ),
         ),
 
-        "gtde_west": DatasetSpec(
-            name="gtde_west",
+        "gtie_west": DatasetSpec(
+            name="gtie_west",
             description=(
-                "GTDE west tile -- companion to gtde_east. "
+                "GTIE west tile -- companion to gtde_east. "
                 "lon 180-360 degW (N270). Corlies et al. (2017); T126. "
-                "From Cornell eCommons (GTDED00N270_T126_V01.IMG.gz)."
+                "West-tile companion to gtie_east. Interpolated elevation DEM (GTIE product, metres). Coverage: ~51S to 90N. See gtie_east for full notes."
             ),
-            url="https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTDED00N270_T126_V01.IMG.gz",
-            local_filename="GTDED00N270_T126_V01.IMG",
+            url="https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTIED00N270_T126_V01.IMG.gz",
+            local_filename="GTIED00N270_T126_V01.IMG",
             file_format="pds3_img",
             nodata_value=GTDR_MISSING_CONSTANT,
             units="metres (height above 2575 km sphere)",
             citation="Corlies2017Titan",
             manual_instructions=(
                 "Download and gunzip from Cornell:\n"
-                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTDED00N270_T126_V01.IMG.gz\n"
-                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTDED00N270_T126_V01.LBL"
+                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTIED00N270_T126_V01.IMG.gz\n"
+                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTIED00N270_T126_V01.LBL"
             ),
         ),
 
@@ -542,29 +542,49 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             ),
         ),
 
-        # -- Geomorphology Shapefiles (Lopes et al. 2019/2020) ----------------
+        # -- Geomorphology Shapefiles (Lopes et al. 2020) ----------------------
+        # Source: Schoenfeld (2024) Mendeley Data doi:10.17632/f6jrtyfp66.1
+        #         Ashley Schoenfeld (JPL) -- deposited July 2024, CC-BY-4.0
+        #
+        # CONFIRMED FILE LISTING (from Mendeley API, April 2026):
+        #   Basins.shp     1,829,768 bytes  sha256:ade414034e43c258...
+        #   Craters.shp      107,712 bytes  sha256:dd30b573d521acb2...
+        #   Dunes.shp      2,320,712 bytes  sha256:71bd90eb73d0cd61...
+        #   Labyrinth.shp    614,880 bytes  sha256:89e17602555e130b...
+        #   Mountains.shp  7,141,100 bytes  sha256:3c0cd9c0c7b786c5...
+        #   Plains_3.shp   9,504,948 bytes  sha256:894e84153cedf0a2...
+        #
+        # *** Lakes.shp IS NOT in this distribution ***
+        # Lake polygons are in the Birch+2017 Cornell archive (separate dataset).
+        # The geomorphology raster therefore never contains class label 7.
         "geomorphology_shapefiles": DatasetSpec(
             name="geomorphology_shapefiles",
             description=(
-                "Lopes et al. (2019/2020) global geomorphologic map. "
-                "Six terrain classes: Craters(Cr), Dunes(Dn), Plains(Pl), "
-                "Labyrinth(Lb), Mountains(Mt), Basins(Ba). "
+                "Lopes et al. (2020) global geomorphologic map shapefiles. "
+                "Schoenfeld (2024) Mendeley doi:10.17632/f6jrtyfp66.1, CC-BY-4.0. "
+                "SIX terrain classes: Basins(Ba), Craters(Cr), Dunes(Dn), "
+                "Labyrinth(Lb), Mountains(Mt), Plains_3(Pl). "
                 "One shapefile per class. PolygonM geometry. "
-                "CRS: GCS_Titan_2000, east-positive deg. "
-                "JPL cube files provided by Rosaly Lopes."
+                "CRS: GCS_Titan_2000, east-positive longitude. "
+                "NOTE: Lakes.shp is NOT in this distribution. "
+                "Lake polygons are in the Birch+2017 Cornell archive."
             ),
-            url="https://data.mendeley.com/research-data/?query=titan",
+            url="https://data.mendeley.com/datasets/f6jrtyfp66/1",
             local_filename="geomorphology_shapefiles/",
             file_format="shapefile_dir",
             units="terrain class labels",
             citation="Lopes2019",
+            sha256="6b6848afa62344e50103cea37a95fccdd75609b5235be22cddedfd8f1e6b9535",
             manual_instructions=(
-                "Shapefiles provided by JPL (Rosaly Lopes). "
-                "Also check Mendeley Data: "
-                "https://data.mendeley.com/research-data/?query=titan "
-                "Place all .shp/.dbf/.prj/.shx files in a single directory. "
-                "Expected files: Craters.shp, Dunes.shp, Plains_3.shp, "
-                "Labyrinth.shp, Mountains.shp, Basins.shp, Lakes.shp"
+                "Download from Mendeley Data doi:10.17632/f6jrtyfp66.1\n"
+                "  https://data.mendeley.com/datasets/f6jrtyfp66/1\n"
+                "Use 'Download All' (11.6 MB zip).\n"
+                "SHA-256 of zip: 6b6848afa62344e50103cea37a95fccdd75609b5235be22cddedfd8f1e6b9535\n"
+                "Extract and place all .shp/.dbf/.prj/.shx files in:\n"
+                "  data/raw/geomorphology_shapefiles/\n"
+                "Expected stems: Basins, Craters, Dunes, Labyrinth, Mountains, Plains_3\n"
+                "Lakes.shp is NOT in this dataset -- lake polygons come from\n"
+                "  the Birch+2017 Cornell archive (INSTALL.md section 4)."
             ),
         ),
 

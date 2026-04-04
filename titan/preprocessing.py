@@ -206,8 +206,14 @@ def _reproject_geotiff(
 
     with rasterio.open(src_path) as src:
         src_data = src.read(band).astype(np.float32)
-        # Mask nodata -> NaN
-        src_data[src_data == nodata_in] = np.nan
+        # Mask nodata -> NaN.  Use np.isnan() check when nodata_in is NaN
+        # (e.g. VIMS band-ratio mosaic); otherwise compare by value.
+        if np.isnan(nodata_in):
+            # nodata_in=NaN means "trust the file's embedded nodata and
+            # already-NaN pixels; do not apply any additional value mask."
+            pass
+        else:
+            src_data[src_data == nodata_in] = np.nan
         src_crs       = src.crs or grid.crs  # fallback if no CRS embedded
         src_transform = src.transform
 
@@ -503,12 +509,12 @@ class DataPreprocessor:
         self, overwrite: bool
     ) -> Dict[str, Path]:
         """
-        Mosaic and reproject GTDR/GTDE topography tiles.
+        Mosaic and reproject GTDR/GTIE topography tiles.
 
         Source priority (all from Cornell eCommons / USGS gtdr-data.zip)
         ------------------------------------------------------------------
-        1. GTDE T126 -- Dense spline-interpolated global DEM  **PREFERRED**
-           Files: GTDED00N090_T126_V01  +  GTDED00N270_T126_V01
+        1. GTIE T126 -- Interpolated elevation DEM, metres  **PREFERRED**
+           Files: GTIED00N090_T126_V01  +  GTIED00N270_T126_V01
            ~90% global coverage (Corlies et al. 2017).
 
         2. GT0E T126 -- Standard GTDR final mission (sparse)
@@ -543,7 +549,7 @@ class DataPreprocessor:
             This is topo_4PPD_interp.cub from the Hayes Research Group
             (hayesresearchgroup.com/data-products/, titan_topo_corlies.zip).
             It has 100% global coverage at 4ppd resolution -- useful as a
-            gap-filler where GTDE has NaN pixels (~10% of globe).
+            gap-filler where GTIE has NaN pixels (~10% of globe, south truncation).
             """
             candidates = [
                 data_dir / "hayes_topo" / "topo_4PPD_interp.cub",
@@ -627,12 +633,12 @@ class DataPreprocessor:
                     return lbl
             return None
 
-        # -- Priority 1: GTDE interpolated global DEM ----------------------
-        gtde_e = _find_img("GTDED00N090_T126_V01")
-        gtde_w = _find_img("GTDED00N270_T126_V01")
+        # -- Priority 1: GTIE interpolated elevation DEM -------------------
+        gtde_e = _find_img("GTIED00N090_T126_V01")
+        gtde_w = _find_img("GTIED00N270_T126_V01")
         if gtde_e and gtde_w:
             logger.info(
-                "Preprocessing GTDE T126 interpolated DEM "
+                "Preprocessing GTIE T126 interpolated elevation DEM "
                 "(~90%% global coverage -- preferred source) ..."
             )
             _reproject_gtdr(
@@ -651,7 +657,7 @@ class DataPreprocessor:
                 )
             return {"topography": out}
         logger.info(
-            "GTDE tiles not found (GTDED00N090/270_T126_V01.IMG[.gz]). "
+            "GTIE tiles not found (GTIED00N090/270_T126_V01.IMG[.gz]). "
             "For ~90%% global DEM coverage, download from Cornell eCommons: "
             "https://data.astro.cornell.edu/RADAR/DATA/GTDR/"
         )
@@ -662,7 +668,7 @@ class DataPreprocessor:
         if gt0e_e and gt0e_w:
             logger.info(
                 "Preprocessing GT0E T126 GTDR (~25%% coverage). "
-                "Download GTDE tiles for ~90%% global coverage."
+                "Download GTIE tiles for ~90%% coverage (north of ~50S)."
             )
             _reproject_gtdr(
                 gt0e_e, gt0e_w, out, self.grid,
@@ -680,7 +686,7 @@ class DataPreprocessor:
         if legacy_e and legacy_w:
             logger.info(
                 "Preprocessing GT0E T077 legacy GTDR tiles (~15%% coverage). "
-                "For better coverage, use T126 GT0E or GTDE tiles."
+                "For better coverage, use T126 GT0E or GTIE tiles."
             )
             _reproject_gtdr(
                 legacy_e, legacy_w, out, self.grid,
@@ -689,9 +695,9 @@ class DataPreprocessor:
             return {"topography": out}
 
         logger.warning(
-            "No GTDR/GTDE tile pairs found in %s. "
+            "No GTDR/GTIE tile pairs found in %s. "
             "Topography features will be NaN. "
-            "Download GTDE tiles (interpolated, ~90%% coverage) from: "
+            "Download GTIE tiles (interpolated elevation, ~90%% coverage north of 50S) from: "
             "https://data.astro.cornell.edu/RADAR/DATA/GTDR/",
             data_dir,
         )
@@ -701,7 +707,21 @@ class DataPreprocessor:
     def _preprocess_geotiff(
         self, name: str, overwrite: bool
     ) -> Dict[str, Path]:
-        """Reproject a single GeoTIFF dataset."""
+        """
+        Reproject a single GeoTIFF dataset to the canonical grid.
+
+        Respects DatasetSpec.band (which 1-based band to extract) and
+        DatasetSpec.nodata_value (value to mask as NaN).
+
+        For the VIMS mosaic specifically:
+        - band=1 is the 1.59/1.27 umm ratio, the tholin proxy.  This is
+          the only band used by organic_abundance.
+        - nodata_value=None: band-ratio data near zero is physically
+          meaningful (dark dunes can have values close to 0).  We do NOT
+          apply the default GEOTIFF_NODATA=0.0 mask to this dataset;
+          instead we rely on the file's embedded nodata (which is NaN for
+          the Seignovert mosaic) and only mask the fill value if it exists.
+        """
         spec = self.config.datasets.get(name)
         if spec is None:
             return {}
@@ -712,10 +732,22 @@ class DataPreprocessor:
         out = self.config.processed_dir / f"{name}_canonical.tif"
         if out.exists() and not overwrite:
             return {name: out}
-        logger.info("Preprocessing GeoTIFF: %s", name)
-        nodata = spec.nodata_value if spec.nodata_value is not None \
-            else GEOTIFF_NODATA
-        _reproject_geotiff(raw, out, self.grid, nodata_in=nodata)
+        logger.info("Preprocessing GeoTIFF: %s (band=%s)", name, spec.band)
+
+        # nodata: use spec.nodata_value if explicitly set; otherwise use
+        # GEOTIFF_NODATA (0.0) for all datasets EXCEPT those with
+        # nodata_value=None, which signals "use the file's embedded nodata".
+        # Band-ratio products (VIMS) should not have 0.0 masked as nodata.
+        if spec.nodata_value is not None:
+            nodata = spec.nodata_value
+        elif name in ("vims_mosaic",):
+            # Band-ratio data: 0.0 is a valid physical value; use NaN only
+            nodata = np.nan
+        else:
+            nodata = GEOTIFF_NODATA  # 0.0 -- USGS rasters encode nodata as 0
+
+        band = spec.band if spec.band is not None else 1
+        _reproject_geotiff(raw, out, self.grid, nodata_in=nodata, band=band)
         return {name: out}
 
     def _preprocess_vims_parquet(
@@ -1234,7 +1266,7 @@ def normalise_to_0_1(
     if vmax == vmin:
         return np.zeros_like(arr, dtype=np.float32)
     # Compute in float64 to avoid overflow when arr contains large values
-    # (e.g. GTDE missing constant ~-3.4e38 or elevation extremes)
+    # (e.g. GTIE missing constant ~-3.4e38 or elevation extremes)
     out = (arr.astype(np.float64) - vmin) / (vmax - vmin)
     if clip:
         out = np.clip(out, 0.0, 1.0)

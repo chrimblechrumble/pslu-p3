@@ -214,7 +214,9 @@ GS_BOTTOM: float = 0.300
 
 # --- Feature weights and priors ----------------------------------------------
 
-#: Feature weights (must match pipeline run_pipeline.py).
+#: Feature weights (must match pipeline run_pipeline.py for the 8 PRESENT features).
+#: ``impact_melt_bonus`` is an ANIMATION-ONLY feature synthesised on-the-fly from
+#: :func:`_impact_melt_global`; it is NOT a run_pipeline.py feature and has no TIF.
 WEIGHTS: Dict[str, float] = {
     "liquid_hydrocarbon":       0.23,
     "organic_abundance":        0.18,
@@ -224,14 +226,15 @@ WEIGHTS: Dict[str, float] = {
     "topographic_complexity":   0.05,
     "geomorphologic_diversity": 0.04,
     "subsurface_ocean":         0.02,
-    "impact_melt_bonus":        0.09,
+    "impact_melt_bonus":        0.09,  # SYNTHESISED -- no TIF; zero at PRESENT epoch
 }
 
 #: Bayesian inference parameters
 KAPPA:   float = 5.0    # prior concentration
 LAMBDA:  float = 6.0    # likelihood sharpness
 
-#: Prior means (present-epoch)
+#: Prior means (present-epoch).
+#: ``impact_melt_bonus`` prior is 0.0 because no active impact melts exist today.
 PRIOR_MEANS: Dict[str, float] = {
     "liquid_hydrocarbon":       0.020,
     "organic_abundance":        0.600,
@@ -241,7 +244,7 @@ PRIOR_MEANS: Dict[str, float] = {
     "topographic_complexity":   0.250,
     "geomorphologic_diversity": 0.300,
     "subsurface_ocean":         0.030,
-    "impact_melt_bonus":        0.000,
+    "impact_melt_bonus":        0.000,  # SYNTHESISED; 0 at present by design
 }
 
 #: Colourmap display range for P(habitable | features).
@@ -311,6 +314,11 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
      "PRESENT EPOCH  (Cassini 2004–2017)  |  Calibration anchor\n"
      "All 8 features calibrated here. ~1.7 million km² of liquid hydrocarbon.\n"
      "Dragonfly mission will land at Selk crater (#3) in the 2030s."),
+
+    ( 0.250, 2.5,
+     "NEAR FUTURE  (+250 Myr)  |  D2 solar warming window opens\n"
+     "Solar luminosity ~+2.5% above present. Subsurface ocean exchange modestly elevated.\n"
+     "Polar lake margins remain most habitable. Dragonfly era data still applicable."),
 
     ( 1.50, 2.5,
      "SLOW ACCUMULATION PLATEAU  (+1.5 Gya)  |  Tholins build at 5×10⁻¹⁴ g/cm²/s\n"
@@ -595,6 +603,19 @@ def load_present_features(feature_dir: Path) -> Dict[str, np.ndarray]:
     When synthetic data is used, a prominent warning is printed and the
     function returns a flag so callers can declare it in output metadata.
 
+    ``impact_melt_bonus`` note
+    --------------------------
+    This feature is NOT produced by run_pipeline.py.  It is an animation-
+    only feature computed on-the-fly by :func:`_impact_melt_global` for each
+    epoch.  At the PRESENT epoch its value is identically zero (there are no
+    currently active impact-melt oases on Titan).  The spatial distribution
+    for past epochs is derived analytically from the SAR-bright crater annuli
+    (Hedgepeth et al. 2020) rather than from a stored TIF.
+
+    Consequence: no ``impact_melt_bonus.tif`` file will ever exist in the
+    feature directory, and this is NOT a missing-data error.  The feature is
+    always synthesised at load time.
+
     Parameters
     ----------
     feature_dir:
@@ -607,11 +628,21 @@ def load_present_features(feature_dir: Path) -> Dict[str, np.ndarray]:
         A key ``"_synthetic"`` with value ``True`` is added when synthetic
         maps are returned, so callers can log and propagate this fact.
     """
+    # impact_melt_bonus is always synthesised -- never looked for on disk.
+    # All other features are expected as TIF files from run_pipeline.py.
+    SYNTHESISED_FEATURES: frozenset = frozenset({"impact_melt_bonus"})
+
     feature_names = list(WEIGHTS.keys())
     maps: Dict[str, np.ndarray] = {}
     n_real: int = 0
 
     for name in feature_names:
+        # Synthesised features are computed on-the-fly, not loaded from disk
+        if name in SYNTHESISED_FEATURES:
+            maps[name] = np.zeros(GRID_SHAPE, dtype=np.float32)
+            # Not counted towards n_real -- don't print a missing-file warning
+            continue
+
         tif: Path = feature_dir / f"{name}.tif"
         if tif.exists():
             try:
@@ -627,12 +658,18 @@ def load_present_features(feature_dir: Path) -> Dict[str, np.ndarray]:
             except Exception as exc:
                 print(f"  WARNING: failed to load {name}.tif: {exc}")
 
-    if n_real >= 6:
-        print(f"  Loaded {n_real}/{len(feature_names)} real feature TIFs "
-              f"from {feature_dir}")
-        # Fill any missing features with prior-mean constant maps
+    # Count only non-synthesised features towards the threshold
+    n_expected = len([n for n in feature_names if n not in SYNTHESISED_FEATURES])
+
+    if n_real >= min(6, n_expected):
+        print(f"  Loaded {n_real}/{n_expected} real feature TIFs from {feature_dir}")
+        print(f"  impact_melt_bonus: synthesised on-the-fly (not a file; "
+              f"zero at PRESENT epoch by design)")
+        # Fill any missing non-synthesised features with prior-mean constant maps
         for name in feature_names:
             if name not in maps:
+                if name in SYNTHESISED_FEATURES:
+                    continue   # already handled above
                 maps[name] = np.full(GRID_SHAPE, PRIOR_MEANS[name],
                                      dtype=np.float32)
                 print(f"  INFO: {name}.tif missing -- "
@@ -688,6 +725,9 @@ def scale_features_to_epoch(
     """
     result: Dict[str, np.ndarray] = {}
     for name, arr in present.items():
+        # Skip metadata keys (e.g. "_synthetic") that are not real feature arrays
+        if name not in FEATURE_SCALE_FUNCS:
+            continue
         scale_fn = FEATURE_SCALE_FUNCS[name]
         scale    = scale_fn(t)
         if name == "organic_abundance":
@@ -742,6 +782,8 @@ def bayesian_posterior_map(
     valid: np.ndarray  = np.zeros((nrows, ncols), dtype=bool)
 
     for name, arr in features.items():
+        if name not in WEIGHTS:
+            continue   # skip metadata keys such as "_synthetic"
         w = WEIGHTS[name]
         finite_mask = np.isfinite(arr)
         w_sum  += np.where(finite_mask, arr.astype(np.float64) * w, 0.0)
@@ -1487,6 +1529,22 @@ def build_pchip_interpolator(
     without domain knowledge.  Frames in that gap use the ``modelled`` scalar
     approach instead.  See generate_temporal_maps.py documentation.
 
+    NaN handling
+    ------------
+    Real run_pipeline posterior maps contain NaN pixels where no Cassini data
+    were available (e.g. south-polar topography gap, GTIE truncation).
+    PchipInterpolator raises ValueError on NaN inputs.  Strategy:
+
+    1. Replace NaN in each anchor with 0.5 (prior midpoint) before stacking.
+       This is a neutral fill that does not bias the interpolated result
+       towards habitability or non-habitability.
+    2. Record which pixels were NaN in *every* anchor (``all_nan_mask``).
+       Only pixels that are NaN in ALL anchors are considered "no data" and
+       will be restored as NaN in interpolated frames.
+    3. Pixels that are NaN in *some* but not all anchors are gap-filled at
+       those missing anchors with 0.5.  The interpolation then produces a
+       smooth estimate; a per-pixel WARNING is logged once.
+
     Parameters
     ----------
     anchor_epochs:
@@ -1497,22 +1555,58 @@ def build_pchip_interpolator(
     Returns
     -------
     PchipInterpolator
-        Callable interp(t) -> float32 array of shape GRID_SHAPE.
+        Callable interp(t) -> float64 flat array.  A custom attribute
+        ``nan_mask`` (shape GRID_SHAPE, bool) is attached to the returned
+        interpolator; pixels where the mask is True will be set to NaN by
+        :func:`interpolate_posterior_at_epoch`.
         Valid for t in [anchor_epochs[0], anchor_epochs[-1]].
     """
     from scipy.interpolate import PchipInterpolator
-    # Stack posteriors: shape (n_anchors, nrows*ncols)
-    nrows, ncols = GRID_SHAPE
-    n: int = len(anchor_epochs)
-    stacked: np.ndarray = np.stack(
-        [a.ravel().astype(np.float64) for a in anchor_posteriors], axis=0
-    )   # shape (n, nrows*ncols)
+
+    n_anchors = len(anchor_epochs)
+
+    # -- NaN audit and gap-fill -----------------------------------------------
+    nan_masks: List[np.ndarray] = []
+    filled:    List[np.ndarray] = []
+    for i, arr in enumerate(anchor_posteriors):
+        flat = arr.ravel().astype(np.float64)
+        mask = ~np.isfinite(flat)
+        if mask.any():
+            n_nan = int(mask.sum())
+            pct   = 100.0 * n_nan / flat.size
+            print(
+                f"  WARNING: PCHIP anchor[{i}] (epoch={anchor_epochs[i]:+.2f} Gya) "
+                f"has {n_nan} NaN pixels ({pct:.1f}%). "
+                f"Gap-filling with 0.5 (prior midpoint). "
+                f"Pixels NaN in ALL anchors will be restored as NaN."
+            )
+            flat = flat.copy()
+            flat[mask] = 0.5   # neutral fill; will be re-masked later
+        nan_masks.append(mask)
+        filled.append(flat)
+
+    # Pixels NaN in EVERY anchor have no information at all.
+    # Pixels NaN in SOME anchors get smooth gap-fill from neighbours.
+    all_nan_mask: np.ndarray = np.stack(nan_masks, axis=0).all(axis=0)  # (nrows*ncols,)
+
+    # Infer grid shape from the input posteriors (allows non-GRID_SHAPE test arrays)
+    if anchor_posteriors[0].ndim == 2:
+        inferred_shape: Tuple[int, int] = anchor_posteriors[0].shape
+    else:
+        inferred_shape = GRID_SHAPE
+
+    stacked: np.ndarray = np.stack(filled, axis=0)   # (n_anchors, nrows*ncols)
+
     interp = PchipInterpolator(
         np.array(anchor_epochs, dtype=np.float64),
         stacked,
         axis=0,
         extrapolate=False,  # clip to [anchor_epochs[0], anchor_epochs[-1]]
     )
+
+    # Attach the NaN mask so interpolate_posterior_at_epoch can restore it.
+    interp.nan_mask = all_nan_mask.reshape(inferred_shape)  # type: ignore[attr-defined]
+
     return interp
 
 
@@ -1548,7 +1642,42 @@ def interpolate_posterior_at_epoch(
     t_clipped: float = float(np.clip(t, anchor_lo, anchor_hi))
     result: np.ndarray = interp(t_clipped).reshape(shape).astype(np.float32)
     result = np.clip(result, 0.0, 1.0)
+
+    # Restore NaN for pixels that had no data in ANY anchor.
+    # The NaN mask is attached by build_pchip_interpolator.
+    nan_mask: Optional[np.ndarray] = getattr(interp, "nan_mask", None)
+    if nan_mask is not None:
+        mask = nan_mask if nan_mask.shape == shape else None
+        if mask is None and nan_mask.size == result.size:
+            # output_shape differs from GRID_SHAPE (e.g. unit tests with small arrays)
+            mask = nan_mask.ravel()[:result.size].reshape(shape)
+        if mask is not None:
+            result = np.where(mask, np.nan, result)
+
     return result
+
+
+def _narrative_for_epoch(t: float) -> str:
+    """
+    Return the narrative caption string for the given epoch.
+
+    The caption is ALWAYS shown in the video (not gated by --pause).
+    It shows the most recent TRANSITION_EVENT that has been reached or passed.
+    When t is before the first event, the first event caption is used.
+    When t is after the last event, the last event caption is used.
+
+    The ``--pause`` flag controls HOLD DURATION only, not caption visibility.
+    """
+    if not TRANSITION_EVENTS:
+        return ""
+    # Find the most-recently-passed event: the last one whose epoch <= t.
+    applicable = [(et, narr) for et, _, narr in TRANSITION_EVENTS if et <= t]
+    if applicable:
+        # Return the narrative of the latest passed event
+        return max(applicable, key=lambda x: x[0])[1]
+    # Before the first event: show the first event caption
+    return TRANSITION_EVENTS[0][2]
+
 
 
 def _build_pause_timing(
@@ -1558,6 +1687,7 @@ def _build_pause_timing(
     """Build pause_idx dict and NORMAL_HOLD from args.pause flag."""
     if args.pause:
         print(f"  Pause events: {len(TRANSITION_EVENTS)}, target: ~60 s")
+        print("  (--pause controls hold duration at key events; captions are always visible)")
         event_best: Dict[float, Tuple] = {}
         for i, t in enumerate(epochs):
             for et, hold, narr in TRANSITION_EVENTS:
@@ -1667,7 +1797,13 @@ def _run_animation_modelled(
 
         scaled    = scale_features_to_epoch(present, t)
         posterior = bayesian_posterior_map(scaled)
-        frame_narrative = current_narrative if args.pause else ""
+
+        # Caption is ALWAYS shown; --pause only controls hold duration.
+        # Use the event-based current_narrative if available (it is the exact
+        # text for that transition point), otherwise fall back to the epoch-
+        # appropriate caption from _narrative_for_epoch.
+        frame_narrative = current_narrative if current_narrative else _narrative_for_epoch(t)
+
         fig = render_frame(posterior, t, i, len(epochs),
                            dpi=args.dpi, narrative=frame_narrative)
 
@@ -1848,7 +1984,8 @@ def _run_animation_full_inference(
                 source    = f"ANCHOR_{aname.upper()}"
                 break
 
-        frame_narrative = current_narrative if args.pause else ""
+        # Caption is ALWAYS shown; --pause only controls hold duration.
+        frame_narrative = current_narrative if current_narrative else _narrative_for_epoch(t)
         fig = render_frame(posterior, t, i, len(epochs),
                            dpi=args.dpi, narrative=frame_narrative)
 
@@ -1952,14 +2089,32 @@ def main(args: argparse.Namespace) -> None:
                 arr      = posterior,
                 out_path = tif_path,
                 metadata = {
-                    "EPOCH_GYA":          f"{t:.4f}",
-                    "EPOCH_LABEL":        _epoch_label(t).replace("\n", " "),
-                    "PHASE":              phase,
-                    "SOLAR_L_RATIO":      f"{solar_luminosity_ratio(t):.4f}",
-                    "SURFACE_TEMP_K":     f"{T_s:.2f}",
-                    "CRS":                TITAN_CRS_PROJ4,
+                    "EPOCH_GYA":           f"{t:.4f}",
+                    "EPOCH_LABEL":         _epoch_label(t).replace("\n", " "),
+                    "PHASE":               phase,
+                    "SOLAR_L_RATIO":       f"{solar_luminosity_ratio(t):.4f}",
+                    "SURFACE_TEMP_K":      f"{T_s:.2f}",
+                    "CRS":                 TITAN_CRS_PROJ4,
                     "FEATURE_DATA_SOURCE": "SYNTHETIC" if using_synthetic
                                            else "REAL_CASSINI",
+                    # Declared data-provenance flags for downstream users.
+                    # These warn that some regions use modelled gap-fills.
+                    "ORGANIC_EAST_HEMISPHERE":
+                        "MODELLED_GEO_GAPFILL -- pixels east of ~180W use "
+                        "Lopes geomorphology scores, not VIMS observations. "
+                        "See organic_abundance docstring.",
+                    "TOPOGRAPHY_SOUTH_LIMIT":
+                        "GTIE_T126_TRUNCATED -- elevation NaN south of ~48-51S. "
+                        "Corlies 2017 4ppd gap-filler used if available. "
+                        "Ontario Lacus (72S) topography may be gap-filled.",
+                    "ACETYLENE_ENERGY_PROXY":
+                        "SAR_BACKSCATTER_INDIRECT -- no spatially resolved "
+                        "C2H2 map exists; SAR low-sigma0 used as organic "
+                        "substrate proxy. See feature docstring.",
+                    "SUBSURFACE_OCEAN_ANNULUS":
+                        "UNVALIDATED_MORPHOLOGY -- SAR bright-ring detector "
+                        "not validated against Hedgepeth crater catalog. "
+                        "Max boost capped at +0.30 above base prior.",
                 },
             )
         else:
@@ -2107,8 +2262,9 @@ if __name__ == "__main__":
     p.add_argument("--no-animation",  action="store_true",
                    help="Skip animation generation")
     p.add_argument("--pause",         action="store_true",
-                   help="Pause at key geological events with narrative text "
-                        "(default: off; uniform hold time across all frames)")
+                   help="Hold at key geological events for longer (narrative captions "
+                        "are ALWAYS visible; this flag just extends the hold duration "
+                        "at transition points -- default: uniform hold time)")
     p.add_argument("--no-netcdf",     action="store_true",
                    help="Skip NetCDF stack output")
     p.add_argument("--epochs",        type=int, default=0,

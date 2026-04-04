@@ -20,10 +20,29 @@ Rasterises geomorphology and polar-lake shapefiles onto the canonical grid.
 
 Two independent shapefile catalogues are supported:
 
-**Lopes+2019 global geomorphology** (all terrain classes, global coverage):
-  Source: Lopes et al. (2019) Nature Astronomy doi:10.1038/s41550-019-0917-6
+**Lopes+2020 global geomorphology** (all terrain classes, global coverage):
+  Source: Lopes et al. (2020) Nature Astronomy doi:10.1038/s41550-019-0917-6
+  Data:   Schoenfeld (2024) Mendeley doi:10.17632/f6jrtyfp66.1  CC-BY-4.0
   Location: ``data/raw/geomorphology_shapefiles/``
-  Classes: Craters, Dunes, Plains_3, Basins, Mountains, Labyrinth, Lakes
+
+  CONFIRMED FILE LISTING (from Mendeley API, April 2026):
+        Basins.shp     1,829,768 bytes  sha256:ade414034e43c258...
+        Craters.shp      107,712 bytes  sha256:dd30b573d521acb2...
+        Dunes.shp      2,320,712 bytes  sha256:71bd90eb73d0cd61...
+        Labyrinth.shp    614,880 bytes  sha256:89e17602555e130b...
+        Mountains.shp  7,141,100 bytes  sha256:3c0cd9c0c7b786c5...
+        Plains_3.shp   9,504,948 bytes  sha256:894e84153cedf0a2...
+
+  *** Lakes.shp IS NOT PRESENT in the Mendeley distribution. ***
+  The Lakes class does NOT appear in the Mendeley data product.
+  Lake polygon geometry is provided by the separate Birch+2017 Cornell
+  archive (see below), which covers both poles at higher resolution with
+  filled vs empty basin distinction.
+
+  Integer labels assigned at rasterisation time by this pipeline:
+        Craters=1, Dunes=2, Plains_3=3, Basins=4, Mountains=5, Labyrinth=6
+  Class 7 (Lakes) is reserved in SHAPEFILE_LAYERS but the file is absent.
+  Any code checking geo==7 will therefore never match.
 
 **Birch+2017 polar lake mapping** (polar regions, higher-resolution lake
 outlines with confirmed-liquid vs empty-basin distinction):
@@ -56,13 +75,13 @@ Key format facts (verified by direct inspection of real shapefiles):
         geopandas reads these correctly; the M coordinate is ignored.
 
   File structure (Lopes): ONE shapefile per terrain class
-        Craters.shp   -> Meta_Terra = 'Cr'  integer_label = 1
-        Dunes.shp     -> Meta_Terra = 'Dn'  integer_label = 2
-        Plains_3.shp  -> Meta_Terra = 'Pl'  integer_label = 3
-        Basins.shp    -> Meta_Terra = 'Ba'  integer_label = 4
-        Mountains.shp -> Meta_Terra = 'Mt'  integer_label = 5
-        Labyrinth.shp -> Meta_Terra = 'Lb'  integer_label = 6
-        Lakes.shp     -> Meta_Terra = 'Lk'  integer_label = 7  (if present)
+        Craters.shp   -> integer_label = 1  (Cr)
+        Dunes.shp     -> integer_label = 2  (Dn)
+        Plains_3.shp  -> integer_label = 3  (Pl)  [note: filename has _3 suffix]
+        Basins.shp    -> integer_label = 4  (Ba)
+        Mountains.shp -> integer_label = 5  (Mt)  [corresponds to Hummocky in paper]
+        Labyrinth.shp -> integer_label = 6  (Lb)
+        Lakes.shp     -> integer_label = 7  (Lk)  ABSENT -- not in Mendeley dataset
 
   Coordinate conversion -- PROJ BYPASSED:
         PROJ silently rejects west-positive longitudes > 180 deg in its
@@ -73,7 +92,8 @@ Key format facts (verified by direct inspection of real shapefiles):
             y_m = lat      x (pi/180) x R_titan
 
 Rasterisation priority (Lopes -- drawn lowest to highest, higher overwrites):
-        Dunes < Plains < Basins < Mountains < Labyrinth < Craters < Lakes
+        Dunes < Plains < Basins < Mountains < Labyrinth < Craters
+        (Lakes absent; lake polygons come from Birch+2017 separately)
 
 References
 ----------
@@ -106,23 +126,36 @@ logger: logging.Logger = logging.getLogger(__name__)
 # Lopes+2019 terrain class constants
 # ---------------------------------------------------------------------------
 
-#: Mapping from shapefile stem -> (integer_label, Meta_Terra_code).
-#: Labels 1-7 are burned into the canonical geomorphology raster and must
-#: match ``configs/pipeline_config.py::TERRAIN_CLASSES``.
+#: Mapping from shapefile stem -> (integer_label, abbreviation).
+#: Labels are assigned by this pipeline at rasterisation time.
+#: There is no inherent numeric code in the Mendeley shapefiles.
+#:
+#: CONFIRMED PRESENT in Mendeley DOI:10.17632/f6jrtyfp66.1 (verified April 2026):
+#:   Basins, Craters, Dunes, Labyrinth, Mountains, Plains_3
+#:
+#: ABSENT from Mendeley distribution:
+#:   Lakes -- NOT in the Mendeley dataset.  Lake polygons are provided by the
+#:            separate Birch+2017 Cornell archive (POLAR_LAKE_FILLED class).
+#:            Any geomorphology raster built from the Mendeley data will
+#:            never contain label 7.  All lake detection in features.py
+#:            relies on the Birch polar_lakes layer.
 SHAPEFILE_LAYERS: Final[Dict[str, Tuple[int, str]]] = {
     "Craters":   (1, "Cr"),
     "Dunes":     (2, "Dn"),
     "Plains_3":  (3, "Pl"),
     "Basins":    (4, "Ba"),
-    "Mountains": (5, "Mt"),
+    "Mountains": (5, "Mt"),   # corresponds to "Hummocky terrain" in Lopes 2020 paper
     "Labyrinth": (6, "Lb"),
-    "Lakes":     (7, "Lk"),
+    "Lakes":     (7, "Lk"),   # ABSENT in Mendeley -- entry retained for compatibility
+                              # only.  The rasteriser skips missing shapefiles silently.
 }
 
 #: Draw order for Lopes rasterisation -- lower index drawn first so higher
-#: priority classes overwrite lower ones.  Lakes (class 7) drawn last.
+#: priority classes overwrite lower ones.
+#: Lakes absent from Mendeley; lake geometry comes from Birch+2017 separately.
 RASTER_DRAW_ORDER: Final[List[str]] = [
-    "Dunes", "Plains_3", "Basins", "Mountains", "Labyrinth", "Craters", "Lakes",
+    "Dunes", "Plains_3", "Basins", "Mountains", "Labyrinth", "Craters",
+    "Lakes",  # silently skipped if absent
 ]
 
 #: Nodata value in the integer terrain-class output raster.

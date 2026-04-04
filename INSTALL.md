@@ -12,8 +12,8 @@ all files to run; the minimum viable set is marked **[required]**.
 titan_pipeline/
 └── data/
     └── raw/                         ← set via --data-dir (default: data/raw)
-        ├── GTDED00N090_T126_V01.IMG     [required] Topography east tile
-        ├── GTDED00N270_T126_V01.IMG     [required] Topography west tile
+        ├── GTIED00N090_T126_V01.IMG     [required] Topography east tile
+        ├── GTIED00N270_T126_V01.IMG     [required] Topography west tile
         ├── TitanSARHiSAR_MAP2_SIMP_256px.tif      SAR mosaic
         ├── Titan_ISS_NearGlobal_450m.tif           ISS mosaic
         ├── Titan_VIMS-ISS.tif                      VIMS+ISS mosaic
@@ -42,22 +42,36 @@ titan_pipeline/
 
 ## Dataset-by-dataset download instructions
 
-### 1. Topography — GTDE tiles [required]
+### 1. Topography — GTIE tiles [required]
 
 Source: Cornell eCommons (Corlies et al. 2017)
 
+> **CRITICAL — product code:** The correct topography product is **`GTIED`**
+> (Interpolated Elevation in metres). Do **not** use `GTDED` — that product
+> contains the *distance-to-nearest-measurement* quality map (units: km), not
+> elevation. Both files have identical PDS3 structure and the mistake is easy
+> to make; `GTIED` is what the pipeline expects.
+>
+> **Known south-truncation:** The Cornell-distributed GTIED T126 files are
+> shorter than their labels state. This is a confirmed distribution
+> characteristic (April 2026); re-downloading gives the same result.
+> Coverage is approximately 90°N to 48–51°S. Ontario Lacus (72°S) falls
+> in the missing region. The Corlies 2017 gap-filler (Section 5 below)
+> compensates when available. All northern seas and equatorial sites are
+> fully covered.
+
 ```bash
 # East tile (0–180°W)
-wget https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTDED00N090_T126_V01.IMG.gz
-wget https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTDED00N090_T126_V01.LBL
-gunzip GTDED00N090_T126_V01.IMG.gz
-mv GTDED00N090_T126_V01.IMG data/raw/
+wget https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTIED00N090_T126_V01.IMG.gz
+wget https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTIED00N090_T126_V01.LBL
+gunzip GTIED00N090_T126_V01.IMG.gz
+mv GTIED00N090_T126_V01.IMG data/raw/
 
 # West tile (180–360°W)
-wget https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTDED00N270_T126_V01.IMG.gz
-wget https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTDED00N270_T126_V01.LBL
-gunzip GTDED00N270_T126_V01.IMG.gz
-mv GTDED00N270_T126_V01.IMG data/raw/
+wget https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTIED00N270_T126_V01.IMG.gz
+wget https://data.astro.cornell.edu/RADAR/DATA/GTDR/GTIED00N270_T126_V01.LBL
+gunzip GTIED00N270_T126_V01.IMG.gz
+mv GTIED00N270_T126_V01.IMG data/raw/
 ```
 
 The pipeline also accepts the `.IMG.gz` files directly (auto-decompresses).
@@ -122,17 +136,42 @@ cp topo_4PPD_interp.cub data/raw/hayes_topo/
 
 ---
 
-### 7. Lopes+2019 geomorphology shapefiles
+### 7. Lopes+2020 geomorphology shapefiles
 
-Source: JPL / Rosaly Lopes (personal communication or Mendeley Data)
+Source: Mendeley Data — Schoenfeld (2024) — **CC-BY-4.0**
 
-DOI: 10.1038/s41550-019-0917-6
+DOI: [10.17632/f6jrtyfp66.1](https://data.mendeley.com/datasets/f6jrtyfp66/1)
 
-Place all `.shp`, `.dbf`, `.prj`, `.shx` files in:
-`data/raw/geomorphology_shapefiles/`
+```bash
+# Download the zip (11.6 MB) from Mendeley
+wget "https://data.mendeley.com/api/datasets/f6jrtyfp66/files/zip?version=1" \
+     -O lopes_shapefiles.zip
 
-Expected stems: `Craters`, `Dunes`, `Plains_3`, `Basins`, `Mountains`,
-`Labyrinth`, `Lakes` (Lakes.shp is optional but improves Feature 1).
+# SHA-256 of the zip (verify before use):
+# 6b6848afa62344e50103cea37a95fccdd75609b5235be22cddedfd8f1e6b9535
+
+mkdir -p data/raw/geomorphology_shapefiles
+unzip lopes_shapefiles.zip -d data/raw/geomorphology_shapefiles/
+```
+
+> **CONFIRMED FILE LISTING** (from Mendeley API, April 2026 — 6 shapefiles):
+>
+> | File | Size |
+> |------|------|
+> | Basins.shp | 1.83 MB |
+> | Craters.shp | 108 KB |
+> | Dunes.shp | 2.32 MB |
+> | Labyrinth.shp | 615 KB |
+> | Mountains.shp | 7.14 MB |
+> | Plains_3.shp | 9.50 MB |
+>
+> **`Lakes.shp` is NOT in this distribution.** The Lakes unit was not
+> deposited in the public Mendeley archive. Lake polygon geometry comes
+> from the separate **Birch+2017 Cornell archive** (Section 9 below),
+> which provides higher-resolution polar lake outlines with filled vs
+> empty basin distinction. The pipeline is designed to use Birch as the
+> primary lake source; the Lopes lake class is a forward-compatibility
+> stub that is currently inactive.
 
 Override path with: `--shapefile-dir /path/to/shapefiles`
 

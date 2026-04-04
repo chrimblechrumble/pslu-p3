@@ -990,8 +990,7 @@ class TestPolarLakeRasteriser:
       - All-zeros raster returned when birch_dir is None or absent
       - Filled lake label (1) is burned from birch_filled/ sub-dir
       - Empty basin label (2) is burned from birch_empty/ sub-dir
-      - Palermo label (3) is burned from palermo/ sub-dir
-      - Draw order: Palermo (3) overwrites Birch filled (1)
+      - Draw order: Birch filled (1) overwrites empty (2)
       - Draw order: Birch filled (1) overwrites empty (2)
       - Birch pixels in the EAST hemisphere are correctly placed
     """
@@ -1113,15 +1112,14 @@ class TestPolarLakeRasteriser:
         gdf.to_file(filled_dir / "lake.shp")
 
         r = self._make_rasteriser(tmp_path)
-        canvas = r.rasterise(include_filled=True, include_empty=False,
-                             include_palermo=False)
+        canvas = r.rasterise(include_filled=True, include_empty=False)
 
         assert np.any(canvas == POLAR_LAKE_FILLED), (
             "No filled-lake pixels (label 1) found -- "
             "Birch filled layer was not burned."
         )
         assert not np.any(canvas == 2), "Empty-basin label should not appear."
-        assert not np.any(canvas == 3), "Palermo label should not appear."
+        # label 3 (Palermo) never appears: Lakes.shp absent from Mendeley dataset
 
     @_NEED_GEO_RIO
     def test_empty_basin_label_burned(self, tmp_path: Path) -> None:
@@ -1135,40 +1133,29 @@ class TestPolarLakeRasteriser:
         gdf.to_file(empty_dir / "empty.shp")
 
         r = self._make_rasteriser(tmp_path)
-        canvas = r.rasterise(include_filled=False, include_empty=True,
-                             include_palermo=False)
+        canvas = r.rasterise(include_filled=False, include_empty=True)
 
         assert np.any(canvas == POLAR_LAKE_EMPTY), (
             "No empty-basin pixels (label 2) found."
         )
 
     @_NEED_GEO_RIO
+    @pytest.mark.skip(
+        reason="POLAR_LAKE_PALERMO (label 3) removed: Lakes.shp absent "
+               "from Mendeley dataset (doi:10.17632/f6jrtyfp66.1). "
+               "No Palermo shapefiles exist in the public distribution."
+    )
     def test_palermo_label_burned(self, tmp_path: Path) -> None:
-        """Palermo polygons are burned with label POLAR_LAKE_PALERMO (3)."""
-        from titan.io.shapefile_rasteriser import (
-            BIRCH_SUBDIR_PALERMO, POLAR_LAKE_PALERMO,
-        )
-        palermo_dir = tmp_path / BIRCH_SUBDIR_PALERMO
-        palermo_dir.mkdir()
-        gdf = self._make_lake_gdf(lon_east=-90.0, lat=70.0, size=15.0)
-        gdf.to_file(palermo_dir / "palermo.shp")
-
-        r = self._make_rasteriser(tmp_path)
-        canvas = r.rasterise(include_filled=False, include_empty=False,
-                             include_palermo=True)
-
-        assert np.any(canvas == POLAR_LAKE_PALERMO), (
-            "No Palermo pixels (label 3) found."
-        )
+        """Skipped: Palermo data absent from Mendeley distribution."""
 
     # -- draw order ------------------------------------------------------------
 
+    @pytest.mark.skip(
+        reason="POLAR_LAKE_PALERMO removed: no Palermo data in public distribution."
+    )
     @_NEED_GEO_RIO
     def test_palermo_overwrites_birch_filled(self, tmp_path: Path) -> None:
-        """
-        Draw order: Palermo (label 3) is drawn after Birch filled (label 1)
-        so Palermo takes precedence where both datasets cover the same pixel.
-        """
+        """Skipped: Palermo data absent from Mendeley distribution."""
         from titan.io.shapefile_rasteriser import (
             BIRCH_SUBDIR_FILLED, BIRCH_SUBDIR_PALERMO,
             POLAR_LAKE_FILLED, POLAR_LAKE_PALERMO,
@@ -1184,8 +1171,7 @@ class TestPolarLakeRasteriser:
             self._make_lake_gdf(lon_east, lat, size).to_file(d / f"{label}.shp")
 
         r = self._make_rasteriser(tmp_path)
-        canvas = r.rasterise(include_filled=True, include_empty=False,
-                             include_palermo=True)
+        canvas = r.rasterise(include_filled=True, include_empty=False)
 
         # In the overlap area, Palermo (3) must overwrite Birch filled (1)
         overlap_pixels = np.where(
@@ -1217,8 +1203,7 @@ class TestPolarLakeRasteriser:
             self._make_lake_gdf(lon_east, lat, size).to_file(d / f"{label}.shp")
 
         r = self._make_rasteriser(tmp_path)
-        canvas = r.rasterise(include_filled=True, include_empty=True,
-                             include_palermo=False)
+        canvas = r.rasterise(include_filled=True, include_empty=True)
 
         # Birch filled drawn after empty -> empty pixels overwritten
         assert not np.any(canvas == POLAR_LAKE_EMPTY), (
@@ -1248,8 +1233,7 @@ class TestPolarLakeRasteriser:
 
         nrows, ncols = 18, 36
         r = self._make_rasteriser(tmp_path, nrows=nrows, ncols=ncols)
-        canvas = r.rasterise(include_filled=True, include_empty=False,
-                             include_palermo=False)
+        canvas = r.rasterise(include_filled=True, include_empty=False)
 
         filled_cols = np.where(canvas == POLAR_LAKE_FILLED)[1]
         assert len(filled_cols) > 0, "No filled pixels burned."
@@ -1308,11 +1292,14 @@ class TestPolarLakeClassName:
         )
         assert polar_lake_class_name(POLAR_LAKE_EMPTY) == "EmptyBasin_Birch"
 
-    def test_palermo(self) -> None:
-        from titan.io.shapefile_rasteriser import (
-            polar_lake_class_name, POLAR_LAKE_PALERMO,
+    def test_palermo_label_absent(self) -> None:
+        """Label 3 (Palermo) was removed; polar_lake_class_name returns Unknown(3)."""
+        from titan.io.shapefile_rasteriser import polar_lake_class_name
+        # POLAR_LAKE_PALERMO constant removed; label 3 is now Unknown
+        result = polar_lake_class_name(3)
+        assert "Unknown" in result or result == "Unknown(3)", (
+            f"Expected Unknown(3) for removed Palermo label, got: {result}"
         )
-        assert polar_lake_class_name(POLAR_LAKE_PALERMO) == "FilledLake_Palermo"
 
     def test_unknown(self) -> None:
         from titan.io.shapefile_rasteriser import polar_lake_class_name

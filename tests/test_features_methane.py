@@ -19,9 +19,10 @@ tests/test_features_methane.py
 Tests for Feature 4 (_methane_cycle) after the cirs_temperature integration.
 
 The updated feature blends:
-  vims_coverage      (0.50)
-  cirs_temperature   (0.25) -- meridional |dT/dlat| gradient
-  lat_weight         (0.25) -- Gaussian prior at +/-45 deg
+  cirs_temperature   (0.50) -- meridional |dT/dlat| gradient (primary)
+  channel_density    (0.35) -- Miller+2021 fluvial transport (secondary)
+  lat_weight         (0.15) -- Gaussian prior (always available)
+  (VIMS coverage density removed: observing bias, not geophysical signal)
 
 Tests verify correctness of each blend mode and the physical
 validity of the cirs_temperature gradient contribution.
@@ -156,16 +157,26 @@ class TestMethane_CycleCIRS:
 
     def test_flat_cirs_has_minimal_effect(self) -> None:
         """
-        A spatially uniform cirs_temperature has zero gradient -> contributes
-        nothing distinctive.  The result should be close to the VIMS-only case.
+        A spatially uniform cirs_temperature has zero gradient everywhere.
+        The variance guard in _methane_cycle checks:
+            std(dT/dy) > 1e-4 K/px
+        For a flat 93 K field, std == 0, so the CIRS layer is dropped
+        entirely and cirs_weight stays None.  The result is therefore
+        identical to the lat-only baseline -- not worse, not better.
+
+        This is the CORRECT behaviour: silent discard of a zero-information
+        source rather than polluting the blend with 50% dead weight.
         """
-        r_vims_only  = _compute(_stack(vims=True))
-        r_flat_cirs  = _compute(_stack(vims=True, cirs_flat=True))
-        # The flat gradient adds a zero-signal; result should still differ
-        # somewhat due to weight renormalisation, but not dramatically
-        max_diff = float(np.abs(r_vims_only - r_flat_cirs).max())
-        assert max_diff < 0.5, (
-            f"Flat CIRS should not wildly change result (max_diff={max_diff:.3f})"
+        r_lat_only  = _compute(_stack())           # no CIRS, no channels
+        r_flat_cirs = _compute(_stack(cirs_flat=True))
+
+        # Flat CIRS is dropped by the variance guard -> identical to lat-only
+        np.testing.assert_array_equal(
+            r_flat_cirs, r_lat_only,
+            err_msg=(
+                "Flat CIRS should be silently discarded by the variance guard "
+                "(std(dT/dy)==0 < 1e-4 threshold), leaving result == lat-only"
+            ),
         )
 
     def test_cirs_only_blends_with_lat_prior(self) -> None:
@@ -246,5 +257,6 @@ class TestMethane_CycleDocumentation:
         section = src[m_idx:m_end]
         assert "cirs_temperature" in section
         assert "cirs_weight" in section
-        assert "0.50" in section or ".50" in section  # VIMS weight
-        assert "0.25" in section                       # CIRS weight
+        assert "0.50" in section or ".50" in section  # CIRS weight is 0.50
+        assert "0.35" in section                       # channel weight is 0.35
+        assert "0.15" in section                       # lat prior weight is 0.15

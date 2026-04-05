@@ -201,7 +201,7 @@ COLOUR_POSTER_INFO:  str = "#aabbff"
 #:   Setting equal:  fig_width = 4 x (GS_TOP-GS_BOTTOM) / (GS_RIGHT-GS_LEFT) x fig_height
 #:   With GS values below and fig_height=8.5:  20.7" -> delta < 0.01mm
 FIG_WIDTH_IN:  float = 20.7
-FIG_HEIGHT_IN: float = 8.5
+FIG_HEIGHT_IN: float = 11.0
 
 #: GridSpec margins (figure-fraction, 0=bottom/left, 1=top/right).
 #:   GS_LEFT  = 0.08 -- space for equirectangular y-axis labels (Latitude  degN)
@@ -209,8 +209,8 @@ FIG_HEIGHT_IN: float = 8.5
 #:   GS_TOP   = 0.855 -- panel titles clear of the progress bar above
 GS_LEFT:   float = 0.08
 GS_RIGHT:  float = 0.99
-GS_TOP:    float = 0.855
-GS_BOTTOM: float = 0.300
+GS_TOP:    float = 0.920
+GS_BOTTOM: float = 0.500
 
 # --- Feature weights and priors ----------------------------------------------
 
@@ -991,7 +991,12 @@ def _phase_label(t: float) -> str:
         return "Near future"
     if t < 5.0:
         return "Pre red-giant"
-    return "Red-giant\nramp"
+    # T < EUTECTIC_K here (handled above).
+    # t=5.0–6.0: Sun becoming red giant, T rising toward eutectic → ramp up.
+    # t>=6.0: Sun exits red-giant, L collapses 600×→0.8×, T drops → ramp down.
+    if t < 6.0:
+        return "Red-giant\nramp up"
+    return "Red-giant\nramp down"
 
 
 def render_frame(
@@ -1042,6 +1047,20 @@ def render_frame(
         (179.0, -72.0, "Ontario",    9, "S"),
         ( 78.0, -20.0, "Hotei",     10, ""),
     ]
+
+    # Northern polar seas and lakes -- labelled only when polar lakes exist.
+    # Epoch range: lakes established at -0.5 Gya; start evaporating at +4.0 Gya.
+    # Sources: Turtle et al. (2009), Hayes et al. (2008),
+    #          USGS Gazetteer of Planetary Nomenclature.
+    # Format: (lon_W deg, lat deg, label)
+    NORTH_LAKES: List[Tuple[float, float, str]] = [
+        (339.0,  85.5, "Punga Mare"),      # 3rd largest N-polar sea
+        (336.3,  73.1, "Jingpo Lacus"),    # large lake SW of Punga
+        ( 93.5,  70.7, "Hammar Lacus"),    # named lake NW of Ligeia
+        ( 12.3,  75.4, "Bolsena Lacus"),   # named lake E of Punga
+        (262.8,  77.5, "Mackay Lacus"),    # named lake W of Kraken
+    ]
+    _lakes_visible: bool = -0.5 <= t <= 4.0
 
     MARKER_SIZE: int  = 6
     TEXT_SIZE:   float = 7.5
@@ -1116,6 +1135,26 @@ def render_frame(
                   fontsize=10, pad=5)
     for spine in ax1.spines.values():
         spine.set_edgecolor(COLOUR_SPINE)
+
+    # Northern polar lakes -- shown only when lakes are present (epoch-conditional)
+    if _lakes_visible:
+        for lon_W, lat, label in NORTH_LAKES:
+            dx = 6.0 if lon_W < 300 else -6.0
+            dy = 5.0
+            ha_nl: str = "left" if dx > 0 else "right"
+            ax1.plot(lon_W, lat, "s", color=COLOUR_MARKER,
+                     ms=MARKER_SIZE - 1, mew=1.0,
+                     markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+            ax1.annotate(
+                label,
+                xy=(lon_W, lat), xytext=(lon_W + dx, lat + dy),
+                color=COLOUR_TEXT, fontsize=TEXT_SIZE - 1.0,
+                ha=ha_nl, va="center",
+                arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.7),
+                zorder=11,
+                bbox=dict(boxstyle="round,pad=0.12",
+                          fc=COLOUR_ANNOT_BOX, ec="none", alpha=0.85),
+            )
 
     # -- Polar reproject helper ------------------------------------------------
     def polar_reproject(img: np.ndarray, north: bool, size: int = 500) -> np.ndarray:
@@ -1257,6 +1296,30 @@ def render_frame(
             bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
         )
 
+    # Northern polar lakes on polar cap -- epoch-conditional
+    if _lakes_visible:
+        for lon_W, lat, label in NORTH_LAKES:
+            xs, ys = _loc_to_stereo(lon_W, lat, north=True)
+            if xs is None:
+                continue
+            ax2.plot(xs, ys, "s", color=COLOUR_MARKER,
+                     ms=MARKER_SIZE - 1, mew=1.0,
+                     markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+            mag = math.sqrt(xs**2 + ys**2)
+            scale_out = min(1.15 / max(0.05, mag), 4.0)
+            tx = max(-0.90, min(0.90, xs * scale_out))
+            ty = max(-0.90, min(0.90, ys * scale_out))
+            ax2.annotate(
+                label,
+                xy=(xs, ys), xytext=(tx, ty),
+                color=COLOUR_TEXT, fontsize=TEXT_SIZE - 1.5,
+                ha="center", va="center",
+                arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.7),
+                zorder=11,
+                bbox=dict(boxstyle="round,pad=0.12",
+                          fc=COLOUR_ANNOT_BOX_POLAR, ec="none", alpha=0.85),
+            )
+
     # -- Right panel: South polar cap (POLAR_CAP_EDGE_DEG deg - 90 degS) ------------
     ax3 = fig.add_subplot(gs[0, 2], aspect="equal")
     ax3.set_facecolor(COLOUR_BACKGROUND)
@@ -1294,48 +1357,49 @@ def render_frame(
         )
 
     # -- Colourbar -------------------------------------------------------------
-    # Placed well below GS_BOTTOM so the equirectangular x-axis label (at
-    # ~y=0.268) and the colourbar top (y=0.170) have ~0.8" of clear space.
-    cax = fig.add_axes([0.10, 0.178, 0.80, 0.022])
+    # Bar axes: [left, bottom, width, height] in figure fraction.
+    # Label is placed as fig.text() ABOVE the bar so it doesn't compete with
+    # the narrative boxes below.  cb.set_label("") suppresses the auto label.
+    cax = fig.add_axes([0.10, 0.145, 0.80, 0.014])
     cax.set_facecolor(COLOUR_BACKGROUND)
     sm  = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     cb  = fig.colorbar(sm, cax=cax, orientation="horizontal")
-    cb.set_label("P(habitable | features)", color="white", fontsize=11)
+    cb.set_label("")                # suppress automatic label below bar
     cb.ax.xaxis.set_tick_params(color="white", labelcolor="white", labelsize=9)
+    # Manual label centred above the bar
+    fig.text(0.50, 0.164, "P(habitable | features)",
+             color="white", fontsize=10, ha="center", va="bottom",
+             transform=fig.transFigure)
 
     # -- Narrative text box ----------------------------------------------------
-    # Both frames (narrative and blank) render identical sized elements so that
-    # bbox_inches=None produces a consistent frame height throughout the video.
-    #
-    # Vertical layout from bottom of figure (FIG_HEIGHT_IN = 8.5"):
-    #   y=0.170  colourbar bar top
-    #   y=0.148  colourbar bar bottom
-    #   y=0.120  colourbar label centre
-    #   -- 0.5" gap --------------------------------------
-    #   y=0.090  title pill centre
-    #   -- gap --------------------------------------------
-    #   y=0.038  body box centre
+    # Vertical layout (11" figure, y in figure fraction, 0=bottom):
+    #   y=0.164  colourbar label (above bar)
+    #   y=0.145  colourbar bar top
+    #   y=0.131  colourbar bar bottom  + tick values below
+    #   ---
+    #   y=0.072  title pill centre
+    #   y=0.030  body box centre
     if narrative:
         lines: list = [ln.strip() for ln in narrative.strip().split("\n") if ln.strip()]
         title_line: str       = lines[0] if lines else ""
         body_lines: list[str] = lines[1:] if len(lines) > 1 else []
         body_text:  str       = "\n".join(body_lines) if body_lines else "-" * 60
 
-        fig.text(0.50, 0.038, body_text,
+        fig.text(0.50, 0.030, body_text,
                  color=COLOUR_NARRATIVE_BODY, fontsize=10.5, fontweight="normal",
                  ha="center", va="center", fontfamily="monospace",
                  linespacing=1.55, zorder=20,
                  bbox=dict(boxstyle="round,pad=0.55",
                            fc=COLOUR_NARRATIVE_FILL, ec=COLOUR_NARRATIVE_BORDER, lw=1.8))
-        fig.text(0.50, 0.090, title_line,
+        fig.text(0.50, 0.072, title_line,
                  color=COLOUR_NARRATIVE_TITLE, fontsize=12.0, fontweight="bold",
                  ha="center", va="center", fontfamily="monospace", zorder=21,
                  bbox=dict(boxstyle="round,pad=0.30",
                            fc=COLOUR_TITLE_FILL, ec=COLOUR_TITLE_BORDER, lw=1.5))
     else:
-        fig.text(0.50, 0.038, " ", color=COLOUR_TRANSPARENT, fontsize=10.5,
+        fig.text(0.50, 0.030, " ", color=COLOUR_TRANSPARENT, fontsize=10.5,
                  fontfamily="monospace", ha="center", va="center", zorder=1)
-        fig.text(0.50, 0.090, " ", color=COLOUR_TRANSPARENT, fontsize=12.0,
+        fig.text(0.50, 0.072, " ", color=COLOUR_TRANSPARENT, fontsize=12.0,
                  fontfamily="monospace", ha="center", va="center", zorder=1)
 
     # ── Title ─────────────────────────────────────────────────────────────────
@@ -1349,20 +1413,303 @@ def render_frame(
     else:
         phase_col = COLOUR_PHASE_DEFAULT
 
-    fig.text(0.5, 0.973, "TITAN SURFACE HABITABILITY", color="white",
+    fig.text(0.5, 0.978, "TITAN SURFACE HABITABILITY", color="white",
              fontsize=15, ha="center", va="bottom", fontweight="bold",
              fontfamily="monospace")
-    fig.text(0.5, 0.940, f"Epoch:  {_epoch_label(t).replace(chr(10),' ')}   |   "
+    fig.text(0.5, 0.963, f"Epoch:  {_epoch_label(t).replace(chr(10),' ')}   |   "
              f"Phase:  {_phase_label(t).replace(chr(10),' ')}   |   {solar_str}",
              color=phase_col, fontsize=10, ha="center", va="bottom")
 
     # -- Progress bar ----------------------------------------------------------
-    bar_ax = fig.add_axes([0.10, 0.910, 0.80, 0.006])
+    bar_ax = fig.add_axes([0.10, 0.948, 0.80, 0.006])
     bar_ax.set_facecolor(COLOUR_BACKGROUND)
     bar_ax.set_xlim(0, n_epochs)
     bar_ax.set_ylim(0, 1)
     bar_ax.barh(0.5, epoch_idx + 1, height=1.0, color=COLOUR_PROGRESS_BAR, alpha=0.7)
     bar_ax.axis("off")
+
+    # -- Epoch-aware feature / assumption panel ----------------------------------
+    # Three-column panel in the expanded lower figure area:
+    #   Left  (x=0.01-0.38): Active features table + excluded features
+    #   Centre(x=0.39-0.65): Colour trend explanation
+    #   Right (x=0.66-0.99): Key assumptions for this epoch
+    #
+    # The panel key is matched by the first word(s) of _phase_label(t).
+    _phase = _phase_label(t)
+    _PANEL: Dict[str, Any] = {
+        "LHB peak": {
+            "active": [
+                ("impact_melt_bonus",        "HIGH",   "Uniform global boost  peak=0.50 @ -3.8 Gya; →0 by -2.5 Gya"),
+                ("cryovolcanic_flux",        "HIGH",   "Cryovolcanic candidate venting to surface"),
+                ("acetylene_energy",         "MED",    "Intense HCN/C₂H₂ photochem under young UV Sun"),
+                ("organic_abundance",        "MED",    "Low tholin — only ~0.5 Gyr of UV photolysis"),
+                ("surface_atm_interaction",  "MED",    "Cryovolcanic conduits elevate gas/surface flux"),
+                ("methane_cycle",            "LOW",    "Episodic outgassing — no stable rain cycle"),
+                ("topographic_complexity",   "LOW",    "Crater rims dominate topography"),
+                ("geomorphologic_diversity", "LOW",    "Terrain class diversity proxy"),
+            ],
+            "excluded": "liquid_hydrocarbon — no stable polar lakes yet\nsubsurface_ocean   — subsumed into cryovolcanic_flux",
+            "colour":
+                "BRIGHT (yellow):  fresh impact craters at mid-latitudes with melt halos\n"
+                "MED (orange):     cryovolcanic candidate sites (Lopes 2007)\n"
+                "DARK (blue):      polar regions, dune plains — no lakes, low organics",
+            "assumptions": [
+                "Epoch ≈ 3.5 Gya  (Late Heavy Bombardment peak; Gomes et al. 2005)",
+                "Impact flux ~30× present (Hartmann & Neukum 2001)",
+                "Uniform spatial warming — no resolved GCM for this epoch",
+                "Birch confirmed-lake polygons not applied (no polar lakes)",
+            ],
+        },
+        "Lake formation": {
+            "active": [
+                ("liquid_hydrocarbon",       "RAMP",   "Polar lake proxy ramping 10% → 100% of present"),
+                ("cryovolcanic_flux",        "HIGH",   "Near Tobie et al. (2006) ~500 Mya cryovolc. peak"),
+                ("organic_abundance",        "MED",    "Tholin stockpile building toward present level"),
+                ("methane_cycle",            "MED",    "Methane rain cycle becoming established"),
+                ("acetylene_energy",         "MED",    "C₂H₂ production ongoing"),
+                ("surface_atm_interaction",  "MED",    "Lake margins + cryovolcanic conduits"),
+                ("topographic_complexity",   "LOW",    "Topographic roughness proxy"),
+                ("geomorphologic_diversity", "LOW",    "Terrain class diversity"),
+                ("impact_melt_bonus",        "LOW",    "LHB residual ~0.005  (spatially uniform, negligible)"),
+            ],
+            "excluded": "subsurface_ocean — subsumed into cryovolcanic_flux",
+            "colour":
+                "BRIGHT (yellow):  north polar region brightening as Kraken/Ligeia fill\n"
+                "MED (orange):     cryovolcanic sites; equatorial organics building\n"
+                "DARK (blue):      mountain ranges, Xanadu (water-ice, low organics)",
+            "assumptions": [
+                "Epoch ≈ 1.0 Gya  (Birch et al. 2017 morphology evidence)",
+                "liquid_HC ramps linearly from −1.0 → −0.5 Gya",
+                "Cassini SAR geomorphology applied (same maps, different weights)",
+            ],
+        },
+        "Recent past": {
+            "active": [
+                ("liquid_hydrocarbon",       "HIGH",   "Birch Fl polygons: Cassini confirmed liquid (=1.0)"),
+                ("organic_abundance",        "HIGH",   "Lopes geomorphology scores; VIMS offset −0.135"),
+                ("methane_cycle",            "MED",    "CIRS temperature + latitude → rain/evap cycle"),
+                ("acetylene_energy",         "MED",    "Strobel (2010) H₂ depletion confirms C₂H₂ use"),
+                ("surface_atm_interaction",  "MED",    "Channel density + lake margin proximity"),
+                ("subsurface_ocean",         "LOW",    "SAR annuli around craters; prior=0.03 (Neish 2024)"),
+                ("topographic_complexity",   "LOW",    "GTIE T126 DEM roughness at 4490 m/px"),
+                ("geomorphologic_diversity", "LOW",    "Lopes 2019 terrain diversity (6 classes)"),
+            ],
+            "excluded": "impact_melt_bonus  — decayed to ~0 by -2.5 Gya; effectively zero\ncryovolcanic_flux  — not used at present epoch",
+            "colour":
+                "BRIGHT (yellow):  north polar seas (Kraken, Ligeia, Punga) — confirmed liquid\n"
+                "MED-BRIGHT:       equatorial dune belts — high organic abundance\n"
+                "MED (pink):       lake-adjacent channels — surface-atm interaction\n"
+                "DARK (blue):      mountain ranges, Xanadu — water-ice, low organics",
+            "assumptions": [
+                "Cassini epoch = 2004-2017 CE  (CIRS T model year 2011.0)",
+                "Organic abundance: geo_only mode — Lopes (2019) terrain classes globally",
+                "El/Em Birch confirmed-empty basins → liquid_HC = 0.0",
+                "Subsurface ocean prior = 0.03  (Neish et al. 2024 organic flux ~1 elephant/yr)",
+                "Label balance: 50/50 positive/negative (pure median split)",
+            ],
+        },
+        "Near future": {
+            "active": [
+                ("liquid_hydrocarbon",       "HIGH",   "Same Cassini map — luminosity change <2.5% in 250 Myr"),
+                ("organic_abundance",        "HIGH",   "Unchanged — terrain stable at this timescale"),
+                ("methane_cycle",            "MED",    "Minor depletion (Lorenz et al. 1997)"),
+                ("acetylene_energy",         "MED",    "Slightly elevated under warmer Sun"),
+                ("surface_atm_interaction",  "MED",    "Unchanged from present"),
+                ("subsurface_ocean",         "LOW",    "Prior raised 0.03→0.08; solar warming ↑ exchange"),
+                ("topographic_complexity",   "LOW",    "Unchanged"),
+                ("geomorphologic_diversity", "LOW",    "Unchanged"),
+            ],
+            "excluded": "impact_melt_bonus  — decayed to zero; no LHB contribution\ncryovolcanic_flux  — not applicable",
+            "colour":
+                "Nearly identical to Cassini era — only subsurface_ocean weight slightly higher\n"
+                "Polar lake shores remain most habitable; Dragonfly-era data still applicable",
+            "assumptions": [
+                "D2 window centre = +250 Myr  (range 100–400 Myr; Lorenz, Lunine & McKay 1997)",
+                "Solar luminosity +2.5% at +250 Myr",
+                "Uniform spatial warming — no resolved GCM for this epoch",
+                "Cassini feature maps unchanged (no spatial data at +250 Myr resolution)",
+            ],
+        },
+        "Solar warming": {
+            "active": [
+                ("liquid_hydrocarbon",       "DECL",   "Lake surfaces evaporating as T exceeds CH₄ b.p."),
+                ("organic_abundance",        "HIGH",   "Tholin stockpile at maximum — billions of yrs UV"),
+                ("acetylene_energy",         "MED",    "Chemistry shifts thermal → photochemical regime"),
+                ("methane_cycle",            "DECL",   "Weakening as surface liquid depletes"),
+                ("surface_atm_interaction",  "MED",    "Shrinking lake margins"),
+                ("subsurface_ocean",         "LOW",    "Present but decreasing surface connection"),
+                ("topographic_complexity",   "LOW",    "Unchanged"),
+                ("geomorphologic_diversity", "LOW",    "Desiccated lake basins add new class"),
+            ],
+            "excluded": "impact_melt_bonus  — decayed to zero; no LHB contribution\ncryovolcanic_flux  — not applicable",
+            "colour":
+                "FADING BRIGHT at poles:  lakes evaporating — liquid_HC scale → 0\n"
+                "BRIGHT at low latitudes: organic abundance dominates as lakes disappear\n"
+                "Overall habitability declining as methane cycle collapses",
+            "assumptions": [
+                "Solar ramp: +4.0 to +5.0 Gya; linear lake evaporation model",
+                "liquid_HC scale declines linearly 1.0 → 0.0 over 1 Gyr",
+                "Uniform spatial warming assumed (no resolved GCM for this epoch)",
+            ],
+        },
+        "Pre red-giant": {
+            "active": [
+                ("liquid_hydrocarbon",       "DECL",   "Lake surfaces evaporating as T exceeds CH₄ b.p."),
+                ("organic_abundance",        "HIGH",   "Tholin stockpile at maximum — billions of yrs UV"),
+                ("acetylene_energy",         "MED",    "Chemistry shifts thermal → photochemical regime"),
+                ("methane_cycle",            "DECL",   "Weakening as surface liquid depletes"),
+                ("surface_atm_interaction",  "MED",    "Shrinking lake margins"),
+                ("subsurface_ocean",         "LOW",    "Present but decreasing surface connection"),
+                ("topographic_complexity",   "LOW",    "Unchanged"),
+                ("geomorphologic_diversity", "LOW",    "Desiccated lake basins add new class"),
+            ],
+            "excluded": "impact_melt_bonus  — decayed to zero; no LHB contribution\ncryovolcanic_flux  — not applicable",
+            "colour":
+                "FADING BRIGHT at poles:  lakes evaporating — liquid_HC scale → 0\n"
+                "BRIGHT at low latitudes: organic abundance dominates as lakes disappear",
+            "assumptions": [
+                "Solar ramp: +4.0 to +5.0 Gya; linear lake evaporation model",
+                "Uniform spatial warming assumed",
+            ],
+        },
+        "Red giant": {
+            "active": [
+                ("water_ammonia_solvent",    "HIGH",   "Global water-ammonia ocean: 176 K eutectic mix"),
+                ("dissolved_energy",         "HIGH",   "Tidal + radiogenic heating in ocean"),
+                ("organic_stockpile",        "HIGH",   "Billions of yrs of tholin dissolves into ocean"),
+                ("water_ammonia_cycle",      "MED",    "Evap/precip cycle in water-NH₃ atmosphere"),
+                ("global_ocean_habitability","MED",    "Ocean depth/salinity/redox proxy (DEM-derived)"),
+                ("surface_atm_interaction",  "LOW",    "Residual — atmosphere now largely water vapour"),
+                ("topographic_complexity",   "LOW",    "Sub-ocean topography drives circulation"),
+                ("geomorphologic_diversity", "LOW",    "Surface largely submerged"),
+            ],
+            "excluded":
+                "liquid_hydrocarbon  — methane lakes long evaporated\n"
+                "methane_cycle       — methane cycle ended\n"
+                "acetylene_energy    — photochemistry regime changed\n"
+                "subsurface_ocean    — now a SURFACE ocean → global_ocean_habitability",
+            "colour":
+                "BRIGHT globally:   entire surface habitable under water-ammonia ocean\n"
+                "LOCAL variation:   sub-ocean ridges/basins from GTIE DEM topography\n"
+                "Highest scores:    deep ocean basins (Kraken, Ligeia depressions)",
+            "assumptions": [
+                "Future epoch ≈ 5.1–6.0 Gya  (peak red-giant; Lorenz et al. 1997)",
+                "Water-ammonia eutectic at 176 K  (Grasset & Pargamin 2005)",
+                "Global ocean when T_surface ≥ 176 K; depth from GTIE DEM",
+                "Uniform ocean composition assumed",
+            ],
+        },
+        "Ocean refreezing": {
+            "active": [
+                ("water_ammonia_solvent",    "DECL",   "Ocean refreezing — T dropped below 176 K eutectic"),
+                ("organic_stockpile",        "HIGH",   "Full 16 Gyr tholin inventory still present"),
+                ("global_ocean_habitability","DECL",   "Habitability declining as ocean solidifies"),
+                ("dissolved_energy",         "LOW",    "Heating continues briefly but surface cooling"),
+                ("water_ammonia_cycle",      "LOW",    "Atmosphere thinning as T drops"),
+                ("surface_atm_interaction",  "LOW",    "Residual"),
+                ("topographic_complexity",   "LOW",    "Sub-ocean topography"),
+                ("geomorphologic_diversity", "LOW",    "Surface emerging as ocean solidifies"),
+            ],
+            "excluded":
+                "liquid_hydrocarbon  — methane lakes evaporated long ago\n"
+                "methane_cycle       — ended\n"
+                "acetylene_energy    — ended\n"
+                "subsurface_ocean    — was surface ocean; now refreezing",
+            "colour":
+                "FADING globally:  T < 176 K, ocean refreezes in < 1 Myr\n"
+                "Still elevated:   16 Gyr organic stockpile in solution briefly\n"
+                "Rapid decline:    habitability window closes ~400 Myr after peak",
+            "assumptions": [
+                "Epoch ≥ 6.0 Gya — Sun exits red-giant phase (Lorenz et al. 1997)",
+                "L collapses 600× → 0.8× present; T_surface drops to ~89 K",
+                "Ocean refreezing timescale < 1 Myr (Lorenz 1997)",
+                "Total habitable window: ~400 Myr  (+5.1 to +6.0 Gya)",
+            ],
+        },
+    }
+
+    # Map phase labels (first line of _phase_label output) to panel keys.
+    # This is explicit rather than fragile first-word matching.
+    # Use full phase string (\n → space) for unambiguous matching.
+    _PHASE_TO_PANEL: Dict[str, str] = {
+        "Late Heavy Bombardment": "LHB peak",
+        "Early Titan":            "LHB peak",
+        "Lake formation":         "Lake formation",
+        "Recent past":            "Recent past",
+        "Cassini epoch":          "Recent past",
+        "Near future":            "Near future",
+        "Pre red-giant":          "Solar warming",
+        "Red-giant ramp up":      "Red giant",
+        "Red-giant water ocean":  "Red giant",
+        "Red-giant ramp down":    "Ocean refreezing",
+    }
+    _phase_key = _phase.replace("\n", " ")
+    _panel_key = _PHASE_TO_PANEL.get(_phase_key, "Recent past")
+    _pd = _PANEL[_panel_key]
+
+    # -- Left column: Active features + excluded ---------------------------------
+    _feat_lines = ["ACTIVE FEATURES  (weight level: HIGH / MED / LOW / RAMP / DECL)"]
+    _feat_lines.append("─" * 70)
+    for fname, level, desc in _pd["active"]:
+        _lvl_col = {"HIGH": "▶▶▶", "MED": "▶▶○", "LOW": "▶○○",
+                    "RAMP": "↑↑↑", "DECL": "↓↓↓"}.get(level, "○○○")
+        _feat_lines.append(f"  {_lvl_col} {fname:<28}  {desc}")
+    _feat_lines.append("")
+    _feat_lines.append("EXCLUDED / NOT ACTIVE:")
+    _feat_lines.append("─" * 70)
+    for ln in _pd["excluded"].split("\n"):
+        _feat_lines.append(f"  ✗  {ln}")
+
+    fig.text(
+        0.080, 0.448, "\n".join(_feat_lines),
+        color="#d0d8f0", fontsize=7.8, fontfamily="monospace",
+        va="top", ha="left", linespacing=1.45, zorder=20,
+        bbox=dict(boxstyle="round,pad=0.4", fc="#0a0a1a", ec="#2a3a6a", lw=1.2),
+        transform=fig.transFigure,
+    )
+
+    # -- Centre column: Colour trends --------------------------------------------
+    _colour_lines = ["COLOUR SCALE  ( 0.10 ← DARK          BRIGHT → 0.65 )"]
+    _colour_lines.append("─" * 42)
+    for ln in _pd["colour"].split("\n"):
+        _colour_lines.append(f"  {ln}")
+    _colour_lines.append("")
+    _colour_lines.append(f"DOMINANT FEATURE THIS EPOCH:")
+    _colour_lines.append("─" * 42)
+    _top_feat = _pd["active"][0]
+    _colour_lines.append(f"  {_top_feat[0]}")
+    _colour_lines.append(f"  {_top_feat[2]}")
+
+    fig.text(
+        0.535, 0.448, "\n".join(_colour_lines),
+        color="#f0d8a0", fontsize=7.8, fontfamily="monospace",
+        va="top", ha="center", linespacing=1.45, zorder=20,
+        bbox=dict(boxstyle="round,pad=0.4", fc="#0a0a0a", ec="#6a4a00", lw=1.2),
+        transform=fig.transFigure,
+    )
+
+    # -- Right column: Assumptions -----------------------------------------------
+    _assump_lines = ["KEY ASSUMPTIONS  (this epoch)"]
+    _assump_lines.append("─" * 48)
+    for i, a in enumerate(_pd["assumptions"], 1):
+        _assump_lines.append(f"  {i}. {a}")
+    _assump_lines.append("")
+    _assump_lines.append("GLOBAL ASSUMPTIONS (all epochs):")
+    _assump_lines.append("─" * 48)
+    _assump_lines.append("  • Resolution: 4490 m/px equirectangular")
+    _assump_lines.append("  • Grid: 1802 × 3603 px (Titan R = 2575 km)")
+    _assump_lines.append("  • Organic abundance: Lopes (2019) geo_only mode")
+    _assump_lines.append("  • Label balance: 50/50 (pure median split)")
+    _assump_lines.append("  • Backend: sklearn RandomForestClassifier")
+    _assump_lines.append("  • Temporal scaling: modelled (present TIFs scaled)")
+
+    fig.text(
+        0.990, 0.448, "\n".join(_assump_lines),
+        color="#c0f0c0", fontsize=7.8, fontfamily="monospace",
+        va="top", ha="right", linespacing=1.45, zorder=20,
+        bbox=dict(boxstyle="round,pad=0.4", fc="#000a00", ec="#1a5a1a", lw=1.2),
+        transform=fig.transFigure,
+    )
 
     return fig
 
@@ -2034,7 +2381,9 @@ def main(args: argparse.Namespace) -> None:
     for d in [out_dir, tif_dir, anim_dir, poster_dir]:
         d.mkdir(parents=True, exist_ok=True)
 
-    epochs = make_epoch_axis(n_limit=args.epochs if args.epochs > 0 else None)
+    # --n-frames is an alias for --epochs
+    _n_limit = args.n_frames or args.epochs or 0
+    epochs = make_epoch_axis(n_limit=_n_limit if _n_limit > 0 else None)
     print(f"\nTitan Temporal Habitability Maps")
     print(f"  Epochs:        {len(epochs)} points, {epochs[0]:+.2f} -> {epochs[-1]:+.2f} Gya")
     print(f"  Grid:          {GRID_SHAPE[0]} x {GRID_SHAPE[1]} = {GRID_SHAPE[0]*GRID_SHAPE[1]:,} pixels")
@@ -2269,6 +2618,8 @@ if __name__ == "__main__":
                    help="Skip NetCDF stack output")
     p.add_argument("--epochs",        type=int, default=0,
                    help="Limit to N epochs (0=all, useful for testing)")
+    p.add_argument("--n-frames",      type=int, default=0,
+                   help="Alias for --epochs: limit to N frames (0=all)")
     p.add_argument("--fps",           type=int, default=8,
                    help="Animation frames per second (default: 8)")
     p.add_argument("--dpi",           type=int, default=120,

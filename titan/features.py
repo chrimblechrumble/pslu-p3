@@ -330,6 +330,105 @@ class FeatureStack:
 # Feature extractor
 # ---------------------------------------------------------------------------
 
+
+# ---------------------------------------------------------------------------
+# Pipeline version identifier -- logged at startup and checked by validator
+# ---------------------------------------------------------------------------
+PIPELINE_CODE_VERSION: str = "4.32"
+
+# ---------------------------------------------------------------------------
+# Organic-abundance source mode
+# ---------------------------------------------------------------------------
+# Controls how organic_abundance is computed.  Change this single line to
+# switch between approaches; re-run the pipeline with --overwrite to apply.
+#
+#   "blended"  (Option A) -- VIMS+ISS Seignovert mosaic primary (0-180°W),
+#              Lopes geomorphology gap-fill (180-360°W), 30° cosine taper at
+#              the ~180°W coverage boundary and at the 0/360°W wrap seam.
+#              Preserves VIMS spectral structure in western hemisphere.
+#              May retain faint boundary artefacts where VIMS terrain departs
+#              significantly from the geomorphology class mean.
+#
+#   "geo_only" (Option B) -- Lopes geomorphology scores everywhere, with
+#              the global VIMS calibration offset applied for consistency.
+#              No source-boundary seams.  Loses spatially-resolved VIMS
+#              structure (Xanadu, dune corridors, crater halos).
+#
+# DECLARED ASSUMPTION: "geo_only" assigns every pixel an organic abundance
+# based solely on its Lopes terrain class.  This is the more conservative
+# choice: it never invents local VIMS variation that was not observed
+# globally.  The VIMS calibration offset (global_offset ≈ -0.135) is still
+# applied so the absolute scale matches the Seignovert spectral measurements.
+# ---------------------------------------------------------------------------
+ORGANIC_SOURCE_MODE: str = "geo_only"   # "blended" | "geo_only"
+
+# ---------------------------------------------------------------------------
+# Organic-abundance NaN-fill helper (module-level; used by FeatureExtractor)
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Organic-abundance NaN-fill helper
+# ---------------------------------------------------------------------------
+
+def _fill_organic_nan(result: np.ndarray) -> np.ndarray:
+    """
+    Fill remaining NaN pixels in the organic_abundance map with spatially
+    coherent proxies.  Called after the primary VIMS + geo pipeline to
+    cover regions with no SAR or VIMS data (e.g. ~305-360 degW mid-latitudes
+    and the north-polar SAR gap at ~90-180 degW).
+
+    Two-stage fill
+    --------------
+    Stage 1 -- row-wise (zonal) median:
+        For each row with at least one valid pixel, NaN columns are filled
+        with the row's median valid value.  This propagates the latitude-
+        specific organic-abundance level (dune belt vs polar cap) into
+        the unmapped columns without inventing longitudinal structure.
+
+    Stage 2 -- global median fallback:
+        Any pixel still NaN after stage 1 (rows with no valid neighbours
+        at all, e.g. extreme polar latitudes with full-row SAR gaps) is
+        set to the global valid median.
+
+    DECLARED ASSUMPTION
+    -------------------
+    Both fills synthesise a value from neighbouring valid data.  No Cassini
+    observation constrains the organic abundance in these regions; the fill
+    is equivalent to assuming the local terrain class distribution matches
+    the latitude-weighted global average.  Output GeoTIFF has the
+    ORGANIC_GAP_FILL metadata flag set.
+
+    Parameters
+    ----------
+    result:
+        float32 array, shape (nrows, ncols), values in [0, 1] or NaN.
+
+    Returns
+    -------
+    np.ndarray
+        Same shape as input, NaN-free where valid pixels exist globally.
+    """
+    out = result.copy()
+    nrows = out.shape[0]
+
+    # Stage 1: row-wise zonal median
+    for r in range(nrows):
+        row = out[r, :]
+        valid = row[np.isfinite(row)]
+        if valid.size == 0:
+            continue
+        row_median = float(np.median(valid))
+        row[~np.isfinite(row)] = row_median
+        out[r, :] = row
+
+    # Stage 2: global median for any remaining NaN (full-row gaps)
+    global_valid = out[np.isfinite(out)]
+    if global_valid.size > 0:
+        global_median = float(np.median(global_valid))
+        out[~np.isfinite(out)] = global_median
+
+    return out.astype(np.float32)
+
+
 class FeatureExtractor:
     """
     Derives normalised habitability features from the canonical data stack.
@@ -480,36 +579,72 @@ class FeatureExtractor:
             POLAR_LAKE_FILLED, POLAR_LAKE_EMPTY,
         )
 
+        # Version sentinel: this line confirms code version in the log.
+        # If you see "v4.18 SAR-cap active" in the log, the new code is running.
+        # If this line is absent, the installed code is stale (old zip).
+        logger.info(
+            "_liquid_hydrocarbon: code v%s -- SAR cap=0.05; Birch Fl=1.0, El/Em=0.0, NODATA→SAR",
+            PIPELINE_CODE_VERSION,
+        )
+
         result: np.ndarray = nan.copy()
 
         # -- Priority 1: Birch+2017 polar lake raster --------------------------
-        # These are expert-mapped outlines from the same Cassini SAR data,
-        # providing binary 1.0 for confirmed liquid and 0.0 elsewhere in the
-        # mapped region.  Supersedes both the Lopes class and the SAR proxy
-        # wherever Birch coverage exists.
+        # Three classes from the canonical raster:
+        #   pl == POLAR_LAKE_FILLED (1)  -- Fl_*.shp: confirmed liquid lake
+        #                                   (Cassini SAR + VIMS; Birch 2017)
+        #                                   → liquid_hydrocarbon = 1.0
+        #   pl == POLAR_LAKE_EMPTY  (2)  -- El_*.shp, Em_*.shp:
+        #                                   confirmed empty lake / sea basin
+        #                                   (Cassini SAR; Birch 2017)
+        #                                   → liquid_hydrocarbon = 0.0
+        #                                   DECLARED ASSUMPTION: present-epoch
+        #                                   El/Em basins are confirmed dry.
+        #                                   Temporal scaling (past/future) is
+        #                                   applied globally to the feature
+        #                                   array, not per-pixel here.
+        #   pl == 0 (NODATA)             -- outside Birch coverage
+        #                                   → falls through to SAR proxy
+        #
+        # Note: Hdb/Hdd/Hud files are excluded from the Birch raster
+        # (see shapefile_rasteriser.py ALLOWED_PREFIXES) because they are
+        # not confirmed liquid or confirmed empty.  Those pixels fall through
+        # to the SAR proxy.
+        #
+        # Antimeridian note: lake polygons that cross Titan's prime meridian
+        # (0°W / sub-Saturn direction) are correctly handled by the
+        # shortest-arc coordinate unwrapping in _transform_antimeridian_safe.
         if "polar_lakes" in stack:
-            pl: np.ndarray = stack["polar_lakes"].values.astype(np.int16)
+            pl: np.ndarray = np.nan_to_num(
+                stack["polar_lakes"].values, nan=0.0
+            ).astype(np.int16)
 
-            # Confirmed liquid: Birch filled (1)
-            birch_liquid: np.ndarray = (
-                (pl == POLAR_LAKE_FILLED)
-            ).astype(np.float32)
+            birch_filled_mask: np.ndarray = (pl == POLAR_LAKE_FILLED)
+            birch_empty_mask:  np.ndarray = (pl == POLAR_LAKE_EMPTY)
 
-            # Confirmed non-liquid within Birch coverage area (any Birch pixel
-            # that is NOT a filled lake and NOT nodata = 0 by background).
-            # We set these to 0.0 so the SAR proxy can't override them.
-            birch_any_coverage: np.ndarray = (pl != 0).astype(bool)
-            birch_result: np.ndarray = np.where(
-                birch_any_coverage, birch_liquid, np.nan
-            ).astype(np.float32)
+            if birch_filled_mask.any():
+                result = np.where(birch_filled_mask, 1.0, result).astype(np.float32)
+            if birch_empty_mask.any():
+                result = np.where(birch_empty_mask, 0.0, result).astype(np.float32)
 
-            result = np.where(np.isfinite(birch_result), birch_result, result)
-            n_birch_liquid: int = int(
-                (pl == POLAR_LAKE_FILLED).sum()
+            n_filled = int(birch_filled_mask.sum())
+            n_empty  = int(birch_empty_mask.sum())
+            logger.info(
+                "_liquid_hydrocarbon: Birch confirmed-liquid=%d px (%.2f%%), "
+                "confirmed-empty=%d px (%.2f%%).  NODATA falls through to SAR proxy.",
+                n_filled, 100.0 * n_filled / pl.size,
+                n_empty,  100.0 * n_empty  / pl.size,
             )
-            logger.debug(
-                "_liquid_hydrocarbon: Birch filled: %d liquid pixels", n_birch_liquid
-            )
+
+            # Sanity check: confirmed-liquid should cover ~1-5% of Titan.
+            filled_frac = float(n_filled) / pl.size
+            if filled_frac > 0.10:
+                logger.critical(
+                    "_liquid_hydrocarbon: %.1f%% FILLED -- physically impossible. "
+                    "Antimeridian fix may have failed.  Resetting to NaN.",
+                    100.0 * filled_frac,
+                )
+                result = nan.copy()
 
         # -- Priority 2: Lopes+2020 geomorphology lake class (label 7) --------
         # DECLARED: Lakes.shp is NOT in the Mendeley distribution (confirmed
@@ -523,28 +658,92 @@ class FeatureExtractor:
         # archive (Priority 1 above).
         if "geomorphology" in stack:
             geo: np.ndarray = stack["geomorphology"].values.astype(np.float32)
-            lake_mask: np.ndarray = (geo == 7.0).astype(np.float32)
-            lake_mask[geo == 0.0] = np.nan   # geomorphology nodata -> skip
-            # Only fill where result is still NaN (Birch takes priority)
-            result = np.where(np.isfinite(result), result,
-                              np.where(np.isfinite(lake_mask), lake_mask, result))
+            # lake_mask = 1.0 only where geo class is 7 (Lakes/Seas).
+            # CRITICAL: do NOT use (geo == 7).astype(float) as fill for NaN
+            # pixels because this produces 0.0 (non-lake) for all non-class-7
+            # pixels, blocking the SAR proxy (Priority 3) from running.
+            # With the standard Mendeley dataset, class 7 never exists, so
+            # lake_mask would be all-zero -> fills everything with 0.0 -> wrong.
+            # Fix: only fill where geo class IS 7 (confirmed lake), never 0.0.
+            lake_pixels: np.ndarray = (geo == 7.0)   # True only where lake
+            result = np.where(
+                lake_pixels & ~np.isfinite(result),   # lake pixel not yet set
+                1.0,                                   # confirmed liquid
+                result,
+            ).astype(np.float32)
 
         # -- Priority 3: SAR low-backscatter proxy -----------------------------
         # Radar-dark (low sigma0) surfaces are consistent with liquid or smooth
         # organic material.  Used only where no better source is available.
+        #
+        # CRITICAL CAP: the raw inverted SAR (1 - sar_norm) ranges 0..1
+        # and produces mean ~0.75 globally because Titan's plains and dunes
+        # are intermediate-backscatter (not bright).  This inflates the
+        # liquid_hydrocarbon feature for ~98% of the surface that has no
+        # liquid at all, causing every terrain type to score as near-liquid.
+        #
+        # Physical constraint (Hayes et al. 2008; Stofan et al. 2007):
+        # Liquid lakes/seas cover ~1.5-2% of Titan globally.  Outside the
+        # polar caps (where Birch has already applied ground truth) the
+        # maximum plausible liquid fraction is ~5% (ephemeral equatorial
+        # lakes; Turtle et al. 2011).  We therefore cap the SAR proxy at
+        # SAR_LIQUID_CAP_EQUATORIAL = 0.05 everywhere outside Birch coverage.
+        # Within this cap, the relative ranking is preserved (darker SAR =
+        # higher score) so true-dark anomalies (e.g. the Ontario basin before
+        # Birch coverage) still outrank bright terrain.
+        #
+        # DECLARED ASSUMPTION: low SAR backscatter in the equatorial/mid-lat
+        # band is interpreted as a weak liquid-likelihood indicator only.
+        # The cap of 0.05 encodes the prior probability of equatorial liquid
+        # from Hayes+2008.  Output GeoTIFF has LIQUID_SAR_CAPPED metadata flag.
+        SAR_LIQUID_CAP = 0.05   # maximum liquid score from SAR proxy alone
+
         if "sar_mosaic" in stack:
             sar: np.ndarray = stack["sar_mosaic"].values.astype(np.float32)
             sar_norm: np.ndarray = normalise_to_0_1(
                 sar, percentile_lo=1, percentile_hi=99
             )
-            # Invert: low backscatter -> high liquid probability
-            sar_liquid: np.ndarray = (1.0 - sar_norm).astype(np.float32)
+            # Invert: low backscatter -> high liquid probability; then cap.
+            sar_liquid: np.ndarray = np.clip(
+                1.0 - sar_norm, 0.0, SAR_LIQUID_CAP
+            ).astype(np.float32)
             result = np.where(
                 np.isfinite(result), result,
                 np.where(np.isfinite(sar_liquid), sar_liquid, nan),
             )
+            logger.info(
+                "_liquid_hydrocarbon: SAR proxy capped at %.2f; "
+                "equatorial mean after cap = %.4f "
+                "(DECLARED ASSUMPTION: cap encodes Hayes+2008 ~1.5%% global "
+                "lake fraction; relative SAR ranking preserved).",
+                SAR_LIQUID_CAP,
+                float(np.nanmean(sar_liquid)),
+            )
+
+        # -- Priority 4: baseline NaN fill for SAR-unmapped regions ---------
+        # Cassini SAR mapped ~67% of Titan.  Regions without SAR coverage
+        # and outside the Birch polar caps are left NaN by Priorities 1-3.
+        # These are predominantly mid-latitude and trailing-hemisphere terrain;
+        # by analogy with the SAR-imaged regions, the liquid fraction there
+        # is expected to be very low (~1-2%).
+        # DECLARED ASSUMPTION: SAR-unmapped pixels are assigned the minimum
+        # SAR proxy value (0.01) as a non-informative prior.  This is
+        # conservative (lower than the capped SAR mean of ~0.025) but
+        # prevents NaN propagation into the Bayesian posterior.
+        SAR_NAN_FILL = 0.01
+        n_nan_before = int(np.sum(~np.isfinite(result)))
+        if n_nan_before > 0:
+            result = np.where(np.isfinite(result), result,
+                              np.full_like(result, SAR_NAN_FILL))
+            logger.info(
+                "_liquid_hydrocarbon: SAR gap-fill: %d px (%.1f%%) set to "
+                "baseline %.2f (SAR-unmapped; no Cassini data). "
+                "DECLARED ASSUMPTION: SAR-unmapped terrain assumed non-lake.",
+                n_nan_before, 100.0 * n_nan_before / result.size, SAR_NAN_FILL,
+            )
 
         return result.astype(np.float32)
+
 
     # -- Feature 2 -------------------------------------------------------------
 
@@ -620,7 +819,8 @@ class FeatureExtractor:
             NaN where all data sources are absent.
         """
         # Announce available data sources so the chosen path is visible in logs
-        available = [k for k in ("vims_mosaic", "geomorphology", "iss_mosaic_450m",
+        available = [k for k in ("vims_mosaic", "vims_5um_2um_ratio",
+                                  "geomorphology", "iss_mosaic_450m",
                                   "vims_coverage") if k in stack]
         logger.info("organic_abundance: available layers = %s", available)
 
@@ -644,8 +844,38 @@ class FeatureExtractor:
                 sorted(np.unique(geo_int32).tolist()),
             )
 
+        # -- Step 1b: 5.0/2.03 umm ratio from individual VIMS cubes -----------
+        # This is a NEW spectral input not available in the Seignovert mosaic.
+        # The 5.0 umm window is Titan's deepest surface window (least haze).
+        # High 5.0/2.03 ratio -> organic-rich terrain; low ratio -> water ice.
+        # (Solomonidou et al. 2018 doi:10.1029/2017JE005462)
+        #
+        # DECLARED ASSUMPTION: no atmospheric correction beyond the vimscal
+        # RC19 calibration.  The ratio partially cancels common-mode haze
+        # effects but residual photometric variations remain.  Where available,
+        # this is blended with the Seignovert mosaic as a second spectral axis.
+        vims_5um_norm: Optional[np.ndarray] = None
+        if "vims_5um_2um_ratio" in stack:
+            ratio_raw = stack["vims_5um_2um_ratio"].values.astype(np.float32)
+            # Normalise to [0, 1]:
+            #   ratio ~0.8  -> water-ice surface  -> score 0.0
+            #   ratio ~2.0  -> organic-rich dunes -> score 1.0
+            # Robust percentile normalisation handles outliers from limb obs.
+            vims_5um_norm = normalise_to_0_1(
+                ratio_raw, percentile_lo=2, percentile_hi=98
+            )
+            n_valid = int(np.isfinite(vims_5um_norm).sum())
+            n_total = vims_5um_norm.size
+            logger.info(
+                "organic_abundance: VIMS 5.0/2.03 umm ratio available "
+                "(%d/%d px = %.1f%% coverage). "
+                "Will blend with Seignovert mosaic where both are valid.",
+                n_valid, n_total, 100.0 * n_valid / n_total,
+            )
+
         # -- Step 2: normalise VIMS mosaic (primary spectral proxy) ----------
         vims_norm: Optional[np.ndarray] = None
+        seignovert_valid_mask: Optional[np.ndarray] = None  # set below; used in Step 3a
         if "vims_mosaic" in stack:
             vims_raw: np.ndarray = stack["vims_mosaic"].values.astype(np.float32)
             # Normalise to [0, 1] using robust percentile range.
@@ -660,20 +890,91 @@ class FeatureExtractor:
                 100.0 * np.isfinite(vims_norm).mean(),
             )
 
-        # -- Step 3: combine -- VIMS primary, row-wise locally-offset geo fill ------
+            # If the 5.0/2.03 umm ratio is also available, blend the two
+            # spectral inputs.  The 5 umm window is less haze-affected and
+            # provides an independent second axis; equal weighting (50/50)
+            # is conservative given the lack of atmospheric correction.
+            #
+            # IMPORTANT: we record the Seignovert-only valid mask BEFORE
+            # blending, so that the global_offset calibration (Step 3a) is
+            # computed from Seignovert pixels only.  The 5um pixels are
+            # from high-resolution close flybys over Titan's most-targeted
+            # (organic-rich) terrain, so their mean is systematically biased
+            # upward relative to the global Seignovert mosaic.  Including
+            # them in the overlap calculation would corrupt the offset for
+            # the entire eastern hemisphere geo gap-fill.
+            seignovert_valid_mask: Optional[np.ndarray] = (
+                np.isfinite(vims_norm).copy()  # true only where Seignovert is valid
+            )
+
+            if vims_5um_norm is not None:
+                both_valid = np.isfinite(vims_norm) & np.isfinite(vims_5um_norm)
+                if both_valid.any():
+                    blended = np.where(
+                        both_valid,
+                        0.50 * vims_norm + 0.50 * vims_5um_norm,
+                        np.where(np.isfinite(vims_norm), vims_norm, vims_5um_norm),
+                    ).astype(np.float32)
+                    vims_norm = blended
+                    logger.info(
+                        "organic_abundance: blended Seignovert 1.59/1.27 (50%%) "
+                        "with cube 5.0/2.03 umm (50%%) -- %d px have both.",
+                        int(both_valid.sum()),
+                    )
+        elif vims_5um_norm is not None:
+            # Seignovert mosaic absent; use 5.0/2.03 ratio as sole spectral input.
+            # No Seignovert pixels -> the geo offset is uncalibrated.
+            seignovert_valid_mask = None
+            vims_norm = vims_5um_norm
+            logger.info(
+                "organic_abundance: using 5.0/2.03 umm cube ratio as sole "
+                "spectral proxy (Seignovert mosaic not available)."
+            )
+
+        # -- Step 3: combine sources ---------------------------------------------
         #
-        # The seam arises because VIMS values vary LOCALLY near the boundary.
-        # At 170-180 degW (Shangri-La/Xanadu), VIMS is ~0.23 while the global
-        # calibrated geo score for that terrain class is ~0.38 -- a +0.14 step.
-        # Global class calibration cannot fix this: the class mean is computed
-        # over all of 0-180 degW but the boundary region is locally anomalous.
+        # Behaviour is controlled by ORGANIC_SOURCE_MODE (module constant):
         #
-        # Solution: ROW-WISE LOCAL OFFSET.
-        # For each row, find the last VIMS-valid pixel. The geo score in the
-        # adjacent (NaN) columns is offset by (VIMS_edge - geo_edge) and this
-        # offset decays smoothly to zero over a transition zone of decay_cols.
-        # This guarantees pixel-level continuity at the exact VIMS edge,
-        # regardless of global class statistics.
+        #   "blended"  -- VIMS primary with row-wise offset geo gap-fill and
+        #                 30° cosine tapers at source boundaries. Option A.
+        #
+        #   "geo_only" -- Lopes geomorphology scores everywhere (with VIMS
+        #                 calibration offset applied). No source seams. Option B.
+        #                 To revert to blended: set ORGANIC_SOURCE_MODE = "blended"
+        #
+        if ORGANIC_SOURCE_MODE == "geo_only" and geo_organic is not None:
+            # Option B: geomorphology scores everywhere.
+            # Still apply the global VIMS calibration offset so the absolute
+            # scale matches Seignovert spectral measurements.
+            geo_raw: np.ndarray = stack["geomorphology"].values
+            geo_int: np.ndarray = np.where(
+                np.isfinite(geo_raw.astype(np.float32)), geo_raw, 0
+            ).astype(np.int32)
+            geo_from_published = _geo_class_to_organic(geo_int)
+
+            # Compute global offset from VIMS overlap (same as blended mode)
+            global_offset = 0.0
+            if vims_norm is not None and seignovert_valid_mask is not None:
+                overlap_mask = seignovert_valid_mask & np.isfinite(geo_from_published)
+                if int(overlap_mask.sum()) >= 5000:
+                    global_offset = (
+                        float(np.mean(vims_norm[overlap_mask]))
+                        - float(np.mean(geo_from_published[overlap_mask]))
+                    )
+            calibrated_geo = np.clip(
+                geo_from_published.astype(np.float64) + global_offset, 0.0, 1.0
+            ).astype(np.float32)
+            calibrated_geo[~np.isfinite(geo_from_published)] = np.nan
+            logger.info(
+                "organic_abundance: ORGANIC_SOURCE_MODE=geo_only. "
+                "Lopes geomorphology scores globally, global_offset=%.4f. "
+                "DECLARED ASSUMPTION: organic abundance derived from terrain "
+                "class only (Lopes 2019); no VIMS spatial structure retained. "
+                "No source-boundary seams.",
+                global_offset,
+            )
+            return _fill_organic_nan(calibrated_geo)
+
         if vims_norm is not None and geo_organic is not None:
             # Re-derive integer class labels from the geomorphology layer
             geo_raw: np.ndarray = stack["geomorphology"].values
@@ -695,8 +996,16 @@ class FeatureExtractor:
             # This preserves relative rankings while eliminating the level seam.
             geo_from_published = _geo_class_to_organic(geo_int)  # published scores
 
-            # Single global shift: VIMS_mean - published_geo_mean (in overlap zone)
-            overlap_mask: np.ndarray = np.isfinite(vims_norm) & np.isfinite(geo_from_published)
+            # Single global shift: VIMS_mean - published_geo_mean in the
+            # Seignovert overlap zone only (not 5um pixels, which are biased).
+            # seignovert_valid_mask is True only where the Seignovert mosaic
+            # had valid data, recorded before any 5um blending was applied.
+            if seignovert_valid_mask is not None:
+                _seignovert_and_geo = seignovert_valid_mask & np.isfinite(geo_from_published)
+            else:
+                # No Seignovert at all: fall back to all valid vims_norm pixels
+                _seignovert_and_geo = np.isfinite(vims_norm) & np.isfinite(geo_from_published)
+            overlap_mask: np.ndarray = _seignovert_and_geo
             n_overlap = int(overlap_mask.sum())
             global_offset: float = 0.0
             if n_overlap >= 5000:
@@ -730,10 +1039,25 @@ class FeatureExtractor:
             # This makes the geo fill EXACTLY match VIMS at the boundary pixel
             # and blend smoothly to the calibrated geo value over decay_cols columns.
             nrows, ncols = vims_norm.shape
-            # Transition width: ~10 deg longitude
+            # Transition width: ~30 deg longitude (widened from 10° to visually
+            # eliminate the Seignovert/geo boundary step at ~180°W).
+            # At 4490 m/px (3603 cols), 30° ≈ 300 columns.
+            # DECLARED ASSUMPTION: organic abundance transitions smoothly from
+            # VIMS to geomorphology over 30° of longitude at coverage boundaries.
             deg_per_col  = 360.0 / ncols
-            decay_cols   = max(5, int(10.0 / deg_per_col))
+            decay_cols   = max(5, int(30.0 / deg_per_col))
 
+            # vims_valid_for_decay: the mask that defines the VIMS coverage edge
+            # for the row-wise decay.  Must be Seignovert-only so that isolated
+            # 5 um cube pixels scattered across the eastern hemisphere do not
+            # create false "edge" columns far from the true ~180 degW boundary.
+            # (The 5 um pixels are used in the final result but not for edge location.)
+            if seignovert_valid_mask is not None:
+                vims_valid_for_decay: np.ndarray = seignovert_valid_mask
+            else:
+                vims_valid_for_decay = np.isfinite(vims_norm)
+
+            # vims_valid is the full blended coverage used for the final composite.
             vims_valid = np.isfinite(vims_norm)
 
             # Build column-distance array relative to each row's VIMS edge.
@@ -744,7 +1068,7 @@ class FeatureExtractor:
             # Only applied to geo-filled pixels (where vims is NaN) with dist > 0.
             last_valid_col = np.full(nrows, -1, dtype=np.int32)
             for r in range(nrows):
-                rv = np.where(vims_valid[r, :])[0]
+                rv = np.where(vims_valid_for_decay[r, :])[0]
                 if len(rv):
                     last_valid_col[r] = int(rv.max())
 
@@ -781,24 +1105,61 @@ class FeatureExtractor:
             )
             result = np.clip(result, 0.0, 1.0)
 
+            # Wrap-seam blend at the 0°/360°W map edge.
+            # The equirectangular canvas cuts at the sub-Saturn meridian (0°W).
+            # The Seignovert mosaic was not stitched to be periodic, so VIMS
+            # values at col 0 (0°W) and col ncols-1 (≈360°W) may differ by
+            # up to ~0.5 even though they are geographically adjacent.
+            # Fix: apply a cosine taper over 30° on each edge, blending the
+            # VIMS result toward calibrated_geo (which IS spatially continuous,
+            # being derived from closed shapefile polygons with no map-edge seam).
+            # DECLARED ASSUMPTION: within 30° of the sub-Saturn meridian,
+            # organic abundance is represented by the geomorphology score
+            # rather than the VIMS mosaic edge value.
+            _taper_cols = decay_cols   # same 30° width as the boundary decay
+            if np.isfinite(calibrated_geo).all() and _taper_cols > 0:
+                _w    = np.linspace(0.0, 1.0, _taper_cols, dtype=np.float64)
+                _cosw = (1.0 - np.cos(np.pi * _w)) / 2.0   # 0 at edge → 1 at interior
+                # Left edge (col 0 = 0°W): blend from geo toward result
+                for _c in range(min(_taper_cols, ncols)):
+                    _alpha = float(_cosw[_c])
+                    result[:, _c] = np.clip(
+                        (1.0 - _alpha) * calibrated_geo[:, _c]
+                        + _alpha * result[:, _c],
+                        0.0, 1.0,
+                    ).astype(np.float32)
+                # Right edge (col ncols-1 ≈ 360°W): blend toward geo
+                for _c_rev in range(min(_taper_cols, ncols)):
+                    _c = ncols - 1 - _c_rev
+                    _alpha = float(_cosw[_c_rev])
+                    result[:, _c] = np.clip(
+                        (1.0 - _alpha) * calibrated_geo[:, _c]
+                        + _alpha * result[:, _c],
+                        0.0, 1.0,
+                    ).astype(np.float32)
+
             n_vims: int = int(np.sum(np.isfinite(vims_norm)))
             n_geo:  int = int(np.sum(~np.isfinite(vims_norm) & np.isfinite(adjusted_geo_v)))
+            n_observed: int = n_vims + n_geo
+            n_total:    int = int(result.size)
+            n_nan_pre:  int = int(np.sum(~np.isfinite(result)))
             logger.info(
                 "organic_abundance: VIMS primary (%d px), "
-                "row-offset geo gap-fill (%d px), decay=%d cols, "
-                "total valid=%.1f%%. "
-                "DECLARED ASSUMPTION: pixels east of ~180 degW are modelled "
-                "from Lopes geomorphology scores, not VIMS observations. "
-                "The edge offset is calibrated at the Shangri-La/Xanadu "
-                "boundary which is locally anomalous; the global_offset "
-                "(%.4f) partially corrects for this but cannot eliminate "
-                "the seam entirely.  Output GeoTIFF has ORGANIC_GAP_FILL "
-                "metadata flag set.",
-                n_vims, n_geo, decay_cols,
-                100.0 * np.isfinite(result).mean(),
+                "row-offset geo gap-fill (%d px), decay=%d cols (~30 deg), "
+                "wrap-blend=%d cols. "
+                "observed coverage=%.1f%%. global_offset=%.4f. "
+                "SAR/VIMS gap (synthesised): %d px (%.1f%%). "
+                "DECLARED ASSUMPTIONS: (1) eastern hemisphere modelled from "
+                "Lopes geomorphology; (2) 30-deg cosine taper blends VIMS to "
+                "geo at the ~180 degW coverage boundary and at the 0/360 degW "
+                "wrap seam; (3) SAR-unmapped pixels filled with zonal/global median. "
+                "Output GeoTIFF has ORGANIC_GAP_FILL flag set.",
+                n_vims, n_geo, decay_cols, _taper_cols,
+                100.0 * n_observed / n_total,
                 global_offset,
+                n_nan_pre, 100.0 * n_nan_pre / n_total,
             )
-            return result.astype(np.float32)
+            return _fill_organic_nan(result.astype(np.float32))
 
         if vims_norm is not None:
             # VIMS only -- no geomorphology available
@@ -807,7 +1168,7 @@ class FeatureExtractor:
                 "valid=%.1f%%",
                 100.0 * np.isfinite(vims_norm).mean(),
             )
-            return vims_norm
+            return _fill_organic_nan(vims_norm)
 
         if geo_organic is not None:
             # No VIMS at all -- use geomorphology scores alone
@@ -816,7 +1177,7 @@ class FeatureExtractor:
                 "(no VIMS mosaic available), valid=%.1f%%",
                 100.0 * np.isfinite(geo_organic).mean(),
             )
-            return geo_organic
+            return _fill_organic_nan(geo_organic)
 
         # -- ISS gap-fill fallback (no geomorphology shapefile available) ------
         # When the Lopes geomorphology shapefiles have not been downloaded,
@@ -858,14 +1219,14 @@ class FeatureExtractor:
                             "hayesresearchgroup.com/data-products/ for better results.",
                             offset, n_ov,
                         )
-                        return result.astype(np.float32)
+                        return _fill_organic_nan(result.astype(np.float32))
                 else:
                     # No VIMS at all -- ISS only
                     logger.warning(
                         "organic_abundance: using ISS-only (no VIMS, no geomorphology). "
                         "Download both for best results."
                     )
-                    return iss_inv.astype(np.float32)
+                    return _fill_organic_nan(iss_inv.astype(np.float32))
 
         # -- Latitude-based prior fallback -------------------------------------
         # Last resort: use a smooth latitude-based terrain prior.
@@ -879,7 +1240,7 @@ class FeatureExtractor:
                 "Right half will be NaN. Download geomorphology shapefiles from "
                 "hayesresearchgroup.com/data-products/ to fix this."
             )
-            return vims_norm
+            return _fill_organic_nan(vims_norm)
 
         # -- VIMS coverage density ---------------------------------------------
         if "vims_coverage" in stack:
@@ -887,7 +1248,7 @@ class FeatureExtractor:
                 "organic_abundance: using VIMS coverage density as last-resort "
                 "fallback -- no spectral or geomorphology data available."
             )
-            return stack["vims_coverage"].values.astype(np.float32)
+            return _fill_organic_nan(stack["vims_coverage"].values.astype(np.float32))
 
         logger.warning(
             "organic_abundance: no data available (VIMS, geomorphology, ISS, or "
@@ -1296,8 +1657,11 @@ class FeatureExtractor:
         labyrinth_component: Optional[np.ndarray] = None
 
         if "polar_lakes" in stack:
-            # Birch+2017 confirmed liquid pixels -> dilate to get margin zone
-            pl: np.ndarray = stack["polar_lakes"].values.astype(np.int16)
+            # Birch+2017 confirmed liquid pixels -> dilate to get margin zone.
+            # NaN (outside coverage) -> 0 (POLAR_LAKE_NODATA) before int cast.
+            pl: np.ndarray = np.nan_to_num(
+                stack["polar_lakes"].values, nan=0.0
+            ).astype(np.int16)
             birch_liquid_mask: np.ndarray = (
                 (pl == POLAR_LAKE_FILLED)
             ).astype(bool)
@@ -1363,7 +1727,10 @@ class FeatureExtractor:
         # neighbourhood that is empty-basin pixels.  This captures the
         # cumulative wetting/drying cycle history of the area.
         if "polar_lakes" in stack:
-            pl_int: np.ndarray = stack["polar_lakes"].values.astype(np.int16)
+            # NaN (outside coverage) -> 0 (POLAR_LAKE_NODATA) before int cast.
+            pl_int: np.ndarray = np.nan_to_num(
+                stack["polar_lakes"].values, nan=0.0
+            ).astype(np.int16)
             empty_mask: np.ndarray = (pl_int == POLAR_LAKE_EMPTY).astype(np.float32)
             if empty_mask.any():
                 from scipy.ndimage import uniform_filter

@@ -767,7 +767,36 @@ class PolarLakeRasteriser:
                         "Birch sub-directory absent, skipping: %s", subdir
                     )
                     continue
-                shapefiles: List[Path] = sorted(subdir.glob("*.shp"))
+                # SHAPEFILE FILTER -- per Birch et al. (2017) classification:
+                #
+                #   Fl = Filled lake (confirmed liquid)     → FILLED_LAKE (pl=1)
+                #   El = Empty lake basin (confirmed dry)   → EMPTY_BASIN (pl=2)
+                #   Em = Empty sea / paleosea (confirmed)   → EMPTY_BASIN (pl=2)
+                #   Hdb = Hydrocarbon-dark basin            → EXCLUDED (ambiguous)
+                #   Hdd = Hydrocarbon-dark drained          → EXCLUDED (ambiguous)
+                #   Hud = Hydrocarbon-undifferentiated      → EXCLUDED (background)
+                #
+                # Excluded classes (Hdb/Hdd/Hud) fall through to the SAR proxy
+                # in _liquid_hydrocarbon, which gives a physically bounded
+                # estimate (~0.01-0.05) for ambiguous dark terrain.
+                # Only files in birch_filled/ with Fl prefix and files in
+                # birch_empty/ with El or Em prefix are used.
+                ALLOWED_PREFIXES: Dict[int, Tuple[str, ...]] = {
+                    POLAR_LAKE_FILLED: ("FL",),           # confirmed liquid only
+                    POLAR_LAKE_EMPTY:  ("EL", "EM"),      # confirmed empty only
+                }
+                allowed = ALLOWED_PREFIXES.get(label, ())
+                all_shp = sorted(subdir.glob("*.shp"))
+                shapefiles: List[Path] = [
+                    p for p in all_shp
+                    if p.stem.upper()[:2] in allowed
+                ]
+                excluded = [p.name for p in all_shp if p not in shapefiles]
+                if excluded:
+                    logger.info(
+                        "  Excluding non-canonical files from %s (label=%d): %s",
+                        subdir_name, label, excluded,
+                    )
                 if not shapefiles:
                     logger.debug("No .shp files in %s", subdir)
                     continue
@@ -793,6 +822,148 @@ class PolarLakeRasteriser:
         return canvas
 
     # -- internal helpers ------------------------------------------------------
+
+    @staticmethod
+    def _stereo_to_canonical(
+        x_arr: "np.ndarray",
+        y_arr: "np.ndarray",
+        is_north: bool,
+        titan_radius_m: float,
+        deg_to_m: float,
+    ) -> "Tuple[np.ndarray, np.ndarray]":
+        """
+        Inverse polar-stereographic → canonical west-positive metres.
+
+        The Birch+2017 Cornell shapefiles have no embedded CRS (CRS=None)
+        and use a polar stereographic projection centred on the respective
+        pole (90°N for NORTH files, 90°S for SOUTH files).
+
+        Convention (confirmed from diagnose_polar_lakes.py, April 2026)
+        ---------------------------------------------------------------
+        Origin : at the pole (0, 0)
+        Y-axis : points toward 0°W (Titan prime meridian / sub-Saturn point)
+        X-axis : points toward 90°W (90° west of prime meridian)
+        Longitude increases westward (IAU Titan convention).
+        Units  : metres.
+
+        Inverse stereographic formulas
+        --------------------------------
+        ρ     = sqrt(X² + Y²)
+        colat = 2 · arctan(ρ / (2R))           [radians]
+        lat   = (90° − colat_deg)  for north pole
+              = −(90° − colat_deg) for south pole
+        lon_W = atan2(X, Y) mod 360            [degrees west-positive]
+
+        Canonical → metres
+        ------------------
+        x_can = lon_W    · deg_to_m
+        y_can = lat_deg  · deg_to_m
+        """
+        import numpy as np
+
+        R   = titan_radius_m
+        rho = np.sqrt(x_arr ** 2 + y_arr ** 2)
+
+        # Inverse polar stereographic (centred at pole, true scale at pole)
+        colat_deg = np.degrees(2.0 * np.arctan2(rho, 2.0 * R))
+
+        if is_north:
+            lat_deg = 90.0 - colat_deg
+        else:
+            lat_deg = -(90.0 - colat_deg)       # south hemisphere
+
+        # Longitude west-positive: Y-axis points to 0°W, X-axis to 90°W.
+        lon_W = np.degrees(np.arctan2(x_arr, y_arr)) % 360.0
+
+        x_can = lon_W  * deg_to_m
+        y_can = lat_deg * deg_to_m
+        return x_can, y_can
+
+
+    @staticmethod
+    def _transform_antimeridian_safe(
+        geom: "shapely.geometry.base.BaseGeometry",
+        transform_fn: "Callable",
+        deg_to_m: float,
+    ) -> "List[shapely.geometry.base.BaseGeometry]":
+        """
+        Transform polar-stereographic polygon to canonical coords using
+        shortest-arc unwrapping to correctly handle the prime-meridian seam.
+
+        Root cause: the inverse stereo transform applies ``lon_W % 360``.
+        A polygon edge crossing 0W/360W gets adjacent vertices at
+        x_can~0 and x_can~360*deg_to_m.  Rasterio fills the "interior"
+        of this wrong-topology polygon across the full canvas width,
+        burning an entire latitude row as FILLED_LAKE.
+
+        Fix: extract coordinates ring-by-ring, apply the numpy transform,
+        then apply shortest-arc correction (if consecutive vertices differ
+        by more than 180 degrees, add/subtract 360 degrees to take the
+        short path).  The resulting polygon may extend outside
+        [0, 360*deg_to_m]; it is clipped to canvas and wrapped copies
+        are added to cover both sides of the seam.
+        """
+        import numpy as np
+        from shapely.affinity import translate
+        from shapely.geometry import Polygon, box
+
+        canvas_w = 360.0 * deg_to_m
+        canvas_h = 200.0 * deg_to_m
+        half_w   = canvas_w / 2.0
+        cb       = box(0.0, -canvas_h, canvas_w, canvas_h)
+
+        def _unwrap_ring(coords: list) -> list:
+            if len(coords) < 3:
+                return coords
+            xs = np.array([c[0] for c in coords], dtype=np.float64)
+            ys = np.array([c[1] for c in coords], dtype=np.float64)
+            r  = transform_fn(xs, ys)
+            xs_t = np.asarray(r[0], dtype=np.float64)
+            ys_t = np.asarray(r[1], dtype=np.float64)
+            out_x = [float(xs_t[0])]
+            out_y = [float(ys_t[0])]
+            for i in range(1, len(xs_t)):
+                x = float(xs_t[i])
+                px = out_x[-1]
+                while x - px >  half_w: x -= canvas_w
+                while px - x >  half_w: x += canvas_w
+                out_x.append(x)
+                out_y.append(float(ys_t[i]))
+            return list(zip(out_x, out_y))
+
+        def _process_poly(poly: "Polygon") -> list:
+            if poly is None or poly.is_empty:
+                return []
+            try:
+                ext  = _unwrap_ring(list(poly.exterior.coords))
+                ints = [_unwrap_ring(list(r.coords)) for r in poly.interiors]
+                fixed = Polygon(ext, ints)
+                if not fixed.is_valid:
+                    fixed = fixed.buffer(0)
+            except Exception:
+                return []
+            if fixed.is_empty:
+                return []
+            parts = []
+            for offset in (0.0, -canvas_w, canvas_w):
+                shifted = translate(fixed, xoff=offset) if offset else fixed
+                try:
+                    clipped = shifted.intersection(cb)
+                    if clipped is not None and not clipped.is_empty:
+                        parts.append(clipped)
+                except Exception:
+                    pass
+            return parts
+
+        if hasattr(geom, "geoms"):
+            out = []
+            for part in geom.geoms:
+                if hasattr(part, "exterior"):
+                    out.extend(_process_poly(part))
+            return out
+        if hasattr(geom, "exterior"):
+            return _process_poly(geom)
+        return []
 
     def _burn_layer(
         self,
@@ -827,15 +998,57 @@ class PolarLakeRasteriser:
         nrows, ncols = self.output_shape
         deg_to_m: float = math.pi * self.titan_radius_m / 180.0
 
-        def _to_canonical(
-            lon_east: float, lat: float, *extra: float
-        ) -> Tuple[float, ...]:
-            """Convert (lon_east deg, lat deg) -> canonical west-positive metres."""
-            return ((-lon_east) % 360.0 * deg_to_m, lat * deg_to_m) + extra
+        # Detect coordinate system from the first shapefile's bounding box.
+        # Birch+2017 Cornell files have CRS=None and use polar stereographic
+        # metres (bounds ≈ ±1,000,000 m, confirmed April 2026).
+        # Any bound > 360 is unambiguously projected (not geographic degrees).
+        def _is_projected(shp_list: list) -> bool:
+            for shp in shp_list:
+                try:
+                    gdf_probe = gpd.read_file(shp)
+                    b = gdf_probe.total_bounds   # [xmin, ymin, xmax, ymax]
+                    if any(abs(v) > 360.0 for v in b):
+                        return True
+                    return False
+                except Exception:
+                    continue
+            return False
+
+        projected_crs = bool(shapefiles) and _is_projected(shapefiles)
+
+        if projected_crs:
+            logger.info(
+                "  Birch CRS=None with projected bounds -- applying inverse "
+                "polar stereographic transform (Titan R=%.0f m).",
+                self.titan_radius_m,
+            )
 
         all_geoms: List[Tuple["shapely.geometry.base.BaseGeometry", int]] = []
 
         for shp in shapefiles:
+            # Determine pole from filename (e.g. Fl_NORTH.shp / Fl_SOUTH.shp)
+            is_north_pole: bool = "NORTH" in shp.stem.upper()
+
+            if projected_crs:
+                # Build a closure capturing the pole and projection parameters
+                _R   = self.titan_radius_m
+                _d2m = deg_to_m
+                _isnorth = is_north_pole
+                def _to_canonical_stereo(
+                    x_arr, y_arr, *extra,
+                    _R=_R, _d2m=_d2m, _isnorth=_isnorth
+                ):
+                    xc, yc = self._stereo_to_canonical(x_arr, y_arr, _isnorth, _R, _d2m)
+                    if extra:
+                        return (xc, yc) + extra
+                    return xc, yc
+                _transform_fn = _to_canonical_stereo
+            else:
+                # Original geographic (degree) transform
+                def _to_canonical(lon_east, lat, *extra):
+                    return ((-lon_east) % 360.0 * deg_to_m, lat * deg_to_m) + extra
+                _transform_fn = _to_canonical
+
             try:
                 gdf: "geopandas.GeoDataFrame" = gpd.read_file(shp)
             except Exception as exc:
@@ -851,17 +1064,20 @@ class PolarLakeRasteriser:
                 if geom is None or geom.is_empty:
                     continue
                 try:
-                    geom_m = shapely_transform(_to_canonical, geom)
-                    if geom_m is not None and not geom_m.is_empty:
-                        all_geoms.append((geom_m, label))
+                    for fixed_geom in self._transform_antimeridian_safe(
+                        geom, _transform_fn, deg_to_m
+                    ):
+                        if fixed_geom is not None and not fixed_geom.is_empty:
+                            all_geoms.append((fixed_geom, label))
                 except Exception as exc:
                     logger.warning(
                         "Birch geometry transform failed (%s): %s",
                         shp.name, exc,
                     )
-            logger.debug(
-                "  %s: added %d geometries",
-                shp.name, len(all_geoms) - n_before,
+            logger.info(
+                "  %s (%s pole): added %d geometries",
+                shp.name, "N" if is_north_pole else "S",
+                len(all_geoms) - n_before,
             )
 
         if not all_geoms:

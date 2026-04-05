@@ -501,6 +501,12 @@ class DataPreprocessor:
         # titan/atmospheric_profiles.py and valid for the full Cassini mission.
         results.update(self._synthesise_cirs_temperature(overwrite))
 
+        # VIMS individual-cube window mosaics (5.0 umm and 2.03 umm).
+        # Downloads C*_ir.cub + N*_ir.cub from Nantes portal for selected
+        # high-resolution cubes and builds the 5.0/2.03 umm ratio mosaic.
+        # Silently skipped if the VIMS parquet is absent.
+        results.update(self._preprocess_vims_cube_windows(overwrite))
+
         return results
 
     # -- Format-specific dispatch ----------------------------------------------
@@ -788,6 +794,107 @@ class DataPreprocessor:
         _bin_vims_to_raster(raw, out, self.grid)
         return {"vims_coverage": out}
 
+    def _preprocess_vims_cube_windows(
+        self, overwrite: bool
+    ) -> Dict[str, Path]:
+        """
+        Build 5.0 umm and 2.03 umm window mosaics from individual VIMS cubes.
+
+        Downloads calibrated C*_ir.cub and N*_ir.cub files from the Nantes
+        portal for high-quality Titan observations, then builds:
+
+          vims_5um_canonical.tif  -- 5.0 umm I/F window mean
+          vims_2um_canonical.tif  -- 2.03 umm I/F window mean
+          vims_5um_2um_ratio_canonical.tif  -- 5.0/2.03 umm ratio
+
+        The 5.0/2.03 umm ratio is the primary output.  It provides the
+        strongest organic-vs-water-ice discrimination of any VIMS band
+        combination (Solomonidou et al. 2018) and is NOT available in the
+        pre-built Seignovert+2019 mosaic.
+
+        Scientific basis
+        ----------------
+        5.0 umm is Titan's deepest atmospheric window -- the least affected
+        by haze scattering.  Organic-rich terrain (dunes, plains) is bright
+        at 5.0 umm relative to 2.03 umm; water-ice-rich terrain (mountains,
+        Xanadu basement) is darker at 5.0 umm relative to 2.03 umm.
+
+        DECLARED ASSUMPTION: no atmospheric correction is applied.  The ratio
+        5.0/2.03 partially cancels common-mode haze effects, but residual
+        seasonal and phase-angle photometric variations remain.
+
+        Download behaviour
+        ------------------
+        Files are cached in ``data/raw/vims_cubes/`` and re-used on subsequent
+        runs.  Only cubes not already cached are downloaded.
+
+        If the VIMS parquet is absent, this step is silently skipped and
+        returns an empty dict.
+
+        References
+        ----------
+        Solomonidou et al. (2018)  doi:10.1029/2017JE005462
+        Le Mouelic et al. (2019)   doi:10.1016/j.icarus.2018.09.017
+        """
+        from titan.io.vims_cube_mosaic import VIMSWindowMosaicker
+
+        ratio_out = self.config.processed_dir / "vims_5um_2um_ratio_canonical.tif"
+        w5_out    = self.config.processed_dir / "vims_5um_canonical.tif"
+        w2_out    = self.config.processed_dir / "vims_2um_canonical.tif"
+
+        if ratio_out.exists() and not overwrite:
+            results: Dict[str, Path] = {"vims_5um_2um_ratio": ratio_out}
+            if w5_out.exists(): results["vims_5um"] = w5_out
+            if w2_out.exists(): results["vims_2um"] = w2_out
+            return results
+
+        raw = self.config.get_vims_parquet()
+        if raw is None:
+            logger.info(
+                "VIMS parquet not found -- skipping 5 umm cube window mosaic. "
+                "Place vims_footprints.parquet in the data directory and re-run "
+                "preprocessing to enable the 5.0/2.03 umm organic proxy."
+            )
+            return {}
+
+        cube_cache = self.config.data_dir / "vims_cubes"
+        mosaicker = VIMSWindowMosaicker(
+            cube_cache_dir    = cube_cache,
+            max_emission_deg  = 40.0,
+            max_resolution_km = 25.0,    # use only high-quality cubes
+            max_cubes         = getattr(self.config, "vims_max_cubes", 200),
+        )
+
+        logger.info("Building VIMS 5.0 umm individual-cube mosaic ...")
+        w5 = mosaicker.build_mosaic(
+            raw, target_um=5.0, nrows=self.grid.nrows, ncols=self.grid.ncols
+        )
+        _write_canonical_tif(w5, w5_out, self.grid)
+        logger.info("VIMS 5.0 umm mosaic -> %s", w5_out)
+
+        logger.info("Building VIMS 2.03 umm individual-cube mosaic ...")
+        w2 = mosaicker.build_mosaic(
+            raw, target_um=2.03, nrows=self.grid.nrows, ncols=self.grid.ncols
+        )
+        _write_canonical_tif(w2, w2_out, self.grid)
+        logger.info("VIMS 2.03 umm mosaic -> %s", w2_out)
+
+        # Compute and save the ratio
+        ratio = np.where(
+            np.isfinite(w5) & np.isfinite(w2) & (w2 > 1e-6),
+            w5 / w2,
+            np.nan,
+        ).astype(np.float32)
+        _write_canonical_tif(ratio, ratio_out, self.grid)
+        logger.info("VIMS 5.0/2.03 umm ratio -> %s", ratio_out)
+
+        return {
+            "vims_5um":           w5_out,
+            "vims_2um":           w2_out,
+            "vims_5um_2um_ratio": ratio_out,
+        }
+
+
     def _preprocess_geomorphology(
         self, overwrite: bool
     ) -> Dict[str, Path]:
@@ -1074,8 +1181,10 @@ class CanonicalDataStack:
 
         all_names = names or [
             "topography", "sar_mosaic", "iss_mosaic_450m",
-            "vims_mosaic", "vims_coverage", "geomorphology",
-            "channel_density", "cirs_temperature",
+            "vims_mosaic", "vims_coverage",
+            "vims_5um", "vims_2um", "vims_5um_2um_ratio",
+            "geomorphology", "channel_density",
+            "cirs_temperature", "polar_lakes",
         ]
 
         data_vars: Dict[str, xr.DataArray] = {}

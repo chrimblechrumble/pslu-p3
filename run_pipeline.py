@@ -104,6 +104,23 @@ Quick start
 from __future__ import annotations
 
 import argparse
+
+
+def _pipeline_version() -> str:
+    """Return the code version from titan/features.py."""
+    try:
+        from titan.features import PIPELINE_CODE_VERSION
+        return PIPELINE_CODE_VERSION
+    except ImportError as exc:
+        # Only suppress if the module itself is absent; if a dependency
+        # (e.g. numpy) is missing, print a clear warning so the user
+        # knows the venv needs activating -- do not hide environment bugs.
+        if "titan" in str(exc) or "features" in str(exc):
+            return "unknown"   # module truly absent
+        print(f"[WARNING] _pipeline_version: dependency missing: {exc}")
+        print("[WARNING] Is your virtual environment activated? ")
+        print("[WARNING]   Run: source .venv/bin/activate")
+        raise   # re-raise so the pipeline fails fast with a clear message
 import json
 import logging
 import sys
@@ -734,7 +751,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     grid_rows, grid_cols = cfg.canonical_grid_shape
     log.info("=" * 65)
-    log.info("  TITAN HABITABILITY PIPELINE")
+    log.info("  TITAN HABITABILITY PIPELINE  v%s", _pipeline_version())
     log.info("=" * 65)
     log.info("  Temporal mode(s)  : %s", ", ".join(modes_to_run))
     log.info("  Backend           : %s", cfg.bayesian_backend)

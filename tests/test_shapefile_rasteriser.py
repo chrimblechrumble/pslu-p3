@@ -1109,7 +1109,7 @@ class TestPolarLakeRasteriser:
         filled_dir = tmp_path / BIRCH_SUBDIR_FILLED
         filled_dir.mkdir()
         gdf = self._make_lake_gdf(lon_east=-90.0, lat=70.0, size=15.0)
-        gdf.to_file(filled_dir / "lake.shp")
+        gdf.to_file(filled_dir / "Fl_lake.shp")
 
         r = self._make_rasteriser(tmp_path)
         canvas = r.rasterise(include_filled=True, include_empty=False)
@@ -1130,7 +1130,7 @@ class TestPolarLakeRasteriser:
         empty_dir = tmp_path / BIRCH_SUBDIR_EMPTY
         empty_dir.mkdir()
         gdf = self._make_lake_gdf(lon_east=-90.0, lat=70.0, size=15.0)
-        gdf.to_file(empty_dir / "empty.shp")
+        gdf.to_file(empty_dir / "El_empty.shp")
 
         r = self._make_rasteriser(tmp_path)
         canvas = r.rasterise(include_filled=False, include_empty=True)
@@ -1139,52 +1139,7 @@ class TestPolarLakeRasteriser:
             "No empty-basin pixels (label 2) found."
         )
 
-    @_NEED_GEO_RIO
-    @pytest.mark.skip(
-        reason="POLAR_LAKE_PALERMO (label 3) removed: Lakes.shp absent "
-               "from Mendeley dataset (doi:10.17632/f6jrtyfp66.1). "
-               "No Palermo shapefiles exist in the public distribution."
-    )
-    def test_palermo_label_burned(self, tmp_path: Path) -> None:
-        """Skipped: Palermo data absent from Mendeley distribution."""
-
     # -- draw order ------------------------------------------------------------
-
-    @pytest.mark.skip(
-        reason="POLAR_LAKE_PALERMO removed: no Palermo data in public distribution."
-    )
-    @_NEED_GEO_RIO
-    def test_palermo_overwrites_birch_filled(self, tmp_path: Path) -> None:
-        """Skipped: Palermo data absent from Mendeley distribution."""
-        from titan.io.shapefile_rasteriser import (
-            BIRCH_SUBDIR_FILLED, BIRCH_SUBDIR_PALERMO,
-            POLAR_LAKE_FILLED, POLAR_LAKE_PALERMO,
-        )
-        # Put both datasets at exactly the same location
-        lon_east, lat, size = -90.0, 70.0, 15.0
-        for subdir, label in [
-            (BIRCH_SUBDIR_FILLED, "filled"),
-            (BIRCH_SUBDIR_PALERMO, "palermo"),
-        ]:
-            d = tmp_path / subdir
-            d.mkdir(exist_ok=True)
-            self._make_lake_gdf(lon_east, lat, size).to_file(d / f"{label}.shp")
-
-        r = self._make_rasteriser(tmp_path)
-        canvas = r.rasterise(include_filled=True, include_empty=False)
-
-        # In the overlap area, Palermo (3) must overwrite Birch filled (1)
-        overlap_pixels = np.where(
-            (canvas == POLAR_LAKE_FILLED) | (canvas == POLAR_LAKE_PALERMO)
-        )
-        assert len(overlap_pixels[0]) > 0, "No overlap pixels found."
-        # With Palermo drawn last, no pixels should retain label 1
-        # where Palermo also covers (same polygon = same pixels)
-        assert not np.any(canvas == POLAR_LAKE_FILLED), (
-            "Birch filled (1) should be overwritten by Palermo (3) "
-            "where both cover the same area."
-        )
-        assert np.any(canvas == POLAR_LAKE_PALERMO), "Palermo pixels missing."
 
     @_NEED_GEO_RIO
     def test_filled_overwrites_empty(self, tmp_path: Path) -> None:
@@ -1194,13 +1149,18 @@ class TestPolarLakeRasteriser:
             POLAR_LAKE_FILLED, POLAR_LAKE_EMPTY,
         )
         lon_east, lat, size = -90.0, 70.0, 15.0
+        # File prefixes must match ALLOWED_PREFIXES in shapefile_rasteriser:
+        #   birch_filled → Fl_*.shp   |   birch_empty → El_*.shp
+        _prefix = {BIRCH_SUBDIR_EMPTY: "El", BIRCH_SUBDIR_FILLED: "Fl"}
         for subdir, label in [
             (BIRCH_SUBDIR_EMPTY, "empty"),
             (BIRCH_SUBDIR_FILLED, "filled"),
         ]:
             d = tmp_path / subdir
             d.mkdir(exist_ok=True)
-            self._make_lake_gdf(lon_east, lat, size).to_file(d / f"{label}.shp")
+            self._make_lake_gdf(lon_east, lat, size).to_file(
+                d / f"{_prefix[subdir]}_{label}.shp"
+            )
 
         r = self._make_rasteriser(tmp_path)
         canvas = r.rasterise(include_filled=True, include_empty=True)
@@ -1229,7 +1189,7 @@ class TestPolarLakeRasteriser:
         filled_dir.mkdir()
         # 90 degE = 270 degW -- should be in the right three-quarters of the raster
         gdf = self._make_lake_gdf(lon_east=90.0, lat=0.0, size=15.0)
-        gdf.to_file(filled_dir / "east_lake.shp")
+        gdf.to_file(filled_dir / "Fl_east_lake.shp")
 
         nrows, ncols = 18, 36
         r = self._make_rasteriser(tmp_path, nrows=nrows, ncols=ncols)
@@ -1253,7 +1213,7 @@ class TestPolarLakeRasteriser:
         from titan.io.shapefile_rasteriser import BIRCH_SUBDIR_FILLED
         filled_dir = tmp_path / "birch" / BIRCH_SUBDIR_FILLED
         filled_dir.mkdir(parents=True)
-        self._make_lake_gdf(-90.0, 70.0).to_file(filled_dir / "lake.shp")
+        self._make_lake_gdf(-90.0, 70.0).to_file(filled_dir / "Fl_lake.shp")
 
         r = self._make_rasteriser(tmp_path / "birch")
         out = tmp_path / "polar_lakes.tif"

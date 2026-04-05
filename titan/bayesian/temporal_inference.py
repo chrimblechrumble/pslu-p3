@@ -141,7 +141,9 @@ def _sklearn_temporal(
     X_f64 = X_valid.astype(np.float64)
     with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
         scores = X_f64 @ w_vec
-    threshold = cfg.positive_label_threshold
+    # Pure median split: always ~50% positive, self-calibrating.
+    # No floor threshold -- see inference.py for full rationale.
+    threshold = float(np.median(scores))
     y_label = (scores > threshold).astype(int)
 
     n_pos = int(y_label.sum())

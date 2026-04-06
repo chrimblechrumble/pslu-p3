@@ -18,11 +18,13 @@ configs/temporal_config.py
 ===========================
 Temporal habitability configurations for the Titan pipeline.
 
-Three temporal modes are supported:
+Five temporal modes are supported:
 
-  PAST    (~3.5 Gya -- Early Titan / Late Heavy Bombardment era)
-  PRESENT (Cassini epoch, ~2004-2017; this is what the original 8 features model)
-  FUTURE  (~6 Gya from now -- Sun as red giant, Lorenz et al. 1997)
+  PAST           (~3.5 Gya -- Early Titan / Late Heavy Bombardment era)
+  LAKE_FORMATION (~1.0 Gya -- cryovolcanic onset, polar lake formation)
+  PRESENT        (Cassini epoch, ~2004-2017)
+  NEAR_FUTURE    (~0.25 Gya from now -- D2 solar-warming window)
+  FUTURE         (~6 Gya from now -- Sun as red giant, Lorenz et al. 1997)
 
 ===============================================================================
 SECTION 1 -- WHERE EACH ORIGINAL PRIOR CAME FROM AND ITS QUALITY
@@ -404,25 +406,43 @@ class TemporalMode(str, Enum):
     """
     Temporal mode for the habitability analysis.
 
-    PAST    : Early Titan, ~3.5-4.0 Gya.
-              High impactor flux, higher internal heat, episodic liquid water
-              from impact melt oases and cryovolcanism.
-              Lower accumulated organics than present day.
+    PAST           : Early Titan, ~3.5-4.0 Gya.
+                     High impactor flux, higher internal heat, episodic liquid
+                     water from impact melt oases and cryovolcanism.
+                     Lower accumulated organics than present day.
 
-    PRESENT : Cassini epoch (~2004-2017).
-              Liquid methane/ethane lakes.  Active methane cycle.
-              Subsurface water-ammonia ocean confirmed but poorly connected
-              to surface organics (Neish et al. 2024).
+    LAKE_FORMATION : Polar lake formation epoch, ~1.0 Gya.
+                     Default epoch: 1.0 Gya before present.
+                     Cryovolcanic outgassing peaked ~500 Mya per Tobie et al.
+                     (2006), replenishing atmospheric methane and enabling polar
+                     lake accumulation.  By 1.0 Gya lakes are beginning to form;
+                     cryovolcanism is active; organics have had ~3.5 Gyr to
+                     accumulate.  Configurable via --lake-formation-epoch-gya.
+                     Alternative epoch: 0.5 Gya (Tobie outgassing peak).
 
-    FUTURE  : Red giant epoch, ~6 Gya from now (Lorenz et al. 1997).
-              Global water-ammonia oceans.  No UV -> no new haze.
-              Window of ~several hundred Myr with surface T ~200 K.
-              Abundant organic substrate from billions of years of tholin
-              accumulation.
+    PRESENT        : Cassini epoch (~2004-2017).
+                     Liquid methane/ethane lakes.  Active methane cycle.
+                     Subsurface water-ammonia ocean confirmed but poorly
+                     connected to surface organics (Neish et al. 2024).
+
+    NEAR_FUTURE    : D2 near-future solar-warming window, ~0.25 Gya from now.
+                     Centre of the 100-400 Myr window (Lorenz et al. 1997;
+                     Lunine & Lorenz 2009).  Solar luminosity ~2.5% higher
+                     than present.  Same Cassini feature maps as PRESENT;
+                     subsurface_ocean prior raised to reflect D2 warming.
+                     Configurable via --near-future-epoch-myr.
+
+    FUTURE         : Red giant epoch, ~6 Gya from now (Lorenz et al. 1997).
+                     Global water-ammonia oceans.  No UV -> no new haze.
+                     Window of ~several hundred Myr with surface T ~200 K.
+                     Abundant organic substrate from billions of years of
+                     tholin accumulation.
     """
-    PAST    = "past"
-    PRESENT = "present"
-    FUTURE  = "future"
+    PAST           = "past"
+    LAKE_FORMATION = "lake_formation"
+    PRESENT        = "present"
+    NEAR_FUTURE    = "near_future"
+    FUTURE         = "future"
 
 
 # ---------------------------------------------------------------------------
@@ -455,6 +475,30 @@ PAST_FEATURES: List[str] = [
     "cryovolcanic_flux",         # NEW: proximity to cryovolcanic candidate sites
 ]
 
+#: Feature names for LAKE_FORMATION mode (~1.0 Gya default).
+#: Same 9 features as PAST, but impact_melt_proxy carries very low weight
+#: (LHB relics highly degraded by 1.0 Gya), while cryovolcanic_flux is at
+#: high weight (Tobie et al. 2006 outgassing peaked ~500 Mya, still active at
+#: 1.0 Gya).
+#:
+#: Alternative epoch: 0.5 Gya (Tobie outgassing peak).  See module docstring.
+LAKE_FORMATION_FEATURES: List[str] = [
+    "liquid_hydrocarbon",       # lakes beginning to form (10-50% of present area)
+    "organic_abundance",        # ~3.5 Gyr of accumulation -- substantial
+    "acetylene_energy",         # photochemically driven, similar to present
+    "methane_cycle",            # becoming active as methane reservoir builds
+    "surface_atm_interaction",  # cryovolcanism active, lake margins forming
+    "topographic_complexity",   # unchanged -- current DEM proxy
+    "geomorphologic_diversity", # unchanged -- current terrain map proxy
+    "impact_melt_proxy",        # VERY LOW: LHB relics largely degraded by 1.0 Gya
+    "cryovolcanic_flux",        # HIGH: active cryovolcanism (Tobie 2006)
+]
+
+#: Feature names for NEAR_FUTURE mode (~0.25 Gya from now).
+#: Identical feature set to PRESENT; only the prior means differ.
+#: Solar luminosity ~2.5% higher; subsurface ocean prior raised (D2 window).
+NEAR_FUTURE_FEATURES: List[str] = PRESENT_FEATURES  # same 8 features
+
 #: Feature names for FUTURE mode.
 #: Methane-cycle features replaced by water-ammonia analogs.
 FUTURE_FEATURES: List[str] = [
@@ -470,9 +514,11 @@ FUTURE_FEATURES: List[str] = [
 
 # Map from temporal mode -> feature name list
 TEMPORAL_FEATURE_NAMES: Dict[TemporalMode, List[str]] = {
-    TemporalMode.PAST:    PAST_FEATURES,
-    TemporalMode.PRESENT: PRESENT_FEATURES,
-    TemporalMode.FUTURE:  FUTURE_FEATURES,
+    TemporalMode.PAST:           PAST_FEATURES,
+    TemporalMode.LAKE_FORMATION: LAKE_FORMATION_FEATURES,
+    TemporalMode.PRESENT:        PRESENT_FEATURES,
+    TemporalMode.NEAR_FUTURE:    NEAR_FUTURE_FEATURES,
+    TemporalMode.FUTURE:         FUTURE_FEATURES,
 }
 
 
@@ -613,6 +659,117 @@ def get_prior_set(mode: TemporalMode) -> TemporalPriorSet:
             ),
         )
 
+    elif mode == TemporalMode.LAKE_FORMATION:
+        return TemporalPriorSet(
+            mode=TemporalMode.LAKE_FORMATION,
+            feature_names=tuple(LAKE_FORMATION_FEATURES),
+            weights=(
+                # Default epoch: ~1.0 Gya before present.
+                # Alternative: ~0.5 Gya (Tobie 2006 outgassing peak).
+                # The two options differ in how active cryovolcanism was:
+                #   1.0 Gya: lakes just beginning to form; cryovolcanism
+                #            building toward its peak.
+                #   0.5 Gya: outgassing peak per Tobie 2006; lakes more
+                #            established; methane cycle more active.
+                # At 1.0 Gya the LHB is ~2.5 Gyr in the past; SAR-bright
+                # crater annuli (impact_melt_proxy) are largely degraded.
+                0.20,  # liquid_hydrocarbon    -- forming but sparse (~10-30% present)
+                0.18,  # organic_abundance      -- ~3.5 Gyr accumulation; substantial
+                0.16,  # acetylene_energy       -- photochemistry active, similar present
+                0.15,  # methane_cycle          -- building as methane reservoir grows
+                0.12,  # surface_atm_interaction-- cryovolcanism active (Tobie 2006)
+                0.05,  # topographic_complexity -- current DEM proxy
+                0.04,  # geomorphologic_diversity -- current terrain map proxy
+                0.02,  # impact_melt_proxy      -- LHB very old; annuli highly degraded
+                0.08,  # cryovolcanic_flux      -- ACTIVE: Tobie peak approaching
+            ),
+            prior_means=(
+                0.010,  # liquid_hydrocarbon: lakes just beginning to form.
+                         # At 1.0 Gya methane is accumulating but lake coverage
+                         # is << present (~2%).  Tobie (2006): outgassing peak
+                         # still ~500 Myr away.  Prior ~1% surface = sparse.
+                         # DECLARED: no direct observational constraint exists
+                         # for 1.0 Gya lake coverage.  Qualitative estimate.
+                0.500,  # organic_abundance: 3.5 Gyr of UV photolysis.
+                         # Midway between PAST (0.30) and PRESENT (0.70).
+                         # Cable 2012; Malaska 2025.
+                0.350,  # acetylene_energy: similar to present; photochemistry active.
+                         # McKay & Smith 2005; Strobel 2010.
+                0.300,  # methane_cycle: becoming active as methane reservoir builds.
+                         # Tobie 2006: episodic outgassing leading toward present cycle.
+                0.500,  # surface_atm_interaction: cryovolcanism still active.
+                         # Tobie 2006: outgassing peaked ~500 Mya; at 1.0 Gya
+                         # cryovolcanic conduits are common.  Lopes 2007, 2013.
+                0.250,  # topographic_complexity: current DEM proxy. Same as PRESENT.
+                0.250,  # geomorphologic_diversity: current terrain map proxy.
+                0.100,  # impact_melt_proxy: LHB relics ~2.5 Gyr old; heavily eroded.
+                         # Neish & Lorenz (2012): surface age 200 Myr-1 Gyr means
+                         # most SAR-bright annuli are geologically recent, not LHB.
+                         # Prior = low.
+                0.600,  # cryovolcanic_flux: high -- Tobie (2006) cryovolcanic peak
+                         # ~500 Mya; at 1.0 Gya activity is actively building.
+                         # Lopes 2007, 2013; internal heat still strong.
+            ),
+            citations=(
+                "Tobie2006; Hayes2016 [lake onset ~1 Gya]",
+                "Cable2012; Malaska2025 [3.5 Gyr accumulation]",
+                "McKay&Smith2005; Strobel2010",
+                "Tobie2006 [methane building toward present level]",
+                "Tobie2006; Lopes2007; Lopes2013 [cryovolcanism active]",
+                "Lorenz2013 [current DEM proxy]",
+                "Lopes2019 [current map proxy]",
+                "Neish2012; Birch2017 [LHB annuli degraded by 1 Gya]",
+                "Tobie2006; Lopes2007 [cryovolcanic peak approaching]",
+            ),
+        )
+
+    elif mode == TemporalMode.NEAR_FUTURE:
+        return TemporalPriorSet(
+            mode=TemporalMode.NEAR_FUTURE,
+            feature_names=tuple(NEAR_FUTURE_FEATURES),
+            weights=(
+                # Identical weights to PRESENT.  The near-future epoch uses the
+                # same Cassini spatial feature maps; only the prior means differ
+                # to reflect the D2 solar-warming window (100-400 Myr from now).
+                # Solar luminosity at +0.25 Gya: ~1.025x present (Lorenz 1997).
+                0.25,  # liquid_hydrocarbon     -- unchanged from PRESENT
+                0.20,  # organic_abundance      -- unchanged
+                0.20,  # acetylene_energy       -- unchanged
+                0.15,  # methane_cycle          -- unchanged
+                0.08,  # surface_atm_interaction -- unchanged
+                0.06,  # topographic_complexity  -- unchanged
+                0.04,  # geomorphologic_diversity-- unchanged
+                0.02,  # subsurface_ocean        -- weight unchanged; mean raised
+            ),
+            prior_means=(
+                0.020,  # liquid_hydrocarbon: unchanged from PRESENT.
+                         # 2.5% solar brightening has negligible effect on lake
+                         # stability over 250 Myr.
+                0.700,  # organic_abundance: unchanged. 250 Myr adds <3% to inventory.
+                0.350,  # acetylene_energy: unchanged. UV +2.5% is within uncertainty.
+                0.380,  # methane_cycle: SLIGHTLY LOWER than PRESENT (0.40).
+                         # At +250 Myr, methane reservoir is ~2.5% depleted.
+                0.350,  # surface_atm_interaction: unchanged.
+                0.250,  # topographic_complexity: unchanged.
+                0.300,  # geomorphologic_diversity: unchanged.
+                0.080,  # subsurface_ocean: RAISED from PRESENT (0.03) to 0.08.
+                         # D2 solar brightening (+2.5%) modestly raises subsurface
+                         # temperatures, increasing ocean-surface exchange probability.
+                         # Lorenz et al. (1997); Lunine & Lorenz (2009).
+                         # Still low overall (Neish 2024 organic flux constraint).
+            ),
+            citations=(
+                "Stofan2007; Hayes2008 [unchanged from PRESENT]",
+                "Cable2012; Malaska2025 [unchanged]",
+                "McKay&Smith2005; Strobel2010 [unchanged]",
+                "Turtle2011; Mitchell&Lora2016 [slight depletion at +250 Myr]",
+                "Hayes2016 [unchanged]",
+                "Lorenz2013 [unchanged]",
+                "Malaska2025 [unchanged]",
+                "Lorenz1997; LunineAndLorenz2009; Neish2024 [D2 raised prior]",
+            ),
+        )
+
     elif mode == TemporalMode.FUTURE:
         return TemporalPriorSet(
             mode=TemporalMode.FUTURE,
@@ -703,6 +860,41 @@ def describe_prior_changes(
             "  + cryovolcanic_flux (NEW):        prior_mean 0.30\n"
             "  Weights redistributed to sum to 1.0.\n"
             "  [WARNING]  ASSUMPTION: 'Past' = ~3.5 Gya (LHB epoch). Confirm?"
+        )
+
+    elif mode == TemporalMode.LAKE_FORMATION:
+        return (
+            "LAKE_FORMATION mode (~1.0 Gya default) -- 9 features:\n"
+            "  * liquid_hydrocarbon prior_mean:  0.02 -> 0.01  "
+            "(lakes sparse at 1.0 Gya; << present 2%; forming epoch)\n"
+            "  * organic_abundance prior_mean:   0.70 -> 0.50  "
+            "(3.5 Gyr accumulation; midway between PAST and PRESENT)\n"
+            "  * methane_cycle prior_mean:       0.40 -> 0.30  "
+            "(building toward present level; episodic outgassing)\n"
+            "  * surface_atm_interaction:        0.35 -> 0.50  "
+            "(cryovolcanism actively building toward ~500 Mya peak)\n"
+            "  + impact_melt_proxy (weight 0.02):  prior_mean 0.10\n"
+            "    (LHB annuli ~2.5 Gyr old; heavily eroded; Neish & Lorenz 2012)\n"
+            "  + cryovolcanic_flux (weight 0.08):  prior_mean 0.60\n"
+            "    (Tobie 2006: outgassing peak ~500 Mya; at 1.0 Gya actively building)\n"
+            "  Alternative epoch: 0.5 Gya (--lake-formation-epoch-gya 0.5)\n"
+            "  [WARNING]  ASSUMPTION: current DEM/terrain used as proxy for past state."
+        )
+
+    elif mode == TemporalMode.NEAR_FUTURE:
+        return (
+            "NEAR_FUTURE mode (+0.25 Gya from now, D2 window centre) -- 8 features:\n"
+            "  Same Cassini feature maps as PRESENT; only prior means differ.\n"
+            "  Solar luminosity +2.5% relative to present (Lorenz 1997 model).\n"
+            "  * subsurface_ocean prior_mean:    0.03 -> 0.08\n"
+            "    (D2 solar warming modestly raises ocean-surface exchange;\n"
+            "     Lorenz 1997; Lunine & Lorenz 2009; Neish 2024 constraint retained)\n"
+            "  * methane_cycle prior_mean:       0.40 -> 0.38\n"
+            "    (minor methane depletion at +250 Myr; ~2.5% reduction)\n"
+            "  All other prior means: unchanged from PRESENT.\n"
+            "  Configurable via --near-future-epoch-myr (default 250 Myr).\n"
+            "  [WARNING]  ASSUMPTION: uniform 2.5% solar brightening applied globally\n"
+            "    (no GCM output at SAR resolution for this epoch)."
         )
 
     elif mode == TemporalMode.FUTURE:

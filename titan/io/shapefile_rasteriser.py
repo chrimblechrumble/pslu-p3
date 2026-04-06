@@ -20,10 +20,29 @@ Rasterises geomorphology and polar-lake shapefiles onto the canonical grid.
 
 Two independent shapefile catalogues are supported:
 
-**Lopes+2019 global geomorphology** (all terrain classes, global coverage):
-  Source: Lopes et al. (2019) Nature Astronomy doi:10.1038/s41550-019-0917-6
+**Lopes+2020 global geomorphology** (all terrain classes, global coverage):
+  Source: Lopes et al. (2020) Nature Astronomy doi:10.1038/s41550-019-0917-6
+  Data:   Schoenfeld (2024) Mendeley doi:10.17632/f6jrtyfp66.1  CC-BY-4.0
   Location: ``data/raw/geomorphology_shapefiles/``
-  Classes: Craters, Dunes, Plains_3, Basins, Mountains, Labyrinth, Lakes
+
+  CONFIRMED FILE LISTING (from Mendeley API, April 2026):
+        Basins.shp     1,829,768 bytes  sha256:ade414034e43c258...
+        Craters.shp      107,712 bytes  sha256:dd30b573d521acb2...
+        Dunes.shp      2,320,712 bytes  sha256:71bd90eb73d0cd61...
+        Labyrinth.shp    614,880 bytes  sha256:89e17602555e130b...
+        Mountains.shp  7,141,100 bytes  sha256:3c0cd9c0c7b786c5...
+        Plains_3.shp   9,504,948 bytes  sha256:894e84153cedf0a2...
+
+  *** Lakes.shp IS NOT PRESENT in the Mendeley distribution. ***
+  The Lakes class does NOT appear in the Mendeley data product.
+  Lake polygon geometry is provided by the separate Birch+2017 Cornell
+  archive (see below), which covers both poles at higher resolution with
+  filled vs empty basin distinction.
+
+  Integer labels assigned at rasterisation time by this pipeline:
+        Craters=1, Dunes=2, Plains_3=3, Basins=4, Mountains=5, Labyrinth=6
+  Class 7 (Lakes) is reserved in SHAPEFILE_LAYERS but the file is absent.
+  Any code checking geo==7 will therefore never match.
 
 **Birch+2017 polar lake mapping** (polar regions, higher-resolution lake
 outlines with confirmed-liquid vs empty-basin distinction):
@@ -37,7 +56,6 @@ outlines with confirmed-liquid vs empty-basin distinction):
   Pipeline directories:
     birch_filled/ <- Fl_NORTH.shp, Fl_SOUTH.shp  (confirmed liquid surfaces)
     birch_empty/  <- El_NORTH.shp, El_SOUTH.shp, Em_SOUTH.shp  (paleo-lakes / paleoseas)
-    palermo/      <- reserved; no matching public shapefiles currently exist
 
   Geomorphic unit codes used by the pipeline:
     Fl = Filled lake/sea (SAR-dark, confirmed present-day liquid)
@@ -57,13 +75,13 @@ Key format facts (verified by direct inspection of real shapefiles):
         geopandas reads these correctly; the M coordinate is ignored.
 
   File structure (Lopes): ONE shapefile per terrain class
-        Craters.shp   -> Meta_Terra = 'Cr'  integer_label = 1
-        Dunes.shp     -> Meta_Terra = 'Dn'  integer_label = 2
-        Plains_3.shp  -> Meta_Terra = 'Pl'  integer_label = 3
-        Basins.shp    -> Meta_Terra = 'Ba'  integer_label = 4
-        Mountains.shp -> Meta_Terra = 'Mt'  integer_label = 5
-        Labyrinth.shp -> Meta_Terra = 'Lb'  integer_label = 6
-        Lakes.shp     -> Meta_Terra = 'Lk'  integer_label = 7  (if present)
+        Craters.shp   -> integer_label = 1  (Cr)
+        Dunes.shp     -> integer_label = 2  (Dn)
+        Plains_3.shp  -> integer_label = 3  (Pl)  [note: filename has _3 suffix]
+        Basins.shp    -> integer_label = 4  (Ba)
+        Mountains.shp -> integer_label = 5  (Mt)  [corresponds to Hummocky in paper]
+        Labyrinth.shp -> integer_label = 6  (Lb)
+        Lakes.shp     -> integer_label = 7  (Lk)  ABSENT -- not in Mendeley dataset
 
   Coordinate conversion -- PROJ BYPASSED:
         PROJ silently rejects west-positive longitudes > 180 deg in its
@@ -74,7 +92,8 @@ Key format facts (verified by direct inspection of real shapefiles):
             y_m = lat      x (pi/180) x R_titan
 
 Rasterisation priority (Lopes -- drawn lowest to highest, higher overwrites):
-        Dunes < Plains < Basins < Mountains < Labyrinth < Craters < Lakes
+        Dunes < Plains < Basins < Mountains < Labyrinth < Craters
+        (Lakes absent; lake polygons come from Birch+2017 separately)
 
 References
 ----------
@@ -107,23 +126,36 @@ logger: logging.Logger = logging.getLogger(__name__)
 # Lopes+2019 terrain class constants
 # ---------------------------------------------------------------------------
 
-#: Mapping from shapefile stem -> (integer_label, Meta_Terra_code).
-#: Labels 1-7 are burned into the canonical geomorphology raster and must
-#: match ``configs/pipeline_config.py::TERRAIN_CLASSES``.
+#: Mapping from shapefile stem -> (integer_label, abbreviation).
+#: Labels are assigned by this pipeline at rasterisation time.
+#: There is no inherent numeric code in the Mendeley shapefiles.
+#:
+#: CONFIRMED PRESENT in Mendeley DOI:10.17632/f6jrtyfp66.1 (verified April 2026):
+#:   Basins, Craters, Dunes, Labyrinth, Mountains, Plains_3
+#:
+#: ABSENT from Mendeley distribution:
+#:   Lakes -- NOT in the Mendeley dataset.  Lake polygons are provided by the
+#:            separate Birch+2017 Cornell archive (POLAR_LAKE_FILLED class).
+#:            Any geomorphology raster built from the Mendeley data will
+#:            never contain label 7.  All lake detection in features.py
+#:            relies on the Birch polar_lakes layer.
 SHAPEFILE_LAYERS: Final[Dict[str, Tuple[int, str]]] = {
     "Craters":   (1, "Cr"),
     "Dunes":     (2, "Dn"),
     "Plains_3":  (3, "Pl"),
     "Basins":    (4, "Ba"),
-    "Mountains": (5, "Mt"),
+    "Mountains": (5, "Mt"),   # corresponds to "Hummocky terrain" in Lopes 2020 paper
     "Labyrinth": (6, "Lb"),
-    "Lakes":     (7, "Lk"),
+    "Lakes":     (7, "Lk"),   # ABSENT in Mendeley -- entry retained for compatibility
+                              # only.  The rasteriser skips missing shapefiles silently.
 }
 
 #: Draw order for Lopes rasterisation -- lower index drawn first so higher
-#: priority classes overwrite lower ones.  Lakes (class 7) drawn last.
+#: priority classes overwrite lower ones.
+#: Lakes absent from Mendeley; lake geometry comes from Birch+2017 separately.
 RASTER_DRAW_ORDER: Final[List[str]] = [
-    "Dunes", "Plains_3", "Basins", "Mountains", "Labyrinth", "Craters", "Lakes",
+    "Dunes", "Plains_3", "Basins", "Mountains", "Labyrinth", "Craters",
+    "Lakes",  # silently skipped if absent
 ]
 
 #: Nodata value in the integer terrain-class output raster.
@@ -131,7 +163,7 @@ TERRAIN_NODATA: Final[int] = 0
 
 
 # ---------------------------------------------------------------------------
-# Birch+2017 / Palermo+2022 polar-lake constants
+# Birch+2017 polar-lake constants
 # ---------------------------------------------------------------------------
 
 #: Sub-directory names under the Birch dataset root (``data/raw/birch_polar_mapping/``).
@@ -140,12 +172,10 @@ TERRAIN_NODATA: Final[int] = 0
 #: Expected layout::
 #:
 #:   data/raw/birch_polar_mapping/
-#:     birch_filled/      <- confirmed present-day liquid (Birch+2017)
-#:     birch_empty/       <- empty basins / paleo-lakes (Birch+2017)
-#:     palermo/           <- alternative mapping (Palermo+2022)
+#:     birch_filled/      <- confirmed present-day liquid (Birch+2017, Fl_NORTH/SOUTH)
+#:     birch_empty/       <- empty basins / paleo-lakes (Birch+2017, El_*/Em_SOUTH)
 BIRCH_SUBDIR_FILLED:  Final[str] = "birch_filled"
 BIRCH_SUBDIR_EMPTY:   Final[str] = "birch_empty"
-BIRCH_SUBDIR_PALERMO: Final[str] = "palermo"
 
 #: Integer labels for the polar-lake raster (independent of Lopes labels).
 #:
@@ -155,12 +185,10 @@ BIRCH_SUBDIR_PALERMO: Final[str] = "palermo"
 #: ``POLAR_LAKE_NODATA``   0      Outside polar-mapping coverage
 #: ``POLAR_LAKE_FILLED``   1      Confirmed liquid -- Birch+2017 filled
 #: ``POLAR_LAKE_EMPTY``    2      Empty basin / paleo-lake -- Birch+2017
-#: ``POLAR_LAKE_PALERMO``  3      Confirmed liquid -- Palermo+2022
 #: ======================  =====  ===========================================
 POLAR_LAKE_NODATA:   Final[int] = 0
 POLAR_LAKE_FILLED:   Final[int] = 1
 POLAR_LAKE_EMPTY:    Final[int] = 2
-POLAR_LAKE_PALERMO:  Final[int] = 3
 
 
 # ---------------------------------------------------------------------------
@@ -553,7 +581,7 @@ def terrain_class_name(integer_label: int) -> str:
 
 def polar_lake_class_name(label: int) -> str:
     """
-    Return the human-readable name for a Birch/Palermo polar-lake label.
+    Return the human-readable name for a Birch+2017 polar-lake label.
 
     Parameters
     ----------
@@ -574,20 +602,17 @@ def polar_lake_class_name(label: int) -> str:
     'FilledLake_Birch'
     >>> polar_lake_class_name(2)
     'EmptyBasin_Birch'
-    >>> polar_lake_class_name(3)
-    'FilledLake_Palermo'
     """
     _names: Dict[int, str] = {
         POLAR_LAKE_NODATA:   "NoData",
         POLAR_LAKE_FILLED:   "FilledLake_Birch",
         POLAR_LAKE_EMPTY:    "EmptyBasin_Birch",
-        POLAR_LAKE_PALERMO:  "FilledLake_Palermo",
     }
     return _names.get(label, f"Unknown({label})")
 
 
 # ---------------------------------------------------------------------------
-# Birch+2017 / Palermo+2022 polar lake rasteriser
+# Birch+2017 polar lake rasteriser
 # ---------------------------------------------------------------------------
 
 class PolarLakeRasteriser:
@@ -617,9 +642,6 @@ class PolarLakeRasteriser:
     POLAR_LAKE_NODATA  (0) -- outside polar-mapping coverage
     POLAR_LAKE_FILLED  (1) -- confirmed present-day liquid (Birch+2017 Fl_*)
     POLAR_LAKE_EMPTY   (2) -- empty basin / paleo-lake (Birch+2017 El_* and Em_*)
-    POLAR_LAKE_PALERMO (3) -- reserved; no matching public shapefiles currently
-                              exist.  The palermo/ sub-directory is silently
-                              skipped if absent.
 
     Draw order: empty basins first (label 2), then filled lakes (label 1).
     Filled overwrites empty where both datasets coincide.
@@ -637,8 +659,8 @@ class PolarLakeRasteriser:
     ----------
     birch_dir:
         Root directory of the Birch dataset.  Expected to contain
-        sub-directories ``birch_filled/``, ``birch_empty/``, and optionally
-        ``palermo/``.  Any absent sub-directory is silently skipped.
+        sub-directories ``birch_filled/`` and ``birch_empty/``.
+        Any absent sub-directory is silently skipped.
     output_shape:
         (nrows, ncols) of the canonical output raster.
     output_transform:
@@ -693,24 +715,20 @@ class PolarLakeRasteriser:
         self,
         include_filled:  bool            = True,
         include_empty:   bool            = True,
-        include_palermo: bool            = True,
         out_path:        Optional[Path]  = None,
     ) -> np.ndarray:
         """
-        Load Birch/Palermo shapefiles and burn them into a polar-lake raster.
+        Load Birch+2017 shapefiles and burn them into a polar-lake raster.
 
-        Each sub-directory is processed in draw order (empty -> filled ->
-        Palermo) so higher-priority classes overwrite lower ones.
+        Sub-directories are processed in draw order (empty first, then
+        filled) so filled lakes overwrite empty basins.
 
         Parameters
         ----------
         include_filled:
             Burn Birch+2017 filled lake/sea polygons (label 1).
         include_empty:
-            Burn Birch+2017 empty basin polygons (label 2).
-        include_palermo:
-            Burn Palermo+2022 sea polygons (label 3).
-        out_path:
+            Burn Birch+2017 empty basin polygons (label 2).        out_path:
             If provided, write the raster as a GeoTIFF.
 
         Returns
@@ -739,7 +757,6 @@ class PolarLakeRasteriser:
             tasks: List[Tuple[str, int, bool]] = [
                 (BIRCH_SUBDIR_EMPTY,   POLAR_LAKE_EMPTY,   include_empty),
                 (BIRCH_SUBDIR_FILLED,  POLAR_LAKE_FILLED,  include_filled),
-                (BIRCH_SUBDIR_PALERMO, POLAR_LAKE_PALERMO, include_palermo),
             ]
             for subdir_name, label, include in tasks:
                 if not include:
@@ -750,7 +767,36 @@ class PolarLakeRasteriser:
                         "Birch sub-directory absent, skipping: %s", subdir
                     )
                     continue
-                shapefiles: List[Path] = sorted(subdir.glob("*.shp"))
+                # SHAPEFILE FILTER -- per Birch et al. (2017) classification:
+                #
+                #   Fl = Filled lake (confirmed liquid)     → FILLED_LAKE (pl=1)
+                #   El = Empty lake basin (confirmed dry)   → EMPTY_BASIN (pl=2)
+                #   Em = Empty sea / paleosea (confirmed)   → EMPTY_BASIN (pl=2)
+                #   Hdb = Hydrocarbon-dark basin            → EXCLUDED (ambiguous)
+                #   Hdd = Hydrocarbon-dark drained          → EXCLUDED (ambiguous)
+                #   Hud = Hydrocarbon-undifferentiated      → EXCLUDED (background)
+                #
+                # Excluded classes (Hdb/Hdd/Hud) fall through to the SAR proxy
+                # in _liquid_hydrocarbon, which gives a physically bounded
+                # estimate (~0.01-0.05) for ambiguous dark terrain.
+                # Only files in birch_filled/ with Fl prefix and files in
+                # birch_empty/ with El or Em prefix are used.
+                ALLOWED_PREFIXES: Dict[int, Tuple[str, ...]] = {
+                    POLAR_LAKE_FILLED: ("FL",),           # confirmed liquid only
+                    POLAR_LAKE_EMPTY:  ("EL", "EM"),      # confirmed empty only
+                }
+                allowed = ALLOWED_PREFIXES.get(label, ())
+                all_shp = sorted(subdir.glob("*.shp"))
+                shapefiles: List[Path] = [
+                    p for p in all_shp
+                    if p.stem.upper()[:2] in allowed
+                ]
+                excluded = [p.name for p in all_shp if p not in shapefiles]
+                if excluded:
+                    logger.info(
+                        "  Excluding non-canonical files from %s (label=%d): %s",
+                        subdir_name, label, excluded,
+                    )
                 if not shapefiles:
                     logger.debug("No .shp files in %s", subdir)
                     continue
@@ -776,6 +822,148 @@ class PolarLakeRasteriser:
         return canvas
 
     # -- internal helpers ------------------------------------------------------
+
+    @staticmethod
+    def _stereo_to_canonical(
+        x_arr: "np.ndarray",
+        y_arr: "np.ndarray",
+        is_north: bool,
+        titan_radius_m: float,
+        deg_to_m: float,
+    ) -> "Tuple[np.ndarray, np.ndarray]":
+        """
+        Inverse polar-stereographic → canonical west-positive metres.
+
+        The Birch+2017 Cornell shapefiles have no embedded CRS (CRS=None)
+        and use a polar stereographic projection centred on the respective
+        pole (90°N for NORTH files, 90°S for SOUTH files).
+
+        Convention (confirmed from diagnose_polar_lakes.py, April 2026)
+        ---------------------------------------------------------------
+        Origin : at the pole (0, 0)
+        Y-axis : points toward 0°W (Titan prime meridian / sub-Saturn point)
+        X-axis : points toward 90°W (90° west of prime meridian)
+        Longitude increases westward (IAU Titan convention).
+        Units  : metres.
+
+        Inverse stereographic formulas
+        --------------------------------
+        ρ     = sqrt(X² + Y²)
+        colat = 2 · arctan(ρ / (2R))           [radians]
+        lat   = (90° − colat_deg)  for north pole
+              = −(90° − colat_deg) for south pole
+        lon_W = atan2(X, Y) mod 360            [degrees west-positive]
+
+        Canonical → metres
+        ------------------
+        x_can = lon_W    · deg_to_m
+        y_can = lat_deg  · deg_to_m
+        """
+        import numpy as np
+
+        R   = titan_radius_m
+        rho = np.sqrt(x_arr ** 2 + y_arr ** 2)
+
+        # Inverse polar stereographic (centred at pole, true scale at pole)
+        colat_deg = np.degrees(2.0 * np.arctan2(rho, 2.0 * R))
+
+        if is_north:
+            lat_deg = 90.0 - colat_deg
+        else:
+            lat_deg = -(90.0 - colat_deg)       # south hemisphere
+
+        # Longitude west-positive: Y-axis points to 0°W, X-axis to 90°W.
+        lon_W = np.degrees(np.arctan2(x_arr, y_arr)) % 360.0
+
+        x_can = lon_W  * deg_to_m
+        y_can = lat_deg * deg_to_m
+        return x_can, y_can
+
+
+    @staticmethod
+    def _transform_antimeridian_safe(
+        geom: "shapely.geometry.base.BaseGeometry",
+        transform_fn: "Callable",
+        deg_to_m: float,
+    ) -> "List[shapely.geometry.base.BaseGeometry]":
+        """
+        Transform polar-stereographic polygon to canonical coords using
+        shortest-arc unwrapping to correctly handle the prime-meridian seam.
+
+        Root cause: the inverse stereo transform applies ``lon_W % 360``.
+        A polygon edge crossing 0W/360W gets adjacent vertices at
+        x_can~0 and x_can~360*deg_to_m.  Rasterio fills the "interior"
+        of this wrong-topology polygon across the full canvas width,
+        burning an entire latitude row as FILLED_LAKE.
+
+        Fix: extract coordinates ring-by-ring, apply the numpy transform,
+        then apply shortest-arc correction (if consecutive vertices differ
+        by more than 180 degrees, add/subtract 360 degrees to take the
+        short path).  The resulting polygon may extend outside
+        [0, 360*deg_to_m]; it is clipped to canvas and wrapped copies
+        are added to cover both sides of the seam.
+        """
+        import numpy as np
+        from shapely.affinity import translate
+        from shapely.geometry import Polygon, box
+
+        canvas_w = 360.0 * deg_to_m
+        canvas_h = 200.0 * deg_to_m
+        half_w   = canvas_w / 2.0
+        cb       = box(0.0, -canvas_h, canvas_w, canvas_h)
+
+        def _unwrap_ring(coords: list) -> list:
+            if len(coords) < 3:
+                return coords
+            xs = np.array([c[0] for c in coords], dtype=np.float64)
+            ys = np.array([c[1] for c in coords], dtype=np.float64)
+            r  = transform_fn(xs, ys)
+            xs_t = np.asarray(r[0], dtype=np.float64)
+            ys_t = np.asarray(r[1], dtype=np.float64)
+            out_x = [float(xs_t[0])]
+            out_y = [float(ys_t[0])]
+            for i in range(1, len(xs_t)):
+                x = float(xs_t[i])
+                px = out_x[-1]
+                while x - px >  half_w: x -= canvas_w
+                while px - x >  half_w: x += canvas_w
+                out_x.append(x)
+                out_y.append(float(ys_t[i]))
+            return list(zip(out_x, out_y))
+
+        def _process_poly(poly: "Polygon") -> list:
+            if poly is None or poly.is_empty:
+                return []
+            try:
+                ext  = _unwrap_ring(list(poly.exterior.coords))
+                ints = [_unwrap_ring(list(r.coords)) for r in poly.interiors]
+                fixed = Polygon(ext, ints)
+                if not fixed.is_valid:
+                    fixed = fixed.buffer(0)
+            except Exception:
+                return []
+            if fixed.is_empty:
+                return []
+            parts = []
+            for offset in (0.0, -canvas_w, canvas_w):
+                shifted = translate(fixed, xoff=offset) if offset else fixed
+                try:
+                    clipped = shifted.intersection(cb)
+                    if clipped is not None and not clipped.is_empty:
+                        parts.append(clipped)
+                except Exception:
+                    pass
+            return parts
+
+        if hasattr(geom, "geoms"):
+            out = []
+            for part in geom.geoms:
+                if hasattr(part, "exterior"):
+                    out.extend(_process_poly(part))
+            return out
+        if hasattr(geom, "exterior"):
+            return _process_poly(geom)
+        return []
 
     def _burn_layer(
         self,
@@ -810,15 +998,57 @@ class PolarLakeRasteriser:
         nrows, ncols = self.output_shape
         deg_to_m: float = math.pi * self.titan_radius_m / 180.0
 
-        def _to_canonical(
-            lon_east: float, lat: float, *extra: float
-        ) -> Tuple[float, ...]:
-            """Convert (lon_east deg, lat deg) -> canonical west-positive metres."""
-            return ((-lon_east) % 360.0 * deg_to_m, lat * deg_to_m) + extra
+        # Detect coordinate system from the first shapefile's bounding box.
+        # Birch+2017 Cornell files have CRS=None and use polar stereographic
+        # metres (bounds ≈ ±1,000,000 m, confirmed April 2026).
+        # Any bound > 360 is unambiguously projected (not geographic degrees).
+        def _is_projected(shp_list: list) -> bool:
+            for shp in shp_list:
+                try:
+                    gdf_probe = gpd.read_file(shp)
+                    b = gdf_probe.total_bounds   # [xmin, ymin, xmax, ymax]
+                    if any(abs(v) > 360.0 for v in b):
+                        return True
+                    return False
+                except Exception:
+                    continue
+            return False
+
+        projected_crs = bool(shapefiles) and _is_projected(shapefiles)
+
+        if projected_crs:
+            logger.info(
+                "  Birch CRS=None with projected bounds -- applying inverse "
+                "polar stereographic transform (Titan R=%.0f m).",
+                self.titan_radius_m,
+            )
 
         all_geoms: List[Tuple["shapely.geometry.base.BaseGeometry", int]] = []
 
         for shp in shapefiles:
+            # Determine pole from filename (e.g. Fl_NORTH.shp / Fl_SOUTH.shp)
+            is_north_pole: bool = "NORTH" in shp.stem.upper()
+
+            if projected_crs:
+                # Build a closure capturing the pole and projection parameters
+                _R   = self.titan_radius_m
+                _d2m = deg_to_m
+                _isnorth = is_north_pole
+                def _to_canonical_stereo(
+                    x_arr, y_arr, *extra,
+                    _R=_R, _d2m=_d2m, _isnorth=_isnorth
+                ):
+                    xc, yc = self._stereo_to_canonical(x_arr, y_arr, _isnorth, _R, _d2m)
+                    if extra:
+                        return (xc, yc) + extra
+                    return xc, yc
+                _transform_fn = _to_canonical_stereo
+            else:
+                # Original geographic (degree) transform
+                def _to_canonical(lon_east, lat, *extra):
+                    return ((-lon_east) % 360.0 * deg_to_m, lat * deg_to_m) + extra
+                _transform_fn = _to_canonical
+
             try:
                 gdf: "geopandas.GeoDataFrame" = gpd.read_file(shp)
             except Exception as exc:
@@ -834,17 +1064,20 @@ class PolarLakeRasteriser:
                 if geom is None or geom.is_empty:
                     continue
                 try:
-                    geom_m = shapely_transform(_to_canonical, geom)
-                    if geom_m is not None and not geom_m.is_empty:
-                        all_geoms.append((geom_m, label))
+                    for fixed_geom in self._transform_antimeridian_safe(
+                        geom, _transform_fn, deg_to_m
+                    ):
+                        if fixed_geom is not None and not fixed_geom.is_empty:
+                            all_geoms.append((fixed_geom, label))
                 except Exception as exc:
                     logger.warning(
                         "Birch geometry transform failed (%s): %s",
                         shp.name, exc,
                     )
-            logger.debug(
-                "  %s: added %d geometries",
-                shp.name, len(all_geoms) - n_before,
+            logger.info(
+                "  %s (%s pole): added %d geometries",
+                shp.name, "N" if is_north_pole else "S",
+                len(all_geoms) - n_before,
             )
 
         if not all_geoms:

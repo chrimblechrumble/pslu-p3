@@ -82,8 +82,8 @@ def fixtures_gtdr_dir() -> Path:
     Path to the GTDR/GTDE fixture directory (tests/fixtures/gtdr/).
 
     Required for integration tests:
-      GTDED00N090_T126_V01.IMG[.gz] + .LBL  (GTDE east -- preferred)
-      GTDED00N270_T126_V01.IMG[.gz] + .LBL  (GTDE west -- preferred)
+      GTIED00N090_T126_V01.IMG[.gz] + .LBL  (GTDE east -- preferred)
+      GTIED00N270_T126_V01.IMG[.gz] + .LBL  (GTDE west -- preferred)
       GT2ED00N090_T126_V01.IMG[.gz] + .LBL  (GT0E east -- T126 sparse)
       GT0EB00N090_T077_V01.IMG     + .LBL   (GT0E east -- T077 legacy)
 
@@ -112,12 +112,12 @@ def _gtdr_find(gtdr_dir: Path, stem: str) -> Path:
 def gtde_east_img(fixtures_gtdr_dir: Path) -> Path:
     """
     GTDE east tile -- Dense interpolated DEM, lon 0-180 degW.
-    File: GTDED00N090_T126_V01.IMG or .IMG.gz
+    File: GTIED00N090_T126_V01.IMG or .IMG.gz
     """
-    p = _gtdr_find(fixtures_gtdr_dir, "GTDED00N090_T126_V01")
+    p = _gtdr_find(fixtures_gtdr_dir, "GTIED00N090_T126_V01")
     if p is None:
         pytest.skip(
-            "GTDE east tile not found (GTDED00N090_T126_V01.IMG[.gz]). "
+            "GTDE east tile not found (GTIED00N090_T126_V01.IMG[.gz]). "
             "Download from https://data.astro.cornell.edu/RADAR/DATA/GTDR/"
         )
     return p
@@ -127,12 +127,12 @@ def gtde_east_img(fixtures_gtdr_dir: Path) -> Path:
 def gtde_west_img(fixtures_gtdr_dir: Path) -> Path:
     """
     GTDE west tile -- Dense interpolated DEM, lon 180-360 degW.
-    File: GTDED00N270_T126_V01.IMG or .IMG.gz
+    File: GTIED00N270_T126_V01.IMG or .IMG.gz
     """
-    p = _gtdr_find(fixtures_gtdr_dir, "GTDED00N270_T126_V01")
+    p = _gtdr_find(fixtures_gtdr_dir, "GTIED00N270_T126_V01")
     if p is None:
         pytest.skip(
-            "GTDE west tile not found (GTDED00N270_T126_V01.IMG[.gz]). "
+            "GTDE west tile not found (GTIED00N270_T126_V01.IMG[.gz]). "
             "Download from https://data.astro.cornell.edu/RADAR/DATA/GTDR/"
         )
     return p

@@ -18,10 +18,10 @@ tests/fixtures/
 ├── gtdr/                                    ← Cornell GTDR/GTDE topography
 │   │
 │   │   ── GTDE: Dense interpolated DEM (PREFERRED, ~90% global) ────────
-│   ├── GTDED00N090_T126_V01.IMG  (or .IMG.gz)  ← east tile, 0–180°W
-│   ├── GTDED00N090_T126_V01.LBL
-│   ├── GTDED00N270_T126_V01.IMG  (or .IMG.gz)  ← west tile, 180–360°W
-│   ├── GTDED00N270_T126_V01.LBL
+│   ├── GTIED00N090_T126_V01.IMG  (or .IMG.gz)  ← east tile, 0–180°W
+│   ├── GTIED00N090_T126_V01.LBL
+│   ├── GTIED00N270_T126_V01.IMG  (or .IMG.gz)  ← west tile, 180–360°W
+│   ├── GTIED00N270_T126_V01.LBL
 │   │
 │   │   ── GT0E: Standard sparse GTDR (~25% coverage) ──────────────────
 │   ├── GT2ED00N090_T126_V01.IMG  (or .IMG.gz)  ← T126 east (final mission)
@@ -49,7 +49,7 @@ The pipeline reader decompresses them transparently — place either
 ## Pipeline DEM priority
 
 The pipeline (`_preprocess_topography`) tries in this order:
-1. `GTDED00N090_T126_V01` + `GTDED00N270_T126_V01` — **PREFERRED**
+1. `GTIED00N090_T126_V01` + `GTIED00N270_T126_V01` — **PREFERRED**
 2. `GT2ED00N090_T126_V01` + `GT2ED00N270_T126_V01`
 3. `GT0EB00N090_T077_V01` + matching west tile
 
@@ -57,7 +57,7 @@ The pipeline (`_preprocess_topography`) tries in this order:
 
 ### Cornell eCommons (direct download, no login, .IMG.gz)
   https://data.astro.cornell.edu/RADAR/DATA/GTDR/
-  Download GTDED00N090_T126_V01.IMG.gz + GTDED00N270_T126_V01.IMG.gz
+  Download GTIED00N090_T126_V01.IMG.gz + GTIED00N270_T126_V01.IMG.gz
   and their .LBL companions.
 
 ### USGS gtdr-data.zip (same product set)
@@ -78,7 +78,7 @@ The pipeline (`_preprocess_topography`) tries in this order:
 | shapefiles/Craters.shp            | test_real_rasteriser_with_craters              |
 | shapefiles/Craters.shp            | test_loads_real_sample_shapefile               |
 | shapefiles/                       | test_real_all_layers_present                   |
-| gtdr/GTDED00N090*.IMG[.gz]        | test_real_gtde_east_has_global_coverage        |
+| gtdr/GTIED00N090*.IMG[.gz]        | test_real_gtde_east_has_global_coverage        |
 | gtdr/GTDE* (both)                 | test_real_gtde_mosaic_near_global              |
 | gtdr/GTDE* (both)                 | test_preprocess_uses_gtde_when_available       |
 | gtdr/GT0ED or GT0EB east          | test_real_gt0e_east_reads_correctly            |

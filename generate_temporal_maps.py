@@ -201,7 +201,7 @@ COLOUR_POSTER_INFO:  str = "#aabbff"
 #:   Setting equal:  fig_width = 4 x (GS_TOP-GS_BOTTOM) / (GS_RIGHT-GS_LEFT) x fig_height
 #:   With GS values below and fig_height=8.5:  20.7" -> delta < 0.01mm
 FIG_WIDTH_IN:  float = 20.7
-FIG_HEIGHT_IN: float = 8.5
+FIG_HEIGHT_IN: float = 11.0
 
 #: GridSpec margins (figure-fraction, 0=bottom/left, 1=top/right).
 #:   GS_LEFT  = 0.08 -- space for equirectangular y-axis labels (Latitude  degN)
@@ -209,12 +209,14 @@ FIG_HEIGHT_IN: float = 8.5
 #:   GS_TOP   = 0.855 -- panel titles clear of the progress bar above
 GS_LEFT:   float = 0.08
 GS_RIGHT:  float = 0.99
-GS_TOP:    float = 0.855
-GS_BOTTOM: float = 0.300
+GS_TOP:    float = 0.920
+GS_BOTTOM: float = 0.500
 
 # --- Feature weights and priors ----------------------------------------------
 
-#: Feature weights (must match pipeline run_pipeline.py).
+#: Feature weights (must match pipeline run_pipeline.py for the 8 PRESENT features).
+#: ``impact_melt_bonus`` is an ANIMATION-ONLY feature synthesised on-the-fly from
+#: :func:`_impact_melt_global`; it is NOT a run_pipeline.py feature and has no TIF.
 WEIGHTS: Dict[str, float] = {
     "liquid_hydrocarbon":       0.23,
     "organic_abundance":        0.18,
@@ -224,14 +226,15 @@ WEIGHTS: Dict[str, float] = {
     "topographic_complexity":   0.05,
     "geomorphologic_diversity": 0.04,
     "subsurface_ocean":         0.02,
-    "impact_melt_bonus":        0.09,
+    "impact_melt_bonus":        0.09,  # SYNTHESISED -- no TIF; zero at PRESENT epoch
 }
 
 #: Bayesian inference parameters
 KAPPA:   float = 5.0    # prior concentration
 LAMBDA:  float = 6.0    # likelihood sharpness
 
-#: Prior means (present-epoch)
+#: Prior means (present-epoch).
+#: ``impact_melt_bonus`` prior is 0.0 because no active impact melts exist today.
 PRIOR_MEANS: Dict[str, float] = {
     "liquid_hydrocarbon":       0.020,
     "organic_abundance":        0.600,
@@ -241,7 +244,7 @@ PRIOR_MEANS: Dict[str, float] = {
     "topographic_complexity":   0.250,
     "geomorphologic_diversity": 0.300,
     "subsurface_ocean":         0.030,
-    "impact_melt_bonus":        0.000,
+    "impact_melt_bonus":        0.000,  # SYNTHESISED; 0 at present by design
 }
 
 #: Colourmap display range for P(habitable | features).
@@ -251,14 +254,21 @@ VMIN, VMAX = 0.10, 0.65
 
 def make_epoch_axis(n_limit: Optional[int] = None) -> np.ndarray:
     """
-    Build the ~71-point epoch axis, denser near key geological transitions.
+    Build the 72-point epoch axis, denser near key geological transitions.
 
     Segments are denser near:
       - LHB peak (-3.8 Gya)
       - Lake formation onset (-1.5 to -0.4 Gya)
       - Present epoch (-0.4 to +0.1 Gya)
+      - D2 near-future solar warming window (+0.250 Gya, explicit anchor)
       - Solar warming + lake evaporation (+3.8 to +5.0 Gya)
       - Water-ammonia eutectic crossing (+5.0 to +5.3 Gya)
+
+    The point +0.250 Gya is the centre of the D2 near-future habitability
+    window (100-400 Myr from now; Lorenz et al. 1997, Lunine & Lorenz 2009).
+    It is added explicitly so that ``full_inference`` mode can anchor the
+    NEAR_FUTURE pipeline run to an exact frame rather than the nearest
+    available point.
 
     Returns
     -------
@@ -270,6 +280,7 @@ def make_epoch_axis(n_limit: Optional[int] = None) -> np.ndarray:
         np.linspace(-3.00, -1.50,  8),   # early Titan
         np.linspace(-1.50, -0.40, 12),   # lake formation -- dense
         np.linspace(-0.40,  0.10,  8),   # near-present -- very dense
+        np.array([0.250]),               # D2 near-future anchor (exact)
         np.linspace( 0.10,  2.00,  8),   # near future
         np.linspace( 2.00,  3.80,  6),   # mid future
         np.linspace( 3.80,  5.00, 10),   # solar warming -- dense
@@ -304,6 +315,11 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
      "All 8 features calibrated here. ~1.7 million km² of liquid hydrocarbon.\n"
      "Dragonfly mission will land at Selk crater (#3) in the 2030s."),
 
+    ( 0.250, 2.5,
+     "NEAR FUTURE  (+250 Myr)  |  D2 solar warming window opens\n"
+     "Solar luminosity ~+2.5% above present. Subsurface ocean exchange modestly elevated.\n"
+     "Polar lake margins remain most habitable. Dragonfly era data still applicable."),
+
     ( 1.50, 2.5,
      "SLOW ACCUMULATION PLATEAU  (+1.5 Gya)  |  Tholins build at 5×10⁻¹⁴ g/cm²/s\n"
      "Solar UV climbing steadily on the main sequence. Polar lakes remain stable.\n"
@@ -320,12 +336,12 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
      "Surface is dry and cold. Local minimum before the red-giant transition."),
 
     ( 5.1333, 4.0,
-     "EUTECTIC THRESHOLD CROSSED  (+5.1 Gya)  |  T_surface > 176 K\n"
-     "Global water-ammonia ocean forms in < 1 Myr. Entire surface becomes liquid.\n"
+     "WATER-AMMONIA EUTECTIC CROSSED  (+5.1 Gya)  |  T_surface > 176 K\n"
+     "Global liquid water-ammonia ocean forms in < 1 Myr. Entire surface is now liquid.\n"
      "Subsurface ocean merges with surface. Maximum organic concentration in solution."),
 
     ( 5.50, 3.5,
-     "PEAK HABITABILITY  (+5.5 Gya)  |  Global ocean phase\n"
+     "PEAK HABITABILITY  (+5.5 Gya)  |  Global liquid water-ammonia ocean\n"
      "All surfaces score ~0.47. 16 Gyr organic stockpile dissolved as bioavailable substrate.\n"
      "Water-ammonia chemistry enables terrestrial-analogue biochemistry."),
 
@@ -581,9 +597,24 @@ def _synthetic_features() -> Dict[str, np.ndarray]:
 
 def load_present_features(feature_dir: Path) -> Dict[str, np.ndarray]:
     """
-    Load present-epoch feature GeoTIFFs.
+    Load present-epoch feature GeoTIFFs produced by run_pipeline.py.
 
-    Falls back to synthetic maps if real TIFs are not available.
+    Falls back to synthetic maps ONLY if real TIFs are not available.
+    When synthetic data is used, a prominent warning is printed and the
+    function returns a flag so callers can declare it in output metadata.
+
+    ``impact_melt_bonus`` note
+    --------------------------
+    This feature is NOT produced by run_pipeline.py.  It is an animation-
+    only feature computed on-the-fly by :func:`_impact_melt_global` for each
+    epoch.  At the PRESENT epoch its value is identically zero (there are no
+    currently active impact-melt oases on Titan).  The spatial distribution
+    for past epochs is derived analytically from the SAR-bright crater annuli
+    (Hedgepeth et al. 2020) rather than from a stored TIF.
+
+    Consequence: no ``impact_melt_bonus.tif`` file will ever exist in the
+    feature directory, and this is NOT a missing-data error.  The feature is
+    always synthesised at load time.
 
     Parameters
     ----------
@@ -594,18 +625,30 @@ def load_present_features(feature_dir: Path) -> Dict[str, np.ndarray]:
     -------
     Dict[str, np.ndarray]
         Feature name -> float32 array of shape GRID_SHAPE.
+        A key ``"_synthetic"`` with value ``True`` is added when synthetic
+        maps are returned, so callers can log and propagate this fact.
     """
+    # impact_melt_bonus is always synthesised -- never looked for on disk.
+    # All other features are expected as TIF files from run_pipeline.py.
+    SYNTHESISED_FEATURES: frozenset = frozenset({"impact_melt_bonus"})
+
     feature_names = list(WEIGHTS.keys())
     maps: Dict[str, np.ndarray] = {}
-    n_real = 0
+    n_real: int = 0
 
     for name in feature_names:
-        tif = feature_dir / f"{name}.tif"
+        # Synthesised features are computed on-the-fly, not loaded from disk
+        if name in SYNTHESISED_FEATURES:
+            maps[name] = np.zeros(GRID_SHAPE, dtype=np.float32)
+            # Not counted towards n_real -- don't print a missing-file warning
+            continue
+
+        tif: Path = feature_dir / f"{name}.tif"
         if tif.exists():
             try:
                 import rasterio
                 with rasterio.open(tif) as src:
-                    arr = src.read(1).astype(np.float32)
+                    arr: np.ndarray = src.read(1).astype(np.float32)
                     nd = src.nodata
                     if nd is not None:
                         arr[arr == nd] = np.nan
@@ -615,19 +658,48 @@ def load_present_features(feature_dir: Path) -> Dict[str, np.ndarray]:
             except Exception as exc:
                 print(f"  WARNING: failed to load {name}.tif: {exc}")
 
-    if n_real >= 6:
-        print(f"  Loaded {n_real}/{len(feature_names)} feature TIFs from {feature_dir}")
-        # Fill any missing with priors
+    # Count only non-synthesised features towards the threshold
+    n_expected = len([n for n in feature_names if n not in SYNTHESISED_FEATURES])
+
+    if n_real >= min(6, n_expected):
+        print(f"  Loaded {n_real}/{n_expected} real feature TIFs from {feature_dir}")
+        print(f"  impact_melt_bonus: synthesised on-the-fly (not a file; "
+              f"zero at PRESENT epoch by design)")
+        # Fill any missing non-synthesised features with prior-mean constant maps
         for name in feature_names:
             if name not in maps:
-                maps[name] = np.full(GRID_SHAPE, PRIOR_MEANS[name], dtype=np.float32)
+                if name in SYNTHESISED_FEATURES:
+                    continue   # already handled above
+                maps[name] = np.full(GRID_SHAPE, PRIOR_MEANS[name],
+                                     dtype=np.float32)
+                print(f"  INFO: {name}.tif missing -- "
+                      f"filled with prior mean {PRIOR_MEANS[name]:.3f}")
+        maps["_synthetic"] = False   # type: ignore[assignment]
         return maps
     else:
-        if n_real > 0:
-            print(f"  Only {n_real} TIFs found -- falling back to synthetic maps")
-        else:
-            print(f"  No feature TIFs found in {feature_dir} -- using synthetic maps")
-        return _synthetic_features()
+        # -- SYNTHETIC DATA FALLBACK -------------------------------------------
+        # This path is taken ONLY when real Cassini-derived feature TIFs are
+        # not present.  Synthetic maps are physically grounded heuristics based
+        # on known Titan geography; they are NOT observational data.
+        # Run run_pipeline.py --temporal-mode present first to generate real TIFs.
+        sep = "=" * 70
+        msg_lines = [
+            sep,
+            "  *** SYNTHETIC DATA MODE ***",
+            f"  Real feature TIFs not found in: {feature_dir}",
+            f"  Found {n_real}/{len(feature_names)} TIFs "
+            f"(need >= 6 to use real data).",
+            "  Falling back to SYNTHETIC feature maps.",
+            "  These are geography-based heuristics, NOT Cassini observations.",
+            "  To use real data: run run_pipeline.py --temporal-mode present",
+            "  then re-run this script.",
+            sep,
+        ]
+        for line in msg_lines:
+            print(line)
+        synth: Dict[str, np.ndarray] = _synthetic_features()
+        synth["_synthetic"] = True   # type: ignore[assignment]
+        return synth
 
 
 # --- Temporal scaling ---------------------------------------------------------
@@ -653,6 +725,9 @@ def scale_features_to_epoch(
     """
     result: Dict[str, np.ndarray] = {}
     for name, arr in present.items():
+        # Skip metadata keys (e.g. "_synthetic") that are not real feature arrays
+        if name not in FEATURE_SCALE_FUNCS:
+            continue
         scale_fn = FEATURE_SCALE_FUNCS[name]
         scale    = scale_fn(t)
         if name == "organic_abundance":
@@ -707,6 +782,8 @@ def bayesian_posterior_map(
     valid: np.ndarray  = np.zeros((nrows, ncols), dtype=bool)
 
     for name, arr in features.items():
+        if name not in WEIGHTS:
+            continue   # skip metadata keys such as "_synthetic"
         w = WEIGHTS[name]
         finite_mask = np.isfinite(arr)
         w_sum  += np.where(finite_mask, arr.astype(np.float64) * w, 0.0)
@@ -914,7 +991,12 @@ def _phase_label(t: float) -> str:
         return "Near future"
     if t < 5.0:
         return "Pre red-giant"
-    return "Red-giant\nramp"
+    # T < EUTECTIC_K here (handled above).
+    # t=5.0–6.0: Sun becoming red giant, T rising toward eutectic → ramp up.
+    # t>=6.0: Sun exits red-giant, L collapses 600×→0.8×, T drops → ramp down.
+    if t < 6.0:
+        return "Red-giant\nramp up"
+    return "Red-giant\nramp down"
 
 
 def render_frame(
@@ -965,6 +1047,20 @@ def render_frame(
         (179.0, -72.0, "Ontario",    9, "S"),
         ( 78.0, -20.0, "Hotei",     10, ""),
     ]
+
+    # Northern polar seas and lakes -- labelled only when polar lakes exist.
+    # Epoch range: lakes established at -0.5 Gya; start evaporating at +4.0 Gya.
+    # Sources: Turtle et al. (2009), Hayes et al. (2008),
+    #          USGS Gazetteer of Planetary Nomenclature.
+    # Format: (lon_W deg, lat deg, label)
+    NORTH_LAKES: List[Tuple[float, float, str]] = [
+        (339.0,  85.5, "Punga Mare"),      # 3rd largest N-polar sea
+        (336.3,  73.1, "Jingpo Lacus"),    # large lake SW of Punga
+        ( 93.5,  70.7, "Hammar Lacus"),    # named lake NW of Ligeia
+        ( 12.3,  75.4, "Bolsena Lacus"),   # named lake E of Punga
+        (262.8,  77.5, "Mackay Lacus"),    # named lake W of Kraken
+    ]
+    _lakes_visible: bool = -0.5 <= t <= 4.0
 
     MARKER_SIZE: int  = 6
     TEXT_SIZE:   float = 7.5
@@ -1039,6 +1135,26 @@ def render_frame(
                   fontsize=10, pad=5)
     for spine in ax1.spines.values():
         spine.set_edgecolor(COLOUR_SPINE)
+
+    # Northern polar lakes -- shown only when lakes are present (epoch-conditional)
+    if _lakes_visible:
+        for lon_W, lat, label in NORTH_LAKES:
+            dx = 6.0 if lon_W < 300 else -6.0
+            dy = 5.0
+            ha_nl: str = "left" if dx > 0 else "right"
+            ax1.plot(lon_W, lat, "s", color=COLOUR_MARKER,
+                     ms=MARKER_SIZE - 1, mew=1.0,
+                     markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+            ax1.annotate(
+                label,
+                xy=(lon_W, lat), xytext=(lon_W + dx, lat + dy),
+                color=COLOUR_TEXT, fontsize=TEXT_SIZE - 1.0,
+                ha=ha_nl, va="center",
+                arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.7),
+                zorder=11,
+                bbox=dict(boxstyle="round,pad=0.12",
+                          fc=COLOUR_ANNOT_BOX, ec="none", alpha=0.85),
+            )
 
     # -- Polar reproject helper ------------------------------------------------
     def polar_reproject(img: np.ndarray, north: bool, size: int = 500) -> np.ndarray:
@@ -1180,6 +1296,30 @@ def render_frame(
             bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
         )
 
+    # Northern polar lakes on polar cap -- epoch-conditional
+    if _lakes_visible:
+        for lon_W, lat, label in NORTH_LAKES:
+            xs, ys = _loc_to_stereo(lon_W, lat, north=True)
+            if xs is None:
+                continue
+            ax2.plot(xs, ys, "s", color=COLOUR_MARKER,
+                     ms=MARKER_SIZE - 1, mew=1.0,
+                     markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+            mag = math.sqrt(xs**2 + ys**2)
+            scale_out = min(1.15 / max(0.05, mag), 4.0)
+            tx = max(-0.90, min(0.90, xs * scale_out))
+            ty = max(-0.90, min(0.90, ys * scale_out))
+            ax2.annotate(
+                label,
+                xy=(xs, ys), xytext=(tx, ty),
+                color=COLOUR_TEXT, fontsize=TEXT_SIZE - 1.5,
+                ha="center", va="center",
+                arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.7),
+                zorder=11,
+                bbox=dict(boxstyle="round,pad=0.12",
+                          fc=COLOUR_ANNOT_BOX_POLAR, ec="none", alpha=0.85),
+            )
+
     # -- Right panel: South polar cap (POLAR_CAP_EDGE_DEG deg - 90 degS) ------------
     ax3 = fig.add_subplot(gs[0, 2], aspect="equal")
     ax3.set_facecolor(COLOUR_BACKGROUND)
@@ -1217,48 +1357,49 @@ def render_frame(
         )
 
     # -- Colourbar -------------------------------------------------------------
-    # Placed well below GS_BOTTOM so the equirectangular x-axis label (at
-    # ~y=0.268) and the colourbar top (y=0.170) have ~0.8" of clear space.
-    cax = fig.add_axes([0.10, 0.178, 0.80, 0.022])
+    # Bar axes: [left, bottom, width, height] in figure fraction.
+    # Label is placed as fig.text() ABOVE the bar so it doesn't compete with
+    # the narrative boxes below.  cb.set_label("") suppresses the auto label.
+    cax = fig.add_axes([0.10, 0.145, 0.80, 0.014])
     cax.set_facecolor(COLOUR_BACKGROUND)
     sm  = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     cb  = fig.colorbar(sm, cax=cax, orientation="horizontal")
-    cb.set_label("P(habitable | features)", color="white", fontsize=11)
+    cb.set_label("")                # suppress automatic label below bar
     cb.ax.xaxis.set_tick_params(color="white", labelcolor="white", labelsize=9)
+    # Manual label centred above the bar
+    fig.text(0.50, 0.164, "P(habitable | features)",
+             color="white", fontsize=10, ha="center", va="bottom",
+             transform=fig.transFigure)
 
     # -- Narrative text box ----------------------------------------------------
-    # Both frames (narrative and blank) render identical sized elements so that
-    # bbox_inches=None produces a consistent frame height throughout the video.
-    #
-    # Vertical layout from bottom of figure (FIG_HEIGHT_IN = 8.5"):
-    #   y=0.170  colourbar bar top
-    #   y=0.148  colourbar bar bottom
-    #   y=0.120  colourbar label centre
-    #   -- 0.5" gap --------------------------------------
-    #   y=0.090  title pill centre
-    #   -- gap --------------------------------------------
-    #   y=0.038  body box centre
+    # Vertical layout (11" figure, y in figure fraction, 0=bottom):
+    #   y=0.164  colourbar label (above bar)
+    #   y=0.145  colourbar bar top
+    #   y=0.131  colourbar bar bottom  + tick values below
+    #   ---
+    #   y=0.072  title pill centre
+    #   y=0.030  body box centre
     if narrative:
         lines: list = [ln.strip() for ln in narrative.strip().split("\n") if ln.strip()]
         title_line: str       = lines[0] if lines else ""
         body_lines: list[str] = lines[1:] if len(lines) > 1 else []
         body_text:  str       = "\n".join(body_lines) if body_lines else "-" * 60
 
-        fig.text(0.50, 0.038, body_text,
+        fig.text(0.50, 0.030, body_text,
                  color=COLOUR_NARRATIVE_BODY, fontsize=10.5, fontweight="normal",
                  ha="center", va="center", fontfamily="monospace",
                  linespacing=1.55, zorder=20,
                  bbox=dict(boxstyle="round,pad=0.55",
                            fc=COLOUR_NARRATIVE_FILL, ec=COLOUR_NARRATIVE_BORDER, lw=1.8))
-        fig.text(0.50, 0.090, title_line,
+        fig.text(0.50, 0.072, title_line,
                  color=COLOUR_NARRATIVE_TITLE, fontsize=12.0, fontweight="bold",
                  ha="center", va="center", fontfamily="monospace", zorder=21,
                  bbox=dict(boxstyle="round,pad=0.30",
                            fc=COLOUR_TITLE_FILL, ec=COLOUR_TITLE_BORDER, lw=1.5))
     else:
-        fig.text(0.50, 0.038, " ", color=COLOUR_TRANSPARENT, fontsize=10.5,
+        fig.text(0.50, 0.030, " ", color=COLOUR_TRANSPARENT, fontsize=10.5,
                  fontfamily="monospace", ha="center", va="center", zorder=1)
-        fig.text(0.50, 0.090, " ", color=COLOUR_TRANSPARENT, fontsize=12.0,
+        fig.text(0.50, 0.072, " ", color=COLOUR_TRANSPARENT, fontsize=12.0,
                  fontfamily="monospace", ha="center", va="center", zorder=1)
 
     # ── Title ─────────────────────────────────────────────────────────────────
@@ -1272,20 +1413,303 @@ def render_frame(
     else:
         phase_col = COLOUR_PHASE_DEFAULT
 
-    fig.text(0.5, 0.973, "TITAN SURFACE HABITABILITY", color="white",
+    fig.text(0.5, 0.978, "TITAN SURFACE HABITABILITY", color="white",
              fontsize=15, ha="center", va="bottom", fontweight="bold",
              fontfamily="monospace")
-    fig.text(0.5, 0.940, f"Epoch:  {_epoch_label(t).replace(chr(10),' ')}   |   "
+    fig.text(0.5, 0.963, f"Epoch:  {_epoch_label(t).replace(chr(10),' ')}   |   "
              f"Phase:  {_phase_label(t).replace(chr(10),' ')}   |   {solar_str}",
              color=phase_col, fontsize=10, ha="center", va="bottom")
 
     # -- Progress bar ----------------------------------------------------------
-    bar_ax = fig.add_axes([0.10, 0.910, 0.80, 0.006])
+    bar_ax = fig.add_axes([0.10, 0.948, 0.80, 0.006])
     bar_ax.set_facecolor(COLOUR_BACKGROUND)
     bar_ax.set_xlim(0, n_epochs)
     bar_ax.set_ylim(0, 1)
     bar_ax.barh(0.5, epoch_idx + 1, height=1.0, color=COLOUR_PROGRESS_BAR, alpha=0.7)
     bar_ax.axis("off")
+
+    # -- Epoch-aware feature / assumption panel ----------------------------------
+    # Three-column panel in the expanded lower figure area:
+    #   Left  (x=0.01-0.38): Active features table + excluded features
+    #   Centre(x=0.39-0.65): Colour trend explanation
+    #   Right (x=0.66-0.99): Key assumptions for this epoch
+    #
+    # The panel key is matched by the first word(s) of _phase_label(t).
+    _phase = _phase_label(t)
+    _PANEL: Dict[str, Any] = {
+        "LHB peak": {
+            "active": [
+                ("impact_melt_bonus",        "HIGH",   "Uniform global boost  peak=0.50 @ -3.8 Gya; →0 by -2.5 Gya"),
+                ("cryovolcanic_flux",        "HIGH",   "Cryovolcanic candidate venting to surface"),
+                ("acetylene_energy",         "MED",    "Intense HCN/C₂H₂ photochem under young UV Sun"),
+                ("organic_abundance",        "MED",    "Low tholin — only ~0.5 Gyr of UV photolysis"),
+                ("surface_atm_interaction",  "MED",    "Cryovolcanic conduits elevate gas/surface flux"),
+                ("methane_cycle",            "LOW",    "Episodic outgassing — no stable rain cycle"),
+                ("topographic_complexity",   "LOW",    "Crater rims dominate topography"),
+                ("geomorphologic_diversity", "LOW",    "Terrain class diversity proxy"),
+            ],
+            "excluded": "liquid_hydrocarbon — no stable polar lakes yet\nsubsurface_ocean   — subsumed into cryovolcanic_flux",
+            "colour":
+                "BRIGHT (yellow):  fresh impact craters at mid-latitudes with melt halos\n"
+                "MED (orange):     cryovolcanic candidate sites (Lopes 2007)\n"
+                "DARK (blue):      polar regions, dune plains — no lakes, low organics",
+            "assumptions": [
+                "Epoch ≈ 3.5 Gya  (Late Heavy Bombardment peak; Gomes et al. 2005)",
+                "Impact flux ~30× present (Hartmann & Neukum 2001)",
+                "Uniform spatial warming — no resolved GCM for this epoch",
+                "Birch confirmed-lake polygons not applied (no polar lakes)",
+            ],
+        },
+        "Lake formation": {
+            "active": [
+                ("liquid_hydrocarbon",       "RAMP",   "Polar lake proxy ramping 10% → 100% of present"),
+                ("cryovolcanic_flux",        "HIGH",   "Near Tobie et al. (2006) ~500 Mya cryovolc. peak"),
+                ("organic_abundance",        "MED",    "Tholin stockpile building toward present level"),
+                ("methane_cycle",            "MED",    "Methane rain cycle becoming established"),
+                ("acetylene_energy",         "MED",    "C₂H₂ production ongoing"),
+                ("surface_atm_interaction",  "MED",    "Lake margins + cryovolcanic conduits"),
+                ("topographic_complexity",   "LOW",    "Topographic roughness proxy"),
+                ("geomorphologic_diversity", "LOW",    "Terrain class diversity"),
+                ("impact_melt_bonus",        "LOW",    "LHB residual ~0.005  (spatially uniform, negligible)"),
+            ],
+            "excluded": "subsurface_ocean — subsumed into cryovolcanic_flux",
+            "colour":
+                "BRIGHT (yellow):  north polar region brightening as Kraken/Ligeia fill\n"
+                "MED (orange):     cryovolcanic sites; equatorial organics building\n"
+                "DARK (blue):      mountain ranges, Xanadu (water-ice, low organics)",
+            "assumptions": [
+                "Epoch ≈ 1.0 Gya  (Birch et al. 2017 morphology evidence)",
+                "liquid_HC ramps linearly from −1.0 → −0.5 Gya",
+                "Cassini SAR geomorphology applied (same maps, different weights)",
+            ],
+        },
+        "Recent past": {
+            "active": [
+                ("liquid_hydrocarbon",       "HIGH",   "Birch Fl polygons: Cassini confirmed liquid (=1.0)"),
+                ("organic_abundance",        "HIGH",   "Lopes geomorphology scores; VIMS offset −0.135"),
+                ("methane_cycle",            "MED",    "CIRS temperature + latitude → rain/evap cycle"),
+                ("acetylene_energy",         "MED",    "Strobel (2010) H₂ depletion confirms C₂H₂ use"),
+                ("surface_atm_interaction",  "MED",    "Channel density + lake margin proximity"),
+                ("subsurface_ocean",         "LOW",    "SAR annuli around craters; prior=0.03 (Neish 2024)"),
+                ("topographic_complexity",   "LOW",    "GTIE T126 DEM roughness at 4490 m/px"),
+                ("geomorphologic_diversity", "LOW",    "Lopes 2019 terrain diversity (6 classes)"),
+            ],
+            "excluded": "impact_melt_bonus  — decayed to ~0 by -2.5 Gya; effectively zero\ncryovolcanic_flux  — not used at present epoch",
+            "colour":
+                "BRIGHT (yellow):  north polar seas (Kraken, Ligeia, Punga) — confirmed liquid\n"
+                "MED-BRIGHT:       equatorial dune belts — high organic abundance\n"
+                "MED (pink):       lake-adjacent channels — surface-atm interaction\n"
+                "DARK (blue):      mountain ranges, Xanadu — water-ice, low organics",
+            "assumptions": [
+                "Cassini epoch = 2004-2017 CE  (CIRS T model year 2011.0)",
+                "Organic abundance: geo_only mode — Lopes (2019) terrain classes globally",
+                "El/Em Birch confirmed-empty basins → liquid_HC = 0.0",
+                "Subsurface ocean prior = 0.03  (Neish et al. 2024 organic flux ~1 elephant/yr)",
+                "Label balance: 50/50 positive/negative (pure median split)",
+            ],
+        },
+        "Near future": {
+            "active": [
+                ("liquid_hydrocarbon",       "HIGH",   "Same Cassini map — luminosity change <2.5% in 250 Myr"),
+                ("organic_abundance",        "HIGH",   "Unchanged — terrain stable at this timescale"),
+                ("methane_cycle",            "MED",    "Minor depletion (Lorenz et al. 1997)"),
+                ("acetylene_energy",         "MED",    "Slightly elevated under warmer Sun"),
+                ("surface_atm_interaction",  "MED",    "Unchanged from present"),
+                ("subsurface_ocean",         "LOW",    "Prior raised 0.03→0.08; solar warming ↑ exchange"),
+                ("topographic_complexity",   "LOW",    "Unchanged"),
+                ("geomorphologic_diversity", "LOW",    "Unchanged"),
+            ],
+            "excluded": "impact_melt_bonus  — decayed to zero; no LHB contribution\ncryovolcanic_flux  — not applicable",
+            "colour":
+                "Nearly identical to Cassini era — only subsurface_ocean weight slightly higher\n"
+                "Polar lake shores remain most habitable; Dragonfly-era data still applicable",
+            "assumptions": [
+                "D2 window centre = +250 Myr  (range 100–400 Myr; Lorenz, Lunine & McKay 1997)",
+                "Solar luminosity +2.5% at +250 Myr",
+                "Uniform spatial warming — no resolved GCM for this epoch",
+                "Cassini feature maps unchanged (no spatial data at +250 Myr resolution)",
+            ],
+        },
+        "Solar warming": {
+            "active": [
+                ("liquid_hydrocarbon",       "DECL",   "Lake surfaces evaporating as T exceeds CH₄ b.p."),
+                ("organic_abundance",        "HIGH",   "Tholin stockpile at maximum — billions of yrs UV"),
+                ("acetylene_energy",         "MED",    "Chemistry shifts thermal → photochemical regime"),
+                ("methane_cycle",            "DECL",   "Weakening as surface liquid depletes"),
+                ("surface_atm_interaction",  "MED",    "Shrinking lake margins"),
+                ("subsurface_ocean",         "LOW",    "Present but decreasing surface connection"),
+                ("topographic_complexity",   "LOW",    "Unchanged"),
+                ("geomorphologic_diversity", "LOW",    "Desiccated lake basins add new class"),
+            ],
+            "excluded": "impact_melt_bonus  — decayed to zero; no LHB contribution\ncryovolcanic_flux  — not applicable",
+            "colour":
+                "FADING BRIGHT at poles:  lakes evaporating — liquid_HC scale → 0\n"
+                "BRIGHT at low latitudes: organic abundance dominates as lakes disappear\n"
+                "Overall habitability declining as methane cycle collapses",
+            "assumptions": [
+                "Solar ramp: +4.0 to +5.0 Gya; linear lake evaporation model",
+                "liquid_HC scale declines linearly 1.0 → 0.0 over 1 Gyr",
+                "Uniform spatial warming assumed (no resolved GCM for this epoch)",
+            ],
+        },
+        "Pre red-giant": {
+            "active": [
+                ("liquid_hydrocarbon",       "DECL",   "Lake surfaces evaporating as T exceeds CH₄ b.p."),
+                ("organic_abundance",        "HIGH",   "Tholin stockpile at maximum — billions of yrs UV"),
+                ("acetylene_energy",         "MED",    "Chemistry shifts thermal → photochemical regime"),
+                ("methane_cycle",            "DECL",   "Weakening as surface liquid depletes"),
+                ("surface_atm_interaction",  "MED",    "Shrinking lake margins"),
+                ("subsurface_ocean",         "LOW",    "Present but decreasing surface connection"),
+                ("topographic_complexity",   "LOW",    "Unchanged"),
+                ("geomorphologic_diversity", "LOW",    "Desiccated lake basins add new class"),
+            ],
+            "excluded": "impact_melt_bonus  — decayed to zero; no LHB contribution\ncryovolcanic_flux  — not applicable",
+            "colour":
+                "FADING BRIGHT at poles:  lakes evaporating — liquid_HC scale → 0\n"
+                "BRIGHT at low latitudes: organic abundance dominates as lakes disappear",
+            "assumptions": [
+                "Solar ramp: +4.0 to +5.0 Gya; linear lake evaporation model",
+                "Uniform spatial warming assumed",
+            ],
+        },
+        "Red giant": {
+            "active": [
+                ("water_ammonia_solvent",    "HIGH",   "Global water-ammonia ocean: 176 K eutectic mix"),
+                ("dissolved_energy",         "HIGH",   "Tidal + radiogenic heating in ocean"),
+                ("organic_stockpile",        "HIGH",   "Billions of yrs of tholin dissolves into ocean"),
+                ("water_ammonia_cycle",      "MED",    "Evap/precip cycle in water-NH₃ atmosphere"),
+                ("global_ocean_habitability","MED",    "Ocean depth/salinity/redox proxy (DEM-derived)"),
+                ("surface_atm_interaction",  "LOW",    "Residual — atmosphere now largely water vapour"),
+                ("topographic_complexity",   "LOW",    "Sub-ocean topography drives circulation"),
+                ("geomorphologic_diversity", "LOW",    "Surface largely submerged"),
+            ],
+            "excluded":
+                "liquid_hydrocarbon  — methane lakes long evaporated\n"
+                "methane_cycle       — methane cycle ended\n"
+                "acetylene_energy    — photochemistry regime changed\n"
+                "subsurface_ocean    — now a SURFACE ocean → global_ocean_habitability",
+            "colour":
+                "BRIGHT globally:   entire surface habitable under water-ammonia ocean\n"
+                "LOCAL variation:   sub-ocean ridges/basins from GTIE DEM topography\n"
+                "Highest scores:    deep ocean basins (Kraken, Ligeia depressions)",
+            "assumptions": [
+                "Future epoch ≈ 5.1–6.0 Gya  (peak red-giant; Lorenz et al. 1997)",
+                "Water-ammonia eutectic at 176 K  (Grasset & Pargamin 2005)",
+                "Global ocean when T_surface ≥ 176 K; depth from GTIE DEM",
+                "Uniform ocean composition assumed",
+            ],
+        },
+        "Ocean refreezing": {
+            "active": [
+                ("water_ammonia_solvent",    "DECL",   "Ocean refreezing — T dropped below 176 K eutectic"),
+                ("organic_stockpile",        "HIGH",   "Full 16 Gyr tholin inventory still present"),
+                ("global_ocean_habitability","DECL",   "Habitability declining as ocean solidifies"),
+                ("dissolved_energy",         "LOW",    "Heating continues briefly but surface cooling"),
+                ("water_ammonia_cycle",      "LOW",    "Atmosphere thinning as T drops"),
+                ("surface_atm_interaction",  "LOW",    "Residual"),
+                ("topographic_complexity",   "LOW",    "Sub-ocean topography"),
+                ("geomorphologic_diversity", "LOW",    "Surface emerging as ocean solidifies"),
+            ],
+            "excluded":
+                "liquid_hydrocarbon  — methane lakes evaporated long ago\n"
+                "methane_cycle       — ended\n"
+                "acetylene_energy    — ended\n"
+                "subsurface_ocean    — was surface ocean; now refreezing",
+            "colour":
+                "FADING globally:  T < 176 K, ocean refreezes in < 1 Myr\n"
+                "Still elevated:   16 Gyr organic stockpile in solution briefly\n"
+                "Rapid decline:    habitability window closes ~400 Myr after peak",
+            "assumptions": [
+                "Epoch ≥ 6.0 Gya — Sun exits red-giant phase (Lorenz et al. 1997)",
+                "L collapses 600× → 0.8× present; T_surface drops to ~89 K",
+                "Ocean refreezing timescale < 1 Myr (Lorenz 1997)",
+                "Total habitable window: ~400 Myr  (+5.1 to +6.0 Gya)",
+            ],
+        },
+    }
+
+    # Map phase labels (first line of _phase_label output) to panel keys.
+    # This is explicit rather than fragile first-word matching.
+    # Use full phase string (\n → space) for unambiguous matching.
+    _PHASE_TO_PANEL: Dict[str, str] = {
+        "Late Heavy Bombardment": "LHB peak",
+        "Early Titan":            "LHB peak",
+        "Lake formation":         "Lake formation",
+        "Recent past":            "Recent past",
+        "Cassini epoch":          "Recent past",
+        "Near future":            "Near future",
+        "Pre red-giant":          "Solar warming",
+        "Red-giant ramp up":      "Red giant",
+        "Red-giant water ocean":  "Red giant",
+        "Red-giant ramp down":    "Ocean refreezing",
+    }
+    _phase_key = _phase.replace("\n", " ")
+    _panel_key = _PHASE_TO_PANEL.get(_phase_key, "Recent past")
+    _pd = _PANEL[_panel_key]
+
+    # -- Left column: Active features + excluded ---------------------------------
+    _feat_lines = ["ACTIVE FEATURES  (weight level: HIGH / MED / LOW / RAMP / DECL)"]
+    _feat_lines.append("─" * 70)
+    for fname, level, desc in _pd["active"]:
+        _lvl_col = {"HIGH": "▶▶▶", "MED": "▶▶○", "LOW": "▶○○",
+                    "RAMP": "↑↑↑", "DECL": "↓↓↓"}.get(level, "○○○")
+        _feat_lines.append(f"  {_lvl_col} {fname:<28}  {desc}")
+    _feat_lines.append("")
+    _feat_lines.append("EXCLUDED / NOT ACTIVE:")
+    _feat_lines.append("─" * 70)
+    for ln in _pd["excluded"].split("\n"):
+        _feat_lines.append(f"  ✗  {ln}")
+
+    fig.text(
+        0.080, 0.448, "\n".join(_feat_lines),
+        color="#d0d8f0", fontsize=7.8, fontfamily="monospace",
+        va="top", ha="left", linespacing=1.45, zorder=20,
+        bbox=dict(boxstyle="round,pad=0.4", fc="#0a0a1a", ec="#2a3a6a", lw=1.2),
+        transform=fig.transFigure,
+    )
+
+    # -- Centre column: Colour trends --------------------------------------------
+    _colour_lines = ["COLOUR SCALE  ( 0.10 ← DARK          BRIGHT → 0.65 )"]
+    _colour_lines.append("─" * 42)
+    for ln in _pd["colour"].split("\n"):
+        _colour_lines.append(f"  {ln}")
+    _colour_lines.append("")
+    _colour_lines.append(f"DOMINANT FEATURE THIS EPOCH:")
+    _colour_lines.append("─" * 42)
+    _top_feat = _pd["active"][0]
+    _colour_lines.append(f"  {_top_feat[0]}")
+    _colour_lines.append(f"  {_top_feat[2]}")
+
+    fig.text(
+        0.535, 0.448, "\n".join(_colour_lines),
+        color="#f0d8a0", fontsize=7.8, fontfamily="monospace",
+        va="top", ha="center", linespacing=1.45, zorder=20,
+        bbox=dict(boxstyle="round,pad=0.4", fc="#0a0a0a", ec="#6a4a00", lw=1.2),
+        transform=fig.transFigure,
+    )
+
+    # -- Right column: Assumptions -----------------------------------------------
+    _assump_lines = ["KEY ASSUMPTIONS  (this epoch)"]
+    _assump_lines.append("─" * 48)
+    for i, a in enumerate(_pd["assumptions"], 1):
+        _assump_lines.append(f"  {i}. {a}")
+    _assump_lines.append("")
+    _assump_lines.append("GLOBAL ASSUMPTIONS (all epochs):")
+    _assump_lines.append("─" * 48)
+    _assump_lines.append("  • Resolution: 4490 m/px equirectangular")
+    _assump_lines.append("  • Grid: 1802 × 3603 px (Titan R = 2575 km)")
+    _assump_lines.append("  • Organic abundance: Lopes (2019) geo_only mode")
+    _assump_lines.append("  • Label balance: 50/50 (pure median split)")
+    _assump_lines.append("  • Backend: sklearn RandomForestClassifier")
+    _assump_lines.append("  • Temporal scaling: modelled (present TIFs scaled)")
+
+    fig.text(
+        0.990, 0.448, "\n".join(_assump_lines),
+        color="#c0f0c0", fontsize=7.8, fontfamily="monospace",
+        va="top", ha="right", linespacing=1.45, zorder=20,
+        bbox=dict(boxstyle="round,pad=0.4", fc="#000a00", ec="#1a5a1a", lw=1.2),
+        transform=fig.transFigure,
+    )
 
     return fig
 
@@ -1371,6 +1795,565 @@ def render_poster(
     print(f"  Poster saved -> {out_path}")
 
 
+# --- Full-inference mode helpers ---------------------------------------------
+
+def load_anchor_posteriors(
+    pipeline_outputs_dir: Path,
+) -> Dict[str, np.ndarray]:
+    """
+    Load the five run_pipeline posterior_mean.npy arrays for full_inference mode.
+
+    Expected directory structure (output of run_pipeline.py --all-temporal-modes)::
+
+        <pipeline_outputs_dir>/
+          past/inference/posterior_mean.npy
+          lake_formation/inference/posterior_mean.npy
+          present/inference/posterior_mean.npy
+          near_future/inference/posterior_mean.npy
+          future/inference/posterior_mean.npy
+
+    Parameters
+    ----------
+    pipeline_outputs_dir:
+        Root outputs directory (default ``outputs/``).
+
+    Returns
+    -------
+    Dict mapping anchor name -> float32 posterior array, shape GRID_SHAPE.
+    Missing anchors are reported; at least ``present`` must be present.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the ``present`` anchor cannot be found (required for fallback).
+    """
+    anchors: Dict[str, np.ndarray] = {}
+    anchor_names = ["past", "lake_formation", "present", "near_future", "future"]
+    for name in anchor_names:
+        p = pipeline_outputs_dir / name / "inference" / "posterior_mean.npy"
+        if p.exists():
+            arr = np.load(p).astype(np.float32)
+            anchors[name] = arr
+            print(f"  Loaded anchor '{name}': {p}")
+        else:
+            print(f"  WARNING: anchor '{name}' not found at {p}")
+    if "present" not in anchors:
+        raise FileNotFoundError(
+            f"Required anchor 'present' not found in {pipeline_outputs_dir}. "
+            "Run: python run_pipeline.py --temporal-mode present"
+        )
+    return anchors
+
+
+def build_pchip_interpolator(
+    anchor_epochs: List[float],
+    anchor_posteriors: List[np.ndarray],
+) -> "scipy.interpolate.PchipInterpolator":
+    """
+    Build a per-pixel PCHIP (monotone cubic) interpolator over anchor posteriors.
+
+    Interpolation choice rationale
+    --------------------------------
+    PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) is used rather than
+    linear interpolation because:
+
+    1. Lake formation onset (PAST -> LAKE_FORMATION, -3.5 -> -1.0 Gya) follows
+       a sigmoidal growth pattern as cryovolcanic outgassing builds the methane
+       reservoir.  Linear interpolation underestimates mid-interval habitability.
+
+    2. PCHIP preserves monotonicity between anchor points -- it will not produce
+       spurious peaks or dips within an interval where both endpoints have the
+       same habitability direction.  This prevents the interpolation from
+       inventing false habitability maxima between anchors.
+
+    3. PCHIP does NOT extrapolate beyond the anchor range (clipped to anchor
+       endpoints), unlike cubic splines which can oscillate wildly.
+
+    The key non-monotonic trajectory (near_future -> red_giant, +0.25 -> +6.0
+    Gya) is EXCLUDED from interpolation deliberately.  That gap involves methane
+    evaporation (habitability falls), a dry period, and eutectic ocean formation
+    (habitability rises sharply) -- no interpolation scheme can represent this
+    without domain knowledge.  Frames in that gap use the ``modelled`` scalar
+    approach instead.  See generate_temporal_maps.py documentation.
+
+    NaN handling
+    ------------
+    Real run_pipeline posterior maps contain NaN pixels where no Cassini data
+    were available (e.g. south-polar topography gap, GTIE truncation).
+    PchipInterpolator raises ValueError on NaN inputs.  Strategy:
+
+    1. Replace NaN in each anchor with 0.5 (prior midpoint) before stacking.
+       This is a neutral fill that does not bias the interpolated result
+       towards habitability or non-habitability.
+    2. Record which pixels were NaN in *every* anchor (``all_nan_mask``).
+       Only pixels that are NaN in ALL anchors are considered "no data" and
+       will be restored as NaN in interpolated frames.
+    3. Pixels that are NaN in *some* but not all anchors are gap-filled at
+       those missing anchors with 0.5.  The interpolation then produces a
+       smooth estimate; a per-pixel WARNING is logged once.
+
+    Parameters
+    ----------
+    anchor_epochs:
+        Sorted list of epoch values in Gya (e.g. [-3.5, -1.0, 0.0, 0.25]).
+    anchor_posteriors:
+        Corresponding posterior arrays, each shape GRID_SHAPE.
+
+    Returns
+    -------
+    PchipInterpolator
+        Callable interp(t) -> float64 flat array.  A custom attribute
+        ``nan_mask`` (shape GRID_SHAPE, bool) is attached to the returned
+        interpolator; pixels where the mask is True will be set to NaN by
+        :func:`interpolate_posterior_at_epoch`.
+        Valid for t in [anchor_epochs[0], anchor_epochs[-1]].
+    """
+    from scipy.interpolate import PchipInterpolator
+
+    n_anchors = len(anchor_epochs)
+
+    # -- NaN audit and gap-fill -----------------------------------------------
+    nan_masks: List[np.ndarray] = []
+    filled:    List[np.ndarray] = []
+    for i, arr in enumerate(anchor_posteriors):
+        flat = arr.ravel().astype(np.float64)
+        mask = ~np.isfinite(flat)
+        if mask.any():
+            n_nan = int(mask.sum())
+            pct   = 100.0 * n_nan / flat.size
+            print(
+                f"  WARNING: PCHIP anchor[{i}] (epoch={anchor_epochs[i]:+.2f} Gya) "
+                f"has {n_nan} NaN pixels ({pct:.1f}%). "
+                f"Gap-filling with 0.5 (prior midpoint). "
+                f"Pixels NaN in ALL anchors will be restored as NaN."
+            )
+            flat = flat.copy()
+            flat[mask] = 0.5   # neutral fill; will be re-masked later
+        nan_masks.append(mask)
+        filled.append(flat)
+
+    # Pixels NaN in EVERY anchor have no information at all.
+    # Pixels NaN in SOME anchors get smooth gap-fill from neighbours.
+    all_nan_mask: np.ndarray = np.stack(nan_masks, axis=0).all(axis=0)  # (nrows*ncols,)
+
+    # Infer grid shape from the input posteriors (allows non-GRID_SHAPE test arrays)
+    if anchor_posteriors[0].ndim == 2:
+        inferred_shape: Tuple[int, int] = anchor_posteriors[0].shape
+    else:
+        inferred_shape = GRID_SHAPE
+
+    stacked: np.ndarray = np.stack(filled, axis=0)   # (n_anchors, nrows*ncols)
+
+    interp = PchipInterpolator(
+        np.array(anchor_epochs, dtype=np.float64),
+        stacked,
+        axis=0,
+        extrapolate=False,  # clip to [anchor_epochs[0], anchor_epochs[-1]]
+    )
+
+    # Attach the NaN mask so interpolate_posterior_at_epoch can restore it.
+    interp.nan_mask = all_nan_mask.reshape(inferred_shape)  # type: ignore[attr-defined]
+
+    return interp
+
+
+def interpolate_posterior_at_epoch(
+    interp: "scipy.interpolate.PchipInterpolator",
+    t: float,
+    anchor_lo: float,
+    anchor_hi: float,
+    output_shape: Optional[Tuple[int, int]] = None,
+) -> np.ndarray:
+    """
+    Evaluate the PCHIP interpolator at epoch *t* and return a clamped array.
+
+    Parameters
+    ----------
+    interp:
+        PchipInterpolator returned by :func:`build_pchip_interpolator`.
+    t:
+        Target epoch in Gya.
+    anchor_lo, anchor_hi:
+        The range of valid epochs for this interpolator.
+    output_shape:
+        (nrows, ncols) for the output array.  Defaults to ``GRID_SHAPE``.
+        Pass an explicit shape when using non-canonical arrays (e.g. in tests).
+
+    Returns
+    -------
+    np.ndarray
+        float32 array, shape *output_shape*, clamped to [0, 1].  NaN where
+        inputs were NaN.
+    """
+    shape: Tuple[int, int] = output_shape if output_shape is not None else GRID_SHAPE
+    t_clipped: float = float(np.clip(t, anchor_lo, anchor_hi))
+    result: np.ndarray = interp(t_clipped).reshape(shape).astype(np.float32)
+    result = np.clip(result, 0.0, 1.0)
+
+    # Restore NaN for pixels that had no data in ANY anchor.
+    # The NaN mask is attached by build_pchip_interpolator.
+    nan_mask: Optional[np.ndarray] = getattr(interp, "nan_mask", None)
+    if nan_mask is not None:
+        mask = nan_mask if nan_mask.shape == shape else None
+        if mask is None and nan_mask.size == result.size:
+            # output_shape differs from GRID_SHAPE (e.g. unit tests with small arrays)
+            mask = nan_mask.ravel()[:result.size].reshape(shape)
+        if mask is not None:
+            result = np.where(mask, np.nan, result)
+
+    return result
+
+
+def _narrative_for_epoch(t: float) -> str:
+    """
+    Return the narrative caption string for the given epoch.
+
+    The caption is ALWAYS shown in the video (not gated by --pause).
+    It shows the most recent TRANSITION_EVENT that has been reached or passed.
+    When t is before the first event, the first event caption is used.
+    When t is after the last event, the last event caption is used.
+
+    The ``--pause`` flag controls HOLD DURATION only, not caption visibility.
+    """
+    if not TRANSITION_EVENTS:
+        return ""
+    # Find the most-recently-passed event: the last one whose epoch <= t.
+    applicable = [(et, narr) for et, _, narr in TRANSITION_EVENTS if et <= t]
+    if applicable:
+        # Return the narrative of the latest passed event
+        return max(applicable, key=lambda x: x[0])[1]
+    # Before the first event: show the first event caption
+    return TRANSITION_EVENTS[0][2]
+
+
+
+def _build_pause_timing(
+    epochs: np.ndarray,
+    args: argparse.Namespace,
+) -> Tuple[Dict[int, Tuple[float, str]], float]:
+    """Build pause_idx dict and NORMAL_HOLD from args.pause flag."""
+    if args.pause:
+        print(f"  Pause events: {len(TRANSITION_EVENTS)}, target: ~60 s")
+        print("  (--pause controls hold duration at key events; captions are always visible)")
+        event_best: Dict[float, Tuple] = {}
+        for i, t in enumerate(epochs):
+            for et, hold, narr in TRANSITION_EVENTS:
+                if abs(t - et) < 0.06:
+                    if et not in event_best or abs(t - et) < abs(
+                        epochs[next(j for j, tt in enumerate(epochs)
+                                    if abs(tt - event_best[et][0]) < 1e-6)] - et
+                    ):
+                        event_best[et] = (t, narr, hold, i)
+        pause_idx: Dict[int, Tuple[float, str]] = {
+            idx: (hold, narr) for t, narr, hold, idx in event_best.values()
+        }
+        pause_total = sum(h for h, _ in pause_idx.values())
+        normal_hold = (60.0 - pause_total) / max(len(epochs) - len(pause_idx), 1)
+    else:
+        print("  Pausing disabled (use --pause to enable key-event captions)")
+        pause_idx   = {}
+        normal_hold = 60.0 / len(epochs)
+    return pause_idx, normal_hold
+
+
+def _encode_animation(
+    anim_dir: Path,
+    frames_dir: Path,
+    frame_paths: List[Path],
+    concat_lines: List[str],
+    suffix: str = "",
+) -> None:
+    """Write concat file and encode MP4 + GIF.  ``suffix`` is appended to filenames."""
+    import subprocess
+    concat_path = anim_dir / f"concat{suffix}.txt"
+    concat_path.write_text("\n".join(concat_lines) + "\n")
+    with open(concat_path, "a") as f:
+        f.write(f"file '{frame_paths[-1].resolve()}'\n")
+        f.write("duration 0.04\n")
+
+    mp4_path = anim_dir / f"titan_habitability_animation{suffix}.mp4"
+    r = subprocess.run([
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "-i", str(concat_path),
+        "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+        "-c:v", "libx264", "-preset", "slow", "-crf", "17",
+        "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+        str(mp4_path),
+    ], capture_output=True, text=True)
+    if r.returncode == 0:
+        print(f"  MP4 -> {mp4_path}  ({mp4_path.stat().st_size/1e6:.1f} MB)")
+    else:
+        print(f"  ffmpeg MP4 failed:\n{r.stderr[-300:]}")
+
+    gif_path = anim_dir / f"titan_habitability_animation{suffix}.gif"
+    r2 = subprocess.run([
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "-i", str(concat_path),
+        "-vf", ("scale=900:-1:flags=lanczos,"
+                "split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]"
+                "paletteuse=dither=sierra2_4a"),
+        "-loop", "0", str(gif_path),
+    ], capture_output=True, text=True)
+    if r2.returncode == 0:
+        print(f"  GIF -> {gif_path}  ({gif_path.stat().st_size/1e6:.1f} MB)")
+    else:
+        print("  GIF encoding failed -- MP4 is the primary output")
+
+
+def _run_animation_modelled(
+    args:             argparse.Namespace,
+    epochs:           np.ndarray,
+    present:          Dict[str, np.ndarray],
+    using_synthetic:  bool,
+    anim_dir:         Path,
+    poster_dir:       Path,
+    epoch_map_cache:  Dict[float, np.ndarray],
+) -> None:
+    """
+    Render the MODELLED animation.
+
+    All frames are produced by scalar-scaling the present-epoch Cassini feature
+    TIFs via ``scale_features_to_epoch`` and running a uniform-prior Bayesian
+    update.  This is the original behaviour of generate_temporal_maps.py.
+
+    Outputs
+    -------
+    outputs/temporal_maps/animation/titan_habitability_animation.mp4
+    outputs/temporal_maps/animation/titan_habitability_animation.gif
+    """
+    import matplotlib.pyplot as plt
+
+    print(f"Rendering MODELLED animation ({len(epochs)} frames)...")
+    if using_synthetic:
+        print("  *** WARNING: SYNTHETIC DATA IN USE ***  see log above.")
+
+    frames_dir = anim_dir / "frames"
+    frames_dir.mkdir(exist_ok=True)
+
+    pause_idx, NORMAL_HOLD = _build_pause_timing(epochs, args)
+
+    concat_lines: List[str] = []
+    frame_paths:  List[Path] = []
+    current_narrative: str = ""
+
+    for i, t in enumerate(epochs):
+        event_data = pause_idx.get(i)
+        hold: float = event_data[0] if event_data else NORMAL_HOLD
+        if event_data:
+            current_narrative = event_data[1]
+
+        scaled    = scale_features_to_epoch(present, t)
+        posterior = bayesian_posterior_map(scaled)
+
+        # Caption is ALWAYS shown; --pause only controls hold duration.
+        # Use the event-based current_narrative if available (it is the exact
+        # text for that transition point), otherwise fall back to the epoch-
+        # appropriate caption from _narrative_for_epoch.
+        frame_narrative = current_narrative if current_narrative else _narrative_for_epoch(t)
+
+        fig = render_frame(posterior, t, i, len(epochs),
+                           dpi=args.dpi, narrative=frame_narrative)
+
+        fpath = frames_dir / f"frame_{i:03d}.png"
+        fig.savefig(fpath, dpi=args.dpi, bbox_inches=None,
+                    facecolor=fig.get_facecolor())
+        plt.close(fig)
+        frame_paths.append(fpath)
+
+        concat_lines.append(f"file '{fpath.resolve()}'")
+        concat_lines.append(f"duration {hold:.4f}")
+
+        marker = " * PAUSE" if event_data else ""
+        if (i + 1) % 8 == 0 or i == len(epochs) - 1 or event_data:
+            print(f"  [{i+1:2d}/{len(epochs)}]  t={t:+6.3f} Gya  "
+                  f"hold={hold:.2f}s{marker}")
+
+    _encode_animation(anim_dir, frames_dir, frame_paths, concat_lines)
+
+
+def _run_animation_full_inference(
+    args:            argparse.Namespace,
+    epochs:          np.ndarray,
+    present:         Dict[str, np.ndarray],
+    using_synthetic: bool,
+    anim_dir:        Path,
+    poster_dir:      Path,
+) -> None:
+    """
+    Render the FULL_INFERENCE animation.
+
+    Scientific basis and declared assumptions
+    -----------------------------------------
+    This mode uses run_pipeline.py anchor posteriors wherever they exist,
+    and PCHIP interpolation between anchors for intermediate epochs.
+
+    ANCHOR EPOCHS AND SOURCES:
+      past          (-3.5 Gya): run_pipeline --temporal-mode past
+                                9-feature Bayesian inference (LHB era)
+      lake_formation(-1.0 Gya): run_pipeline --temporal-mode lake_formation
+                                9-feature inference (cryovolcanic onset)
+      present       ( 0.0 Gya): run_pipeline --temporal-mode present
+                                8-feature inference (Cassini calibration)
+      near_future   (+0.25 Gya): run_pipeline --temporal-mode near_future
+                                8-feature inference (D2 solar warming window)
+      future        (+6.0 Gya): run_pipeline --temporal-mode future
+                                8 transformed-feature inference (red giant)
+
+    INTERPOLATION BETWEEN ANCHORS:
+      Frames between adjacent anchors use PCHIP (monotone cubic) interpolation
+      of the posterior maps.  PCHIP preserves monotonicity within each interval
+      and does not extrapolate beyond the anchor range.
+
+      Intervals covered by PCHIP:
+        past -> lake_formation: -3.5 to -1.0 Gya  (sigmoidal lake growth)
+        lake_formation -> present: -1.0 to 0 Gya  (lake establishment)
+        present -> near_future:  0 to +0.25 Gya   (very small change)
+
+      ** EXCLUDED from interpolation (non-monotonic gap): **
+        near_future -> future: +0.25 to +6.0 Gya
+        This interval involves: lake evaporation (+4 Gya), dry period (+5 Gya),
+        eutectic crossing (+5.1 Gya), ocean peak (+5.5 Gya), ocean cooling (+6 Gya).
+        No interpolation scheme can represent this without domain knowledge.
+        Frames in this gap use the MODELLED scalar approach.
+
+      DECLARED ASSUMPTION: PCHIP interpolation is applied per-pixel to the
+      posterior arrays, not to the raw feature values.  The interpolated
+      posterior is not equivalent to running Bayesian inference at each
+      intermediate epoch with epoch-specific feature sets.  Frames produced
+      by interpolation are labelled [INTERPOLATED] in GeoTIFF metadata.
+
+    OUTPUTS:
+      outputs/temporal_maps/animation_full_inference/
+        titan_habitability_animation_full_inference.mp4
+        titan_habitability_animation_full_inference.gif
+
+    References
+    ----------
+    Tobie et al. (2006) Nature 440:61  -- lake_formation anchor basis
+    Lorenz, Lunine & McKay (1997) GRL 24:2905  -- near_future and future
+    Neish & Lorenz (2012) PSS 60:26  -- surface age context
+    """
+    import matplotlib.pyplot as plt
+
+    print(f"\nRendering FULL_INFERENCE animation ({len(epochs)} frames)...")
+    print("  Loading run_pipeline anchor posteriors...")
+
+    pipeline_out = Path(getattr(args, "pipeline_outputs", "outputs"))
+    try:
+        anchors = load_anchor_posteriors(pipeline_out)
+    except FileNotFoundError as exc:
+        print(f"\n  ERROR: {exc}")
+        print("  Run: python run_pipeline.py --all-temporal-modes  first.")
+        print("  Falling back to MODELLED mode for this run.\n")
+        _run_animation_modelled(args, epochs, present, using_synthetic,
+                                anim_dir.parent / "animation", anim_dir.parent,
+                                {})
+        return
+
+    # -- Anchor epoch -> posterior map -----------------------------------------
+    # Anchor epochs (Gya from present; negative = past)
+    # We only PCHIP-interpolate the well-constrained intervals.
+    PCHIP_ANCHOR_EPOCHS: List[float] = []
+    PCHIP_ANCHOR_POSTS:  List[np.ndarray] = []
+
+    anchor_epoch_map: Dict[str, float] = {
+        "past":           -3.5,
+        "lake_formation": -1.0,
+        "present":         0.0,
+        "near_future":    +0.250,
+    }
+    for name in ["past", "lake_formation", "present", "near_future"]:
+        if name in anchors:
+            PCHIP_ANCHOR_EPOCHS.append(anchor_epoch_map[name])
+            PCHIP_ANCHOR_POSTS.append(anchors[name])
+        else:
+            print(f"  WARNING: anchor '{name}' missing; interpolation may be coarser.")
+
+    # Need at least 2 points to interpolate
+    can_interpolate: bool = len(PCHIP_ANCHOR_EPOCHS) >= 2
+
+    if can_interpolate:
+        print(f"  Building PCHIP interpolator over "
+              f"{PCHIP_ANCHOR_EPOCHS[0]:+.2f} -> "
+              f"{PCHIP_ANCHOR_EPOCHS[-1]:+.2f} Gya "
+              f"({len(PCHIP_ANCHOR_EPOCHS)} anchors)...")
+        pchip = build_pchip_interpolator(PCHIP_ANCHOR_EPOCHS, PCHIP_ANCHOR_POSTS)
+        t_interp_lo = PCHIP_ANCHOR_EPOCHS[0]
+        t_interp_hi = PCHIP_ANCHOR_EPOCHS[-1]   # +0.25 Gya
+    else:
+        pchip = None
+        t_interp_lo = t_interp_hi = 0.0
+
+    # The near_future -> future gap uses modelled scalars
+    # The future anchor (+6 Gya) is used for frames near +6 Gya
+    future_post: Optional[np.ndarray] = anchors.get("future")
+    T_FUTURE_ANCHOR: float = 6.0   # Gya; frames within ±0.1 Gya use future anchor
+
+    fi_anim_dir = anim_dir.parent / "animation_full_inference"
+    frames_dir  = fi_anim_dir / "frames"
+    fi_anim_dir.mkdir(parents=True, exist_ok=True)
+    frames_dir.mkdir(exist_ok=True)
+
+    pause_idx, NORMAL_HOLD = _build_pause_timing(epochs, args)
+
+    concat_lines: List[str] = []
+    frame_paths:  List[Path] = []
+    current_narrative: str = ""
+
+    for i, t in enumerate(epochs):
+        event_data = pause_idx.get(i)
+        hold: float = event_data[0] if event_data else NORMAL_HOLD
+        if event_data:
+            current_narrative = event_data[1]
+
+        # -- Determine posterior source for this epoch -------------------------
+        source: str
+        if can_interpolate and t_interp_lo <= t <= t_interp_hi:
+            # PCHIP interpolation between past, lake_formation, present, near_future
+            posterior = interpolate_posterior_at_epoch(
+                pchip, t, t_interp_lo, t_interp_hi)
+            source = "INTERPOLATED_PCHIP"
+        elif future_post is not None and abs(t - T_FUTURE_ANCHOR) < 0.1:
+            # Exact future anchor ± 100 Myr
+            posterior = future_post
+            source = "ANCHOR_FUTURE"
+        else:
+            # Modelled scalars for the non-monotonic +0.25 -> +6 Gya gap
+            # (and any frames beyond the anchor ranges)
+            scaled    = scale_features_to_epoch(present, t)
+            posterior = bayesian_posterior_map(scaled)
+            source    = "MODELLED_SCALAR"
+
+        # Snap to exact anchor posteriors at anchor epochs (override interpolation)
+        for aname, aepoch in anchor_epoch_map.items():
+            if aname in anchors and abs(t - aepoch) < 1e-4:
+                posterior = anchors[aname]
+                source    = f"ANCHOR_{aname.upper()}"
+                break
+
+        # Caption is ALWAYS shown; --pause only controls hold duration.
+        frame_narrative = current_narrative if current_narrative else _narrative_for_epoch(t)
+        fig = render_frame(posterior, t, i, len(epochs),
+                           dpi=args.dpi, narrative=frame_narrative)
+
+        fpath = frames_dir / f"frame_{i:03d}.png"
+        fig.savefig(fpath, dpi=args.dpi, bbox_inches=None,
+                    facecolor=fig.get_facecolor())
+        plt.close(fig)
+        frame_paths.append(fpath)
+
+        concat_lines.append(f"file '{fpath.resolve()}'")
+        concat_lines.append(f"duration {hold:.4f}")
+
+        marker = " * PAUSE" if event_data else ""
+        if (i + 1) % 8 == 0 or i == len(epochs) - 1 or event_data:
+            print(f"  [{i+1:2d}/{len(epochs)}]  t={t:+6.3f} Gya  "
+                  f"hold={hold:.2f}s  [{source}]{marker}")
+
+    _encode_animation(fi_anim_dir, frames_dir, frame_paths,
+                      concat_lines, suffix="_full_inference")
+
+
 # --- Main --------------------------------------------------------------------
 
 def main(args: argparse.Namespace) -> None:
@@ -1398,7 +2381,9 @@ def main(args: argparse.Namespace) -> None:
     for d in [out_dir, tif_dir, anim_dir, poster_dir]:
         d.mkdir(parents=True, exist_ok=True)
 
-    epochs = make_epoch_axis(n_limit=args.epochs if args.epochs > 0 else None)
+    # --n-frames is an alias for --epochs
+    _n_limit = args.n_frames or args.epochs or 0
+    epochs = make_epoch_axis(n_limit=_n_limit if _n_limit > 0 else None)
     print(f"\nTitan Temporal Habitability Maps")
     print(f"  Epochs:        {len(epochs)} points, {epochs[0]:+.2f} -> {epochs[-1]:+.2f} Gya")
     print(f"  Grid:          {GRID_SHAPE[0]} x {GRID_SHAPE[1]} = {GRID_SHAPE[0]*GRID_SHAPE[1]:,} pixels")
@@ -1409,7 +2394,12 @@ def main(args: argparse.Namespace) -> None:
     # Load present-epoch features once
     print("Loading present-epoch feature maps...")
     present = load_present_features(feat_dir)
-    print()
+    using_synthetic: bool = bool(present.pop("_synthetic", False))
+    if using_synthetic:
+        print("\n  NOTE: all habitability maps in this run are based on")
+        print("        SYNTHETIC (non-observational) feature data.\n")
+    else:
+        print("  Using REAL Cassini-derived feature maps.\n")
 
     has_rasterio = False
     try:
@@ -1448,12 +2438,32 @@ def main(args: argparse.Namespace) -> None:
                 arr      = posterior,
                 out_path = tif_path,
                 metadata = {
-                    "EPOCH_GYA":     f"{t:.4f}",
-                    "EPOCH_LABEL":   _epoch_label(t).replace("\n", " "),
-                    "PHASE":         phase,
-                    "SOLAR_L_RATIO": f"{solar_luminosity_ratio(t):.4f}",
-                    "SURFACE_TEMP_K":f"{T_s:.2f}",
-                    "CRS":           TITAN_CRS_PROJ4,
+                    "EPOCH_GYA":           f"{t:.4f}",
+                    "EPOCH_LABEL":         _epoch_label(t).replace("\n", " "),
+                    "PHASE":               phase,
+                    "SOLAR_L_RATIO":       f"{solar_luminosity_ratio(t):.4f}",
+                    "SURFACE_TEMP_K":      f"{T_s:.2f}",
+                    "CRS":                 TITAN_CRS_PROJ4,
+                    "FEATURE_DATA_SOURCE": "SYNTHETIC" if using_synthetic
+                                           else "REAL_CASSINI",
+                    # Declared data-provenance flags for downstream users.
+                    # These warn that some regions use modelled gap-fills.
+                    "ORGANIC_EAST_HEMISPHERE":
+                        "MODELLED_GEO_GAPFILL -- pixels east of ~180W use "
+                        "Lopes geomorphology scores, not VIMS observations. "
+                        "See organic_abundance docstring.",
+                    "TOPOGRAPHY_SOUTH_LIMIT":
+                        "GTIE_T126_TRUNCATED -- elevation NaN south of ~48-51S. "
+                        "Corlies 2017 4ppd gap-filler used if available. "
+                        "Ontario Lacus (72S) topography may be gap-filled.",
+                    "ACETYLENE_ENERGY_PROXY":
+                        "SAR_BACKSCATTER_INDIRECT -- no spatially resolved "
+                        "C2H2 map exists; SAR low-sigma0 used as organic "
+                        "substrate proxy. See feature docstring.",
+                    "SUBSURFACE_OCEAN_ANNULUS":
+                        "UNVALIDATED_MORPHOLOGY -- SAR bright-ring detector "
+                        "not validated against Hedgepeth crater catalog. "
+                        "Max boost capped at +0.30 above base prior.",
                 },
             )
         else:
@@ -1461,12 +2471,15 @@ def main(args: argparse.Namespace) -> None:
             import json
             np.save(tif_path.with_suffix(".npy"), posterior)
             json.dump({
-                "epoch_Gya": t, "phase": phase,
-                "solar_L_ratio": solar_luminosity_ratio(t),
-                "surface_temp_K": T_s,
-                "crs": TITAN_CRS_PROJ4,
-                "shape": list(GRID_SHAPE),
-                "dtype": "float32",
+                "epoch_Gya":          t,
+                "phase":              phase,
+                "solar_L_ratio":      solar_luminosity_ratio(t),
+                "surface_temp_K":     T_s,
+                "crs":                TITAN_CRS_PROJ4,
+                "shape":              list(GRID_SHAPE),
+                "dtype":              "float32",
+                "feature_data_source": "SYNTHETIC" if using_synthetic
+                                       else "REAL_CASSINI",
             }, open(tif_path.with_suffix(".json"), "w"), indent=2)
 
     print()
@@ -1482,116 +2495,14 @@ def main(args: argparse.Namespace) -> None:
 
     # -- Animation -------------------------------------------------------------
     if not args.no_animation:
-        print(f"Rendering animation ({len(epochs)} unique frames)...")
-        print(f"  Pause events: {len(TRANSITION_EVENTS)}, target: ~60 s")
+        inference_mode: str = getattr(args, "inference_mode", "modelled")
 
-        frames_dir = anim_dir / "frames"
-        frames_dir.mkdir(exist_ok=True)
-
-        # Build per-epoch narrative and hold-time tables
-        NORMAL_HOLD: float = (60.0 - sum(h for _, h, _ in TRANSITION_EVENTS)) / max(
-            len(epochs) - len(TRANSITION_EVENTS), 1
-        )
-
-        # Map each event to the single closest epoch -- avoids pausing multiple
-        # adjacent frames when the dense axis has two epochs near the same event.
-        event_best: Dict[float, Tuple[float, str]] = {}
-        for i, t in enumerate(epochs):
-            for et, hold, narr in TRANSITION_EVENTS:
-                if abs(t - et) < 0.06:
-                    if et not in event_best or abs(t - et) < abs(
-                        epochs[next(j for j,tt in enumerate(epochs) if abs(tt - event_best[et][0]) < 1e-6)] - et
-                    ):
-                        event_best[et] = (t, narr, hold, i)
-        pause_idx: Dict[int, Tuple[float, str]] = {
-            idx: (hold, narr) for t, narr, hold, idx in event_best.values()
-        }
-        pause_total_s  = sum(h for h, _ in pause_idx.values())
-        n_normal_frames = len(epochs) - len(pause_idx)
-        NORMAL_HOLD = (60.0 - pause_total_s) / max(n_normal_frames, 1)
-
-        concat_lines: List[str] = []
-        frame_paths: List[Path] = []
-        current_narrative: str = ""   # persists across frames until next event
-
-        for i, t in enumerate(epochs):
-            event_data = pause_idx.get(i)
-            hold  = event_data[0] if event_data else NORMAL_HOLD
-            # Update the persistent narrative when a new event fires
-            if event_data:
-                current_narrative = event_data[1]
-
-            scaled    = scale_features_to_epoch(present, t)
-            posterior = bayesian_posterior_map(scaled)
-            # Pass current_narrative to every frame so text persists between events
-            fig       = render_frame(posterior, t, i, len(epochs),
-                                     dpi=args.dpi, narrative=current_narrative)
-
-            fpath = frames_dir / f"frame_{i:03d}.png"
-            fig.savefig(fpath, dpi=args.dpi,
-                        bbox_inches=None,   # fixed size -- NEVER tight-crop frames
-                        facecolor=fig.get_facecolor())
-            plt.close(fig)
-            frame_paths.append(fpath)
-
-            # ffmpeg concat entry
-            concat_lines.append(f"file '{fpath.resolve()}'")
-            concat_lines.append(f"duration {hold:.4f}")
-
-            marker: str = " * PAUSE" if event_data else ""
-            if (i + 1) % 8 == 0 or i == len(epochs) - 1 or event_data:
-                print(f"  [{i+1:2d}/{len(epochs)}]  t={t:+6.3f} Gya  "
-                      f"hold={hold:.2f}s{marker}")
-
-        # Write concat file
-        concat_path = anim_dir / "concat.txt"
-        concat_path.write_text("\n".join(concat_lines) + "\n")
-
-        # Repeat last frame entry (ffmpeg concat requires final duration workaround)
-        with open(concat_path, "a") as f:
-            f.write(f"file '{frame_paths[-1].resolve()}'\n")
-            f.write("duration 0.04\n")
-
-        import subprocess
-
-        mp4_path = anim_dir / "titan_habitability_animation.mp4"
-        ffmpeg_cmd = [
-            "ffmpeg", "-y",
-            "-f", "concat", "-safe", "0",
-            "-i", str(concat_path),
-            "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-            "-c:v", "libx264", "-preset", "slow",
-            "-crf", "17", "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart",
-            str(mp4_path),
-        ]
-        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True)
-        if result.returncode == 0:
-            sz = mp4_path.stat().st_size / 1e6
-            print(f"  MP4 saved -> {mp4_path}  ({sz:.1f} MB)")
+        if inference_mode == "full_inference":
+            _run_animation_full_inference(args, epochs, present, using_synthetic,
+                                          anim_dir, poster_dir)
         else:
-            print(f"  ffmpeg MP4 failed:\n{result.stderr[-400:]}")
-
-        # GIF from the same concat (lower resolution)
-        gif_path = anim_dir / "titan_habitability_animation.gif"
-        ffmpeg_gif = [
-            "ffmpeg", "-y",
-            "-f", "concat", "-safe", "0",
-            "-i", str(concat_path),
-            "-vf", (
-                "scale=900:-1:flags=lanczos,"
-                "split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]"
-                "paletteuse=dither=sierra2_4a"
-            ),
-            "-loop", "0",
-            str(gif_path),
-        ]
-        result2 = subprocess.run(ffmpeg_gif, capture_output=True, text=True)
-        if result2.returncode == 0:
-            sz2 = gif_path.stat().st_size / 1e6
-            print(f"  GIF saved -> {gif_path}  ({sz2:.1f} MB)")
-        else:
-            print(f"  GIF encoding failed -- MP4 is the primary output")
+            _run_animation_modelled(args, epochs, present, using_synthetic,
+                                    anim_dir, poster_dir, epoch_map_cache)
 
     # -- Summary and QGIS instructions -----------------------------------------
     print()
@@ -1699,13 +2610,50 @@ if __name__ == "__main__":
                    help="Present-epoch feature TIF directory")
     p.add_argument("--no-animation",  action="store_true",
                    help="Skip animation generation")
+    p.add_argument("--pause",         action="store_true",
+                   help="Hold at key geological events for longer (narrative captions "
+                        "are ALWAYS visible; this flag just extends the hold duration "
+                        "at transition points -- default: uniform hold time)")
     p.add_argument("--no-netcdf",     action="store_true",
                    help="Skip NetCDF stack output")
     p.add_argument("--epochs",        type=int, default=0,
                    help="Limit to N epochs (0=all, useful for testing)")
+    p.add_argument("--n-frames",      type=int, default=0,
+                   help="Alias for --epochs: limit to N frames (0=all)")
     p.add_argument("--fps",           type=int, default=8,
                    help="Animation frames per second (default: 8)")
     p.add_argument("--dpi",           type=int, default=120,
                    help="Animation frame DPI (default: 120)")
+    p.add_argument(
+        "--inference-mode",
+        default="modelled",
+        choices=["modelled", "full_inference"],
+        help=(
+            "Video generation mode (default: modelled).\n"
+            "  modelled       -- current behaviour: scalar-scaling of present-epoch\n"
+            "                    feature TIFs propagates across all epochs.\n"
+            "                    Produces outputs/temporal_maps/animation/.\n"
+            "  full_inference -- five pipeline-anchor posteriors (past, lake_formation,\n"
+            "                    present, near_future, future) loaded from run_pipeline\n"
+            "                    outputs; PCHIP interpolation between anchors;\n"
+            "                    modelled scalars used for the near_future->red_giant\n"
+            "                    gap (+0.25->+6 Gya, non-monotonic trajectory).\n"
+            "                    Requires run_pipeline.py --all-temporal-modes first.\n"
+            "                    Produces outputs/temporal_maps/animation_full_inference/.\n"
+            "                    Declared assumption: PCHIP interpolation between anchors\n"
+            "                    at -3.5, -1.0, 0, +0.25 Gya. All interpolated frames\n"
+            "                    labelled [INTERPOLATED] in GeoTIFF metadata."
+        ),
+    )
+    p.add_argument(
+        "--pipeline-outputs",
+        default="outputs",
+        metavar="DIR",
+        help=(
+            "Root directory of run_pipeline.py outputs (default: outputs). "
+            "Used by --inference-mode full_inference to locate anchor posteriors "
+            "at <DIR>/past/inference/posterior_mean.npy etc."
+        ),
+    )
     args = p.parse_args()
     main(args)

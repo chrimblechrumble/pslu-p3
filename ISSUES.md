@@ -4,6 +4,11 @@
 - [x] cirs_temperature is based on present day only. What can be done for modelling other epochs?
 - [x] how to use the /palermo mappings/shapefiles. Which ones are they in the Birch dataset?
 - [ ] swap out sklearn for pymc or numpyro  
+- [ ] the vims parquet file was created from code that is not available. Is it needed? If it as not available, 
+how would I know which VIMS cubes to use?
+- [x] Add text sections at the bottom of video for which features are and are not included. Add a more in 
+depth explanation for what is happening for each feature that is being used and which one dominates that explains the 
+coming colour trends in locations of interest, and also what assumptions are being made.
 
 ## Video/static frames
 - [x] Use the same habitability scoring data for all three maps in the video. The habitability colouring of eg.g Ligeia is 
@@ -19,21 +24,22 @@ otherwise they give the impression all the data is there, when it isn't
 change is two frames later.
 - [x] Make video pausing on/off optional, with pausing off by default
 - [ ] Cross reference that all downloaded map data is actually used. If not, why not and delete, or use it.
-- [ ] Check INSTALL instructions are correct; maybe script up the manual downloaders
+- [x] Check INSTALL instructions are correct; maybe script up the manual downloaders
 - [ ] Resolve use of GT2ED00N090_T126_V01 vs GT2ED00N090_T090_V01 data
+- [ ] Explain "[D3] Subsurface ocean prior  : 0.030  (Neish et al. 2024: ~1 elephant/yr organic flux to ocean)" better
 
 ## Other output
 - [x] liquid_hydrocarbon.tif has some invalid values and does not render - check. 
-- [ ] organic_abundance.tif has an imbalance in resolution in E vs W hemispheres - can anything be done. 
+- [x] organic_abundance.tif has an imbalance in resolution in E vs W hemispheres - can anything be done. 
 - [x] why do the figure/* diagrams look different to the animation frames
 - [ ] Fix framing in 'importances' pdf
 - [ ] Enumerate/give ordinals to 'top sites'
 - [ ] Change the 'interactive' map to include P
 - [ ] Investigate why the 'temporal comparison' is almost yellow everywhere, but still dotted, whereas video
 is not dotted (see e.g. frame 65). There is inconsistency going on. 
-- [ ] Investigate how VIMS parquet file is being used; it's just an index. The code to pull in actual cubes 
+- [x] Investigate how VIMS parquet file is being used; it's just an index. The code to pull in actual cubes 
 from Nantes is either being used minimally or not not being used. Is VIMS data not useful?
-- [ ] What does ' organic flux to ocean ~1 elephant/year' mean in the subsurface_ocean prior_mean?
+- [ ] What does 'organic flux to ocean ~1 elephant/year' mean in the subsurface_ocean prior_mean?
 
 ## Housekeeping
 

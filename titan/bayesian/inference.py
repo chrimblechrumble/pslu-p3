@@ -220,7 +220,23 @@ class SklearnHabitabilityModel:
         X_f64  = X_valid.astype(np.float64)
         with np.errstate(divide="ignore", over="ignore", invalid="ignore"):
             scores = X_f64 @ w_vec                             # (n_valid,)
-        y_label = (scores > cfg.positive_label_threshold).astype(int)
+        # Use median split rather than a fixed threshold.
+        # A fixed threshold (e.g. 0.35) fails when high-weight features
+        # (organic_abundance, w=0.18, mean~0.49) push >84% of pixels above
+        # it, causing severe class imbalance and domination by whichever
+        # feature discriminates the small minority class (liquid_hydrocarbon).
+        # The median split always produces ~50% positive labels, making the
+        # GNB use all features rather than only the best minority discriminator.
+        # The fixed threshold is kept as a fallback minimum to avoid degenerate
+        # cases where the median produces 0 positives.
+        # Pure median split: always produces ~50%% positive labels,
+        # self-calibrating regardless of absolute feature scale.
+        # The fixed threshold (cfg.positive_label_threshold) is no
+        # longer used as a floor -- it was causing 34%% positives after
+        # the liquid_hydrocarbon fix (correct lake data lowered the
+        # score distribution median below the old 0.35 floor).
+        threshold = float(np.median(scores))
+        y_label = (scores > threshold).astype(int)
 
         # Require at least some positives and negatives
         n_pos = int(y_label.sum())

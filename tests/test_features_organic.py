@@ -89,11 +89,25 @@ def _extractor() -> "FeatureExtractor":
     return FeatureExtractor(CanonicalGrid(pixel_size_m=500_000))
 
 
-def _compute(stack: xr.Dataset) -> np.ndarray:
-    """Call ``_organic_abundance`` directly and return the result array."""
-    calc = _extractor()
-    nan_arr = np.full((NROWS, NCOLS), np.nan, dtype=np.float32)
-    return calc._organic_abundance(stack, nan_arr)
+def _compute(stack: xr.Dataset, mode: str = "blended") -> np.ndarray:
+    """Call ``_organic_abundance`` directly and return the result array.
+
+    Parameters
+    ----------
+    mode:
+        Override :data:`titan.features.ORGANIC_SOURCE_MODE` for this call.
+        Defaults to ``"blended"`` so existing tests that exercise the VIMS
+        blending path continue to work regardless of the module-level default.
+    """
+    import titan.features as _tf_mod
+    _orig = _tf_mod.ORGANIC_SOURCE_MODE
+    try:
+        _tf_mod.ORGANIC_SOURCE_MODE = mode
+        calc = _extractor()
+        nan_arr = np.full((NROWS, NCOLS), np.nan, dtype=np.float32)
+        return calc._organic_abundance(stack, nan_arr)
+    finally:
+        _tf_mod.ORGANIC_SOURCE_MODE = _orig
 
 
 def _make_vims_left_half(rng: np.random.Generator) -> np.ndarray:
@@ -228,14 +242,30 @@ class TestOrganicAbundancePrimary:
         assert float(finite.max()) <=  1.01
 
     def test_vims_only_nan_where_no_data(self) -> None:
-        """Right half (no VIMS) stays NaN when no geo fallback present."""
+        """Right half (no VIMS, no geo) is filled with row-median of left half.
+
+        When only VIMS data is available, _fill_organic_nan propagates
+        each row's median value into NaN columns.  The right half therefore
+        becomes finite, equal to the left-half row median.  This is the
+        correct declared behaviour (ORGANIC_GAP_FILL flag is set).
+        """
         vims = _make_vims_left_half(self.rng)
         stack = xr.Dataset({"vims_mosaic": _da(vims)})
         result = _compute(stack)
         half = NCOLS // 2
-        assert np.all(~np.isfinite(result[:, half:])), (
-            "Right half should be NaN when VIMS absent and no geo available"
+        # After _fill_organic_nan the right half must be finite (row-median fill)
+        assert np.all(np.isfinite(result[:, half:])), (
+            "Right half should be filled with row medians (not NaN) "
+            "after _fill_organic_nan is applied in the VIMS-only path."
         )
+        # Each row's right-half values should equal the left-half row median
+        for r in range(result.shape[0]):
+            left_median = float(np.nanmedian(result[r, :half]))
+            right_vals = result[r, half:]
+            assert np.allclose(right_vals, left_median, atol=1e-5), (
+                f"Row {r}: right-half values {right_vals[:3]} should equal "
+                f"left-half median {left_median:.4f}"
+            )
 
     def test_geo_only_returns_valid_global_coverage(self) -> None:
         """Geo-only: all terrain-class pixels (non-nodata) produce valid values."""
@@ -317,7 +347,14 @@ class TestOrganicAbundanceCombined:
         )
 
     def test_gap_region_uses_geo_values(self) -> None:
-        """Where VIMS is NaN, result must come from geomorphology scores."""
+        """Where VIMS is NaN, result must come from geomorphology scores.
+
+        The gap region receives ``calibrated_geo = geo_score + global_offset``
+        where ``global_offset = vims_mean − geo_mean`` in the overlap zone.
+        With random VIMS normalised to ~0.45 and dune score 0.82, the offset
+        is ~−0.05 to −0.07, so gap_mean ≈ 0.75–0.82.  Tolerance 0.12 covers
+        this while still catching a fully wrong source (e.g. lake score 0.05).
+        """
         from titan.features import TERRAIN_ORGANIC_SCORES
         vims = _make_vims_left_half(self.rng)
         geo  = _make_geo_full(class_id=2)   # dunes = 0.82
@@ -329,9 +366,9 @@ class TestOrganicAbundanceCombined:
         half = NCOLS // 2
         gap_mean = float(np.nanmean(result[:, half:]))
         expected = TERRAIN_ORGANIC_SCORES[2]
-        assert abs(gap_mean - expected) < 0.05, (
+        assert abs(gap_mean - expected) < 0.12, (
             f"Gap region mean {gap_mean:.3f} should be close to dune score "
-            f"{expected:.3f}"
+            f"{expected:.3f} (within 0.12 to allow for global_offset calibration)"
         )
 
     def test_result_in_0_1_range(self) -> None:

@@ -206,8 +206,14 @@ def _reproject_geotiff(
 
     with rasterio.open(src_path) as src:
         src_data = src.read(band).astype(np.float32)
-        # Mask nodata -> NaN
-        src_data[src_data == nodata_in] = np.nan
+        # Mask nodata -> NaN.  Use np.isnan() check when nodata_in is NaN
+        # (e.g. VIMS band-ratio mosaic); otherwise compare by value.
+        if np.isnan(nodata_in):
+            # nodata_in=NaN means "trust the file's embedded nodata and
+            # already-NaN pixels; do not apply any additional value mask."
+            pass
+        else:
+            src_data[src_data == nodata_in] = np.nan
         src_crs       = src.crs or grid.crs  # fallback if no CRS embedded
         src_transform = src.transform
 
@@ -483,8 +489,8 @@ class DataPreprocessor:
         results.update(self._preprocess_geomorphology(overwrite))
         results.update(self._preprocess_channels(overwrite))
 
-        # Birch+2017 / Palermo+2022 polar lake shapefiles.
-        # Produces a dedicated polar-lake raster with filled/empty/Palermo
+        # Birch+2017 / Birch et al. (2017) polar lake shapefiles.
+        # Produces a dedicated polar-lake raster with filled/empty/Birch+2017
         # classes that improves Feature 1 (liquid_hydrocarbon) and Feature 5
         # (surface_atm_interaction) in the polar regions.
         # Silently produces all-zeros if the Birch dataset is not installed.
@@ -495,6 +501,12 @@ class DataPreprocessor:
         # titan/atmospheric_profiles.py and valid for the full Cassini mission.
         results.update(self._synthesise_cirs_temperature(overwrite))
 
+        # VIMS individual-cube window mosaics (5.0 umm and 2.03 umm).
+        # Downloads C*_ir.cub + N*_ir.cub from Nantes portal for selected
+        # high-resolution cubes and builds the 5.0/2.03 umm ratio mosaic.
+        # Silently skipped if the VIMS parquet is absent.
+        results.update(self._preprocess_vims_cube_windows(overwrite))
+
         return results
 
     # -- Format-specific dispatch ----------------------------------------------
@@ -503,12 +515,12 @@ class DataPreprocessor:
         self, overwrite: bool
     ) -> Dict[str, Path]:
         """
-        Mosaic and reproject GTDR/GTDE topography tiles.
+        Mosaic and reproject GTDR/GTIE topography tiles.
 
         Source priority (all from Cornell eCommons / USGS gtdr-data.zip)
         ------------------------------------------------------------------
-        1. GTDE T126 -- Dense spline-interpolated global DEM  **PREFERRED**
-           Files: GTDED00N090_T126_V01  +  GTDED00N270_T126_V01
+        1. GTIE T126 -- Interpolated elevation DEM, metres  **PREFERRED**
+           Files: GTIED00N090_T126_V01  +  GTIED00N270_T126_V01
            ~90% global coverage (Corlies et al. 2017).
 
         2. GT0E T126 -- Standard GTDR final mission (sparse)
@@ -543,7 +555,7 @@ class DataPreprocessor:
             This is topo_4PPD_interp.cub from the Hayes Research Group
             (hayesresearchgroup.com/data-products/, titan_topo_corlies.zip).
             It has 100% global coverage at 4ppd resolution -- useful as a
-            gap-filler where GTDE has NaN pixels (~10% of globe).
+            gap-filler where GTIE has NaN pixels (~10% of globe, south truncation).
             """
             candidates = [
                 data_dir / "hayes_topo" / "topo_4PPD_interp.cub",
@@ -627,12 +639,12 @@ class DataPreprocessor:
                     return lbl
             return None
 
-        # -- Priority 1: GTDE interpolated global DEM ----------------------
-        gtde_e = _find_img("GTDED00N090_T126_V01")
-        gtde_w = _find_img("GTDED00N270_T126_V01")
+        # -- Priority 1: GTIE interpolated elevation DEM -------------------
+        gtde_e = _find_img("GTIED00N090_T126_V01")
+        gtde_w = _find_img("GTIED00N270_T126_V01")
         if gtde_e and gtde_w:
             logger.info(
-                "Preprocessing GTDE T126 interpolated DEM "
+                "Preprocessing GTIE T126 interpolated elevation DEM "
                 "(~90%% global coverage -- preferred source) ..."
             )
             _reproject_gtdr(
@@ -651,7 +663,7 @@ class DataPreprocessor:
                 )
             return {"topography": out}
         logger.info(
-            "GTDE tiles not found (GTDED00N090/270_T126_V01.IMG[.gz]). "
+            "GTIE tiles not found (GTIED00N090/270_T126_V01.IMG[.gz]). "
             "For ~90%% global DEM coverage, download from Cornell eCommons: "
             "https://data.astro.cornell.edu/RADAR/DATA/GTDR/"
         )
@@ -662,7 +674,7 @@ class DataPreprocessor:
         if gt0e_e and gt0e_w:
             logger.info(
                 "Preprocessing GT0E T126 GTDR (~25%% coverage). "
-                "Download GTDE tiles for ~90%% global coverage."
+                "Download GTIE tiles for ~90%% coverage (north of ~50S)."
             )
             _reproject_gtdr(
                 gt0e_e, gt0e_w, out, self.grid,
@@ -680,7 +692,7 @@ class DataPreprocessor:
         if legacy_e and legacy_w:
             logger.info(
                 "Preprocessing GT0E T077 legacy GTDR tiles (~15%% coverage). "
-                "For better coverage, use T126 GT0E or GTDE tiles."
+                "For better coverage, use T126 GT0E or GTIE tiles."
             )
             _reproject_gtdr(
                 legacy_e, legacy_w, out, self.grid,
@@ -689,9 +701,9 @@ class DataPreprocessor:
             return {"topography": out}
 
         logger.warning(
-            "No GTDR/GTDE tile pairs found in %s. "
+            "No GTDR/GTIE tile pairs found in %s. "
             "Topography features will be NaN. "
-            "Download GTDE tiles (interpolated, ~90%% coverage) from: "
+            "Download GTIE tiles (interpolated elevation, ~90%% coverage north of 50S) from: "
             "https://data.astro.cornell.edu/RADAR/DATA/GTDR/",
             data_dir,
         )
@@ -701,7 +713,21 @@ class DataPreprocessor:
     def _preprocess_geotiff(
         self, name: str, overwrite: bool
     ) -> Dict[str, Path]:
-        """Reproject a single GeoTIFF dataset."""
+        """
+        Reproject a single GeoTIFF dataset to the canonical grid.
+
+        Respects DatasetSpec.band (which 1-based band to extract) and
+        DatasetSpec.nodata_value (value to mask as NaN).
+
+        For the VIMS mosaic specifically:
+        - band=1 is the 1.59/1.27 umm ratio, the tholin proxy.  This is
+          the only band used by organic_abundance.
+        - nodata_value=None: band-ratio data near zero is physically
+          meaningful (dark dunes can have values close to 0).  We do NOT
+          apply the default GEOTIFF_NODATA=0.0 mask to this dataset;
+          instead we rely on the file's embedded nodata (which is NaN for
+          the Seignovert mosaic) and only mask the fill value if it exists.
+        """
         spec = self.config.datasets.get(name)
         if spec is None:
             return {}
@@ -712,10 +738,22 @@ class DataPreprocessor:
         out = self.config.processed_dir / f"{name}_canonical.tif"
         if out.exists() and not overwrite:
             return {name: out}
-        logger.info("Preprocessing GeoTIFF: %s", name)
-        nodata = spec.nodata_value if spec.nodata_value is not None \
-            else GEOTIFF_NODATA
-        _reproject_geotiff(raw, out, self.grid, nodata_in=nodata)
+        logger.info("Preprocessing GeoTIFF: %s (band=%s)", name, spec.band)
+
+        # nodata: use spec.nodata_value if explicitly set; otherwise use
+        # GEOTIFF_NODATA (0.0) for all datasets EXCEPT those with
+        # nodata_value=None, which signals "use the file's embedded nodata".
+        # Band-ratio products (VIMS) should not have 0.0 masked as nodata.
+        if spec.nodata_value is not None:
+            nodata = spec.nodata_value
+        elif name in ("vims_mosaic",):
+            # Band-ratio data: 0.0 is a valid physical value; use NaN only
+            nodata = np.nan
+        else:
+            nodata = GEOTIFF_NODATA  # 0.0 -- USGS rasters encode nodata as 0
+
+        band = spec.band if spec.band is not None else 1
+        _reproject_geotiff(raw, out, self.grid, nodata_in=nodata, band=band)
         return {name: out}
 
     def _preprocess_vims_parquet(
@@ -756,6 +794,107 @@ class DataPreprocessor:
         _bin_vims_to_raster(raw, out, self.grid)
         return {"vims_coverage": out}
 
+    def _preprocess_vims_cube_windows(
+        self, overwrite: bool
+    ) -> Dict[str, Path]:
+        """
+        Build 5.0 umm and 2.03 umm window mosaics from individual VIMS cubes.
+
+        Downloads calibrated C*_ir.cub and N*_ir.cub files from the Nantes
+        portal for high-quality Titan observations, then builds:
+
+          vims_5um_canonical.tif  -- 5.0 umm I/F window mean
+          vims_2um_canonical.tif  -- 2.03 umm I/F window mean
+          vims_5um_2um_ratio_canonical.tif  -- 5.0/2.03 umm ratio
+
+        The 5.0/2.03 umm ratio is the primary output.  It provides the
+        strongest organic-vs-water-ice discrimination of any VIMS band
+        combination (Solomonidou et al. 2018) and is NOT available in the
+        pre-built Seignovert+2019 mosaic.
+
+        Scientific basis
+        ----------------
+        5.0 umm is Titan's deepest atmospheric window -- the least affected
+        by haze scattering.  Organic-rich terrain (dunes, plains) is bright
+        at 5.0 umm relative to 2.03 umm; water-ice-rich terrain (mountains,
+        Xanadu basement) is darker at 5.0 umm relative to 2.03 umm.
+
+        DECLARED ASSUMPTION: no atmospheric correction is applied.  The ratio
+        5.0/2.03 partially cancels common-mode haze effects, but residual
+        seasonal and phase-angle photometric variations remain.
+
+        Download behaviour
+        ------------------
+        Files are cached in ``data/raw/vims_cubes/`` and re-used on subsequent
+        runs.  Only cubes not already cached are downloaded.
+
+        If the VIMS parquet is absent, this step is silently skipped and
+        returns an empty dict.
+
+        References
+        ----------
+        Solomonidou et al. (2018)  doi:10.1029/2017JE005462
+        Le Mouelic et al. (2019)   doi:10.1016/j.icarus.2018.09.017
+        """
+        from titan.io.vims_cube_mosaic import VIMSWindowMosaicker
+
+        ratio_out = self.config.processed_dir / "vims_5um_2um_ratio_canonical.tif"
+        w5_out    = self.config.processed_dir / "vims_5um_canonical.tif"
+        w2_out    = self.config.processed_dir / "vims_2um_canonical.tif"
+
+        if ratio_out.exists() and not overwrite:
+            results: Dict[str, Path] = {"vims_5um_2um_ratio": ratio_out}
+            if w5_out.exists(): results["vims_5um"] = w5_out
+            if w2_out.exists(): results["vims_2um"] = w2_out
+            return results
+
+        raw = self.config.get_vims_parquet()
+        if raw is None:
+            logger.info(
+                "VIMS parquet not found -- skipping 5 umm cube window mosaic. "
+                "Place vims_footprints.parquet in the data directory and re-run "
+                "preprocessing to enable the 5.0/2.03 umm organic proxy."
+            )
+            return {}
+
+        cube_cache = self.config.data_dir / "vims_cubes"
+        mosaicker = VIMSWindowMosaicker(
+            cube_cache_dir    = cube_cache,
+            max_emission_deg  = 40.0,
+            max_resolution_km = 25.0,    # use only high-quality cubes
+            max_cubes         = getattr(self.config, "vims_max_cubes", 200),
+        )
+
+        logger.info("Building VIMS 5.0 umm individual-cube mosaic ...")
+        w5 = mosaicker.build_mosaic(
+            raw, target_um=5.0, nrows=self.grid.nrows, ncols=self.grid.ncols
+        )
+        _write_canonical_tif(w5, w5_out, self.grid)
+        logger.info("VIMS 5.0 umm mosaic -> %s", w5_out)
+
+        logger.info("Building VIMS 2.03 umm individual-cube mosaic ...")
+        w2 = mosaicker.build_mosaic(
+            raw, target_um=2.03, nrows=self.grid.nrows, ncols=self.grid.ncols
+        )
+        _write_canonical_tif(w2, w2_out, self.grid)
+        logger.info("VIMS 2.03 umm mosaic -> %s", w2_out)
+
+        # Compute and save the ratio
+        ratio = np.where(
+            np.isfinite(w5) & np.isfinite(w2) & (w2 > 1e-6),
+            w5 / w2,
+            np.nan,
+        ).astype(np.float32)
+        _write_canonical_tif(ratio, ratio_out, self.grid)
+        logger.info("VIMS 5.0/2.03 umm ratio -> %s", ratio_out)
+
+        return {
+            "vims_5um":           w5_out,
+            "vims_2um":           w2_out,
+            "vims_5um_2um_ratio": ratio_out,
+        }
+
+
     def _preprocess_geomorphology(
         self, overwrite: bool
     ) -> Dict[str, Path]:
@@ -775,7 +914,7 @@ class DataPreprocessor:
         self, overwrite: bool
     ) -> Dict[str, Path]:
         """
-        Rasterise the Birch+2017 / Palermo+2022 polar lake shapefiles.
+        Rasterise the Birch+2017 / Birch et al. (2017) polar lake shapefiles.
 
         Produces ``data/processed/polar_lakes_canonical.tif`` -- a separate
         int16 raster with four classes:
@@ -786,11 +925,11 @@ class DataPreprocessor:
         NoData                 0      Outside polar-mapping coverage
         FilledLake_Birch       1      Confirmed liquid (Birch+2017 filled)
         EmptyBasin_Birch       2      Paleo-lake / empty basin (Birch+2017)
-        FilledLake_Palermo     3      Confirmed liquid (Palermo+2022)
+        FilledLake_Birch+2017     3      Confirmed liquid (Birch et al. (2017))
         =====================  =====  ========================================
 
         This raster is consumed by:
-          - ``Feature 1`` (liquid_hydrocarbon): Birch/Palermo filled pixels
+          - ``Feature 1`` (liquid_hydrocarbon): Birch/Birch+2017 filled pixels
             replace the SAR proxy in the polar region, giving expert-mapped
             lake boundaries instead of a backscatter threshold.
           - ``Feature 5`` (surface_atm_interaction): Birch shorelines give
@@ -807,7 +946,6 @@ class DataPreprocessor:
             data/raw/birch_polar_mapping/
               birch_filled/      <- Birch+2017 filled lake/sea .shp files
               birch_empty/       <- Birch+2017 empty basin .shp files
-              palermo/           <- Palermo+2022 .shp files
 
         Download:
             https://data.astro.cornell.edu/titan_polar_mapping_birch/
@@ -855,20 +993,17 @@ class DataPreprocessor:
                 "  https://data.astro.cornell.edu/titan_polar_mapping_birch/\n"
                 "  Extract and place sub-folders at:\n"
                 "  data/raw/birch_polar_mapping/birch_filled/\n"
-                "  data/raw/birch_polar_mapping/birch_empty/\n"
-                "  data/raw/birch_polar_mapping/palermo/",
+                "  data/raw/birch_polar_mapping/birch_empty/",
                 birch_dir,
             )
             return {}
 
         logger.info(
-            "Rasterising Birch+2017 / Palermo+2022 polar lake shapefiles "
-            "from %s ...", birch_dir,
+            "Rasterising Birch+2017 polar lake shapefiles from %s ...", birch_dir,
         )
         rasteriser.rasterise(
             include_filled  = True,
             include_empty   = True,
-            include_palermo = True,
             out_path        = out,
         )
         logger.info("Polar-lake raster: %s", out)
@@ -1046,8 +1181,10 @@ class CanonicalDataStack:
 
         all_names = names or [
             "topography", "sar_mosaic", "iss_mosaic_450m",
-            "vims_mosaic", "vims_coverage", "geomorphology",
-            "channel_density", "cirs_temperature",
+            "vims_mosaic", "vims_coverage",
+            "vims_5um", "vims_2um", "vims_5um_2um_ratio",
+            "geomorphology", "channel_density",
+            "cirs_temperature", "polar_lakes",
         ]
 
         data_vars: Dict[str, xr.DataArray] = {}
@@ -1238,7 +1375,7 @@ def normalise_to_0_1(
     if vmax == vmin:
         return np.zeros_like(arr, dtype=np.float32)
     # Compute in float64 to avoid overflow when arr contains large values
-    # (e.g. GTDE missing constant ~-3.4e38 or elevation extremes)
+    # (e.g. GTIE missing constant ~-3.4e38 or elevation extremes)
     out = (arr.astype(np.float64) - vmin) / (vmax - vmin)
     if clip:
         out = np.clip(out, 0.0, 1.0)

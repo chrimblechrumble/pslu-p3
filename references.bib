@@ -494,7 +494,7 @@
   year    = {2017},
   doi     = {10.1002/2017GL075518},
   note    = {Global spline-interpolated DEM from Cornell eCommons.
-             Files: GTDED00N090\_T126\_V01 + GTDED00N270\_T126\_V01.
+             Files: GTIED00N090\_T126\_V01 + GTIED00N270\_T126\_V01.
              URL: https://data.astro.cornell.edu/RADAR/DATA/GTDR/}
 }
 % =============================================================================
@@ -614,7 +614,7 @@
 }
 
 % =============================================================================
-% BIRCH INTEGRATION — new references added for Birch+2017, Palermo+2022,
+% BIRCH INTEGRATION — new references added for Birch+2017 polar lake dataset,
 % and Mayer & Nixon (2025) protocell mechanism
 % =============================================================================
 
@@ -636,22 +636,6 @@
                https://data.astro.cornell.edu/titan\_polar\_mapping\_birch/}
 }
 
-@article{Palermo2022,
-  author    = {Palermo, Rachel M. and Hayes, Alexander G. and Corlies, Paul
-               and Birch, Samuel P. D. and Hofgartner, Jason D. and
-               Poggiali, Valerio},
-  title     = {Characterizing the Polar Lakes and Seas of {Titan}},
-  journal   = {The Planetary Science Journal},
-  volume    = {3},
-  number    = {5},
-  pages     = {117},
-  year      = {2022},
-  doi       = {10.3847/PSJ/ac4d9c},
-  note      = {Complementary polar sea and lake mapping with alternative
-               shoreline threshold. Shapefiles in palermo/ sub-directory
-               of the Birch polar-lake dataset.}
-}
-
 @article{MayerNixon2025,
   author    = {Mayer, Christian and Nixon, Conor A.},
   title     = {A proposed mechanism for the formation of protocell-like
@@ -663,4 +647,176 @@
                formation at Titan lake surfaces. Rain splash creates bilayer
                vesicles from nitrile amphiphiles. Motivates the
                paleo\_lake\_indicator sub-component of Feature 5.}
+}
+
+% ============================================================
+% NEW REFERENCES — v4 additions for LAKE_FORMATION, NEAR_FUTURE
+% and Palermo2022 replacement entries
+% ============================================================
+
+@article{Tobie2006,
+  author    = {Tobie, Gabriel and Lunine, Jonathan I. and Sotin, Christophe},
+  title     = {Episodic outgassing as the origin of atmospheric methane on {Titan}},
+  journal   = {Nature},
+  volume    = {440},
+  number    = {7080},
+  pages     = {61--64},
+  year      = {2006},
+  doi       = {10.1038/nature04497},
+  note      = {Models episodic cryovolcanic outgassing of methane stored as
+               clathrate hydrates.  Three episodes predicted: accretion (~4.5 Gya),
+               silicate-core convection onset (~2 Gya), and most recent peak
+               ~500 Mya.  The ~500 Mya peak is the primary basis for the
+               LAKE_FORMATION mode epoch at ~1.0 Gya (approaching peak) and
+               the alternative at ~0.5 Gya (at peak).}
+}
+
+@article{Artemieva2003,
+  author    = {Artemieva, Natalia and Lunine, Jonathan I.},
+  title     = {Cratering on {Titan}: impact melt, ejecta, and the fate of
+               surface organics},
+  journal   = {Icarus},
+  volume    = {164},
+  number    = {2},
+  pages     = {471--480},
+  year      = {2003},
+  doi       = {10.1016/S0019-1035(03)00148-9},
+  note      = {Models transient liquid-water melt formation at impact craters
+               on Titan.  First paper to quantify melt volume and longevity.
+               Basis for impact_melt_proxy feature and PAST mode liquid-water
+               prior.}
+}
+
+@article{Artemieva2005,
+  author    = {Artemieva, Natalia and Lunine, Jonathan I.},
+  title     = {Impact cratering on {Titan II}. Global melt, escaping ejecta,
+               and aqueous alteration of surface organics},
+  journal   = {Icarus},
+  volume    = {175},
+  number    = {2},
+  pages     = {522--533},
+  year      = {2005},
+  doi       = {10.1016/j.icarus.2004.12.005},
+  note      = {Follow-up to Artemieva2003.  Shows global melt layer from LHB
+               is improbable; only local transient melting near large craters.
+               Supports the low prior_mean (0.025) for liquid_hydrocarbon in
+               PAST mode and very low prior for LAKE_FORMATION mode (0.10).}
+}
+
+@article{Lorenz1997,
+  author    = {Lorenz, Ralph D. and Lunine, Jonathan I. and McKay, Christopher P.},
+  title     = {Titan under a red giant sun: {A} new kind of ``habitable'' moon},
+  journal   = {Geophysical Research Letters},
+  volume    = {24},
+  number    = {22},
+  pages     = {2905--2908},
+  year      = {1997},
+  doi       = {10.1029/97GL52843},
+  note      = {Original prediction of the ~6 Gya red-giant habitability window.
+               Surface temperature rises to ~200 K enabling water-ammonia oceans
+               for several hundred Myr.  Primary scientific basis for FUTURE mode
+               and the D2 near-future solar warming window.  Also provides the
+               solar luminosity evolution model used in generate_temporal_maps.py.}
+}
+
+@article{LunineAndLorenz2009,
+  author    = {Lunine, Jonathan I. and Lorenz, Ralph D.},
+  title     = {Rivers, Lakes, Dunes, and Rain: Crustal Processes in {Titan}'s
+               Methane Cycle},
+  journal   = {Annual Review of Earth and Planetary Sciences},
+  volume    = {37},
+  pages     = {299--320},
+  year      = {2009},
+  doi       = {10.1146/annurev.earth.031208.100142},
+  note      = {Comprehensive review of Titan's methane cycle and long-term
+               evolution.  Provides context for the D2 near-future warming window
+               and the timescales of cryovolcanic outgassing.  Cited as basis
+               for NEAR_FUTURE subsurface_ocean prior adjustment.}
+}
+
+@article{Birch2018paleoseas,
+  author    = {Birch, Samuel P. D. and Hayes, Alexander G. and Corlies, Paul
+               and Stofan, Ellen R. and Hofgartner, Jason D. and Lopes,
+               Rosaly M. C. and Lorenz, Ralph D. and Lunine, Jonathan I. and
+               MacKenzie, Shannon M. and Malaska, Michael J. and Wood, Charles A.
+               and the Cassini RADAR Team},
+  title     = {Morphological evidence that {Titan}'s southern hemisphere basins
+               are paleoseas},
+  journal   = {Icarus},
+  volume    = {310},
+  pages     = {140--148},
+  year      = {2018},
+  doi       = {10.1016/j.icarus.2017.12.016},
+  note      = {Identifies four large southern basins as former paleoseas.
+               Area ~6.80e5 km^2, similar to northern seas.  Provides
+               morphological evidence for pole-to-pole lake migration.
+               The Em_SOUTH.shp shapefile (Empty seas, south) in the Birch
+               Cornell dataset corresponds to these four basins.}
+}
+
+@article{Neish2012,
+  author    = {Neish, Catherine D. and Lorenz, Ralph D.},
+  title     = {Titan's global crater population: a new assessment},
+  journal   = {Planetary and Space Science},
+  volume    = {60},
+  number    = {1},
+  pages     = {26--33},
+  year      = {2012},
+  doi       = {10.1016/j.pss.2011.02.016},
+  note      = {Statistical analysis of Titan crater population.  Effective
+               surface age ~200 Myr-1 Gyr, implying most SAR-observable crater
+               annuli (impact_melt_proxy) are geologically recent, not LHB relics.
+               Cited as basis for the low impact_melt_proxy prior mean in
+               LAKE_FORMATION mode (0.10 vs 0.50 in PAST).}
+}
+
+@article{Lora2014,
+  author    = {Lora, Juan M. and Lunine, Jonathan I. and Russell, Joellen L.
+               and Hayes, Alexander G.},
+  title     = {Simulations of {Titan}'s paleoclimate},
+  journal   = {Icarus},
+  volume    = {243},
+  pages     = {264--273},
+  year      = {2014},
+  doi       = {10.1016/j.icarus.2014.09.028},
+  note      = {GCM simulations of Titan's climate over the past 42,000 years
+               (four orbital configurations).  Demonstrates that orbital forcing
+               (Aharonson et al. 2009 Croll-Milankovitch cycles) produces
+               efficient pole-to-pole methane transport, with the present and
+               ~14 kyr configurations favouring north-polar lake accumulation.
+               Confirms scientific basis for lake formation epoch discussion.}
+}
+
+@article{OBrien2005,
+  author    = {O'Brien, David P. and Lorenz, Ralph D. and Lunine, Jonathan I.},
+  title     = {Numerical calculations of the longevity of impact oases on
+               {Titan}},
+  journal   = {Icarus},
+  volume    = {173},
+  number    = {1},
+  pages     = {243--253},
+  year      = {2005},
+  doi       = {10.1016/j.icarus.2004.07.034},
+  note      = {Calculates that 150 km craters sustain liquid water for 10^3-10^4
+               years.  Key reference for impact_melt_proxy feature and PAST mode
+               prior_mean for liquid_hydrocarbon (0.025) and impact_melt_proxy
+               (0.50).}
+}
+
+@article{Aharonson2009,
+  author    = {Aharonson, Oded and Hayes, Alexander G. and Lunine, Jonathan I.
+               and Lorenz, Ralph D. and Allison, Michael D. and Elachi, Charles},
+  title     = {An asymmetric distribution of lakes on {Titan} as a possible
+               consequence of orbital forcing},
+  journal   = {Nature Geoscience},
+  volume    = {2},
+  number    = {12},
+  pages     = {851--854},
+  year      = {2009},
+  doi       = {10.1038/ngeo698},
+  note      = {Proposes that Croll-Milankovitch orbital cycles (period ~100 kyr)
+               drive pole-to-pole methane transport and explain the current north
+               polar lake asymmetry.  Contextual reference for LAKE_FORMATION
+               epoch discussion (short-timescale lake redistribution vs long
+               geological timescale outgassing-driven formation).}
 }

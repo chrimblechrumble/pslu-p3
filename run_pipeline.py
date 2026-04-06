@@ -73,15 +73,23 @@ D4 -- SAR bright annuli as past-liquid-water proxy: ACCEPTED.
 
 Quick start
 -----------
-  python run_pipeline.py --status                    # data status
-  python run_pipeline.py                             # present mode (defaults)
-  python run_pipeline.py --temporal-mode past        # early Titan
-  python run_pipeline.py --temporal-mode future      # red giant era (~6 Gya)
-  python run_pipeline.py --all-temporal-modes        # compare all three
-  python run_pipeline.py --backend pymc              # full MCMC
+  python run_pipeline.py --status                          # data status
+  python run_pipeline.py                                   # present mode (defaults)
+  python run_pipeline.py --temporal-mode past              # early Titan (~3.5 Gya)
+  python run_pipeline.py --temporal-mode lake_formation    # lake onset (~1.0 Gya)
+  python run_pipeline.py --temporal-mode near_future       # D2 window (~0.25 Gya)
+  python run_pipeline.py --temporal-mode future            # red giant era (~6 Gya)
+  python run_pipeline.py --all-temporal-modes              # compare all five
+  python run_pipeline.py --backend pymc                    # full MCMC
 
   # Override D1 past epoch (e.g. more conservative ~4.0 Gya):
   python run_pipeline.py --past-epoch-gya 4.0
+
+  # Override lake formation epoch (alternative: 0.5 Gya = Tobie 2006 peak):
+  python run_pipeline.py --temporal-mode lake_formation --lake-formation-epoch-gya 0.5
+
+  # Override D2 near-future anchor epoch (Myr from now):
+  python run_pipeline.py --temporal-mode near_future --near-future-epoch-myr 300
 
   # Override D2 future window (e.g. wider uncertainty range):
   python run_pipeline.py --future-window-min 50 --future-window-max 600
@@ -96,6 +104,23 @@ Quick start
 from __future__ import annotations
 
 import argparse
+
+
+def _pipeline_version() -> str:
+    """Return the code version from titan/features.py."""
+    try:
+        from titan.features import PIPELINE_CODE_VERSION
+        return PIPELINE_CODE_VERSION
+    except ImportError as exc:
+        # Only suppress if the module itself is absent; if a dependency
+        # (e.g. numpy) is missing, print a clear warning so the user
+        # knows the venv needs activating -- do not hide environment bugs.
+        if "titan" in str(exc) or "features" in str(exc):
+            return "unknown"   # module truly absent
+        print(f"[WARNING] _pipeline_version: dependency missing: {exc}")
+        print("[WARNING] Is your virtual environment activated? ")
+        print("[WARNING]   Run: source .venv/bin/activate")
+        raise   # re-raise so the pipeline fails fast with a clear message
 import json
 import logging
 import sys
@@ -184,13 +209,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--temporal-mode",
         default="present",
-        choices=["past", "present", "future"],
-        help="Temporal habitability mode (default: present)",
+        choices=["past", "lake_formation", "present", "near_future", "future"],
+        help=(
+            "Temporal habitability mode (default: present).  "
+            "past=LHB ~3.5 Gya; lake_formation=lake onset ~1.0 Gya; "
+            "present=Cassini epoch; near_future=D2 window ~0.25 Gya; "
+            "future=red giant ~6 Gya."
+        ),
     )
     p.add_argument(
         "--all-temporal-modes",
         action="store_true",
-        help="Run all three temporal modes and produce comparison output",
+        help=(
+            "Run all five temporal modes (past, lake_formation, present, "
+            "near_future, future) and produce comparison output"
+        ),
     )
 
     # -- D1: Past epoch (configurable; default 3.5 Gya) -----------------------
@@ -207,6 +240,33 @@ def build_parser() -> argparse.ArgumentParser:
             "[D1] Age (Gya before present) of the last major surface liquid-water "
             "epoch. Default 3.5 Gya (Late Heavy Bombardment era). Lower = more "
             "recent cryovolcanism; raise to 4.0 for accretion-era estimate."
+        ),
+    )
+    p.add_argument(
+        "--lake-formation-epoch-gya",
+        default=1.0,
+        type=float,
+        metavar="GYA",
+        help=(
+            "Age (Gya before present) of the LAKE_FORMATION anchor epoch. "
+            "Default 1.0 Gya (polar lake formation onset). "
+            "Alternative: 0.5 Gya (Tobie et al. 2006 cryovolcanic outgassing "
+            "peak, when methane replenishment was at maximum). "
+            "Range: 0.2-2.0 Gya sensible. "
+            "Ref: Tobie et al. (2006) Nature 440:61."
+        ),
+    )
+    p.add_argument(
+        "--near-future-epoch-myr",
+        default=250.0,
+        type=float,
+        metavar="MYR",
+        help=(
+            "Epoch from now (Myr) for the NEAR_FUTURE anchor. "
+            "Default 250 Myr (centre of D2 window 100-400 Myr). "
+            "This is the epoch used for the video anchor frame at +0.250 Gya. "
+            "Range: 100-400 Myr sensible (within D2 window). "
+            "Ref: Lorenz et al. (1997) GRL 24:2905."
         ),
     )
 
@@ -684,13 +744,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     cfg.make_dirs()
 
     modes_to_run = (
-        ["past", "present", "future"] if args.all_temporal_modes
+        ["past", "lake_formation", "present", "near_future", "future"]
+        if args.all_temporal_modes
         else [args.temporal_mode]
     )
 
     grid_rows, grid_cols = cfg.canonical_grid_shape
     log.info("=" * 65)
-    log.info("  TITAN HABITABILITY PIPELINE")
+    log.info("  TITAN HABITABILITY PIPELINE  v%s", _pipeline_version())
     log.info("=" * 65)
     log.info("  Temporal mode(s)  : %s", ", ".join(modes_to_run))
     log.info("  Backend           : %s", cfg.bayesian_backend)

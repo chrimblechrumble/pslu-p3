@@ -43,18 +43,47 @@ Cornell archive product types (data.astro.cornell.edu/RADAR/DATA/GTDR/)
 Files are stored gzip-compressed (.IMG.gz); this reader decompresses them
 transparently.  Both .IMG and .IMG.gz paths are accepted.
 
-  GT0ED00N{lon}_{flyby}_V01  -- standard GTDR (sparse, altimetry + SARtopo only)
-  GTDED00N{lon}_{flyby}_V01  -- Dense interpolated DEM (~90% global coverage)
-  GTBED00N{lon}_{flyby}_V01  -- spherical harmonic / ellipsoid model
+Product letter codes (third character of the filename root, e.g. GT?ED):
+  GTIED -- Interpolated Elevation in metres (actual DEM)  <-- USE THIS
+  GTDED -- Distance to nearest measurement in km (data quality map, NOT elevation)
+  GTUED -- Triaxial ellipsoid shape model in metres
+  GTBED -- Spherical harmonic / baseline model
+  GT0ED -- Sparse altimetry + SARtopo only (raw GTDR, NOT interpolated)
+  GT2ED -- Standard GTDR, final mission coverage (sparse)
+
+WARNING: GTDED is easily confused with a DEM but contains measurement-coverage
+  distance values (units: km), NOT elevation.  The correct elevation product
+  is GTIED.  Using GTDED as topography will compute roughness of the coverage
+  map, not terrain relief.
 
 Each product has two half-globe tiles:
-  N090 tile: lon  0 degW -> 180 degW
-  N270 tile: lon 180 degW -> 360 degW
+  N090 tile: lon  0 degW -> 180 degW  (eastern hemisphere)
+  N270 tile: lon 180 degW -> 360 degW  (western hemisphere)
+
+Known truncation of GTIED T126 files (confirmed from Cornell server, April 2026)
+----------------------------------------------------------------------------------
+The Cornell-distributed GTIED T126 files are shorter than their PDS3 labels state.
+This is a KNOWN DATA DISTRIBUTION CHARACTERISTIC, not a download error.
+Re-downloading gives the same result.
+
+  GTIED00N090_T126_V01.IMG.gz  (6.1 MB compressed on server)
+    Uncompressed: ~6.36 MB  ->  1103 lines present out of 1440 labelled
+    Coverage: 90 degN to ~47.9 degS only
+
+  GTIED00N270_T126_V01.IMG.gz  (6.2 MB compressed on server)
+    Uncompressed: ~6.50 MB  ->  1128 lines present out of 1440 labelled
+    Coverage: 90 degN to ~51.0 degS only
+
+  Scientific impact: latitudes south of ~48-51 degS have NaN topography from
+  GTIED T126.  Ontario Lacus (72 degS, rank-10 habitability site) falls in the
+  missing region.  The Corlies 2017 4ppd CUB file (topo_4PPD_interp.cub) has
+  global coverage and is used as a gap-filler when it is available.
 
 Pipeline DEM priority (see preprocessing.py):
-  1. GTDE T126 (interpolated, ~90% global) -- PREFERRED
-  2. GT0E T126 (sparse, final mission coverage)
-  3. GT0E T077 (sparse, partial mission -- legacy fallback)
+  1. GTIED T126 (interpolated elevation, ~8ppd) -- PREFERRED; south-truncated
+  2. GT2E  T126 (sparse, final mission coverage)
+  3. GT0E  T077 (sparse, partial mission -- legacy fallback)
+  4. Corlies 2017 topo_4PPD_interp.cub -- global gap-fill (100% coverage)
 
 USGS gtdr-data.zip contains the same product set.
 
@@ -256,8 +285,7 @@ def read_gtdr_img(
     lines        = meta["lines"]
     line_samples = meta["line_samples"]
     offset       = meta["image_offset"]
-    expected_bytes = lines * line_samples * 4  # float32 = 4 bytes
-    expected_bytes = lines * line_samples * 4  # float32 = 4 bytes
+    expected_bytes = lines * line_samples * 4  # float32 = 4 bytes per sample
 
     if is_gzip:
         # Decompress fully in memory -- GTDR tiles are <=15 MB uncompressed
@@ -270,9 +298,18 @@ def read_gtdr_img(
         file_bytes = None
 
     if available < expected_bytes:
-        # Some GTDE files (e.g. T126 at 4 ppd) are slightly shorter than
-        # the label claims -- the last few rows may be absent.  Clamp to
-        # what is actually available rather than raising.
+        # The GTIED T126 files (Cornell distribution, 2019) are shorter than
+        # their PDS3 labels state.  This is a KNOWN DISTRIBUTION CHARACTERISTIC
+        # of the Cornell Cornell GTDR archive -- re-downloading gives the same
+        # result.  The truncation is always at the south end of the tile.
+        #
+        # Confirmed from server file sizes (April 2026):
+        #   GTIED00N090 (east): 1103/1440 rows -> covers 90N to ~47.9S
+        #   GTIED00N270 (west): 1128/1440 rows -> covers 90N to ~51.0S
+        #
+        # The Corlies 2017 topo_4PPD_interp.cub gap-filler has global coverage
+        # and compensates for the missing southern hemisphere data when available.
+        # Ontario Lacus (72S) falls in the missing region.
         actual_lines = available // (line_samples * 4)
         if actual_lines < 1:
             raise ValueError(
@@ -280,11 +317,15 @@ def read_gtdr_img(
                 f"available={available}, expected={expected_bytes}."
             )
         if actual_lines < lines:
+            at_8ppd = 90.0 - actual_lines / 8.0   # southernmost lat if 8 ppd
             logger.warning(
                 "%s: label says %d lines but only %d rows available "
-                "(%d bytes short). Reading %d lines.",
+                "(%d bytes short). Reading %d lines (covers to ~%.1fS at 8ppd). "
+                "This is a known Cornell distribution characteristic -- "
+                "re-downloading gives the same result.  Corlies 2017 CUB "
+                "gap-filler will cover latitudes south of this limit.",
                 img_path.name, lines, actual_lines,
-                expected_bytes - available, actual_lines,
+                expected_bytes - available, actual_lines, abs(at_8ppd),
             )
             lines = actual_lines
             expected_bytes = lines * line_samples * 4
@@ -359,20 +400,22 @@ def mosaic_gtdr_tiles(
     west_data, west_meta = read_gtdr_img(west_img, west_lbl)
 
     if east_data.shape != west_data.shape:
-        # Both tiles are truncated, but by different amounts. The label's
-        # expected row count is the authority -- pad the shorter tile with
-        # NaN rows at the bottom so the two halves can be concatenated.
-        # This preserves geographic alignment (both tiles are north-up and
-        # the truncation is always at the south end).
+        # Both tiles may be south-truncated, but by different amounts.
+        # The label's expected row count is the authority -- pad the shorter
+        # tile with NaN rows at the bottom so the two halves can be concatenated.
+        # This preserves geographic alignment (both tiles are north-up; truncation
+        # is always at the south end -- see module docstring for full details).
         target_rows = max(east_data.shape[0], west_data.shape[0])
         def _pad_rows(arr: np.ndarray, n: int) -> np.ndarray:
             if arr.shape[0] >= n:
                 return arr
-            pad = np.full((n - arr.shape[0], arr.shape[1]), np.nan, dtype=arr.dtype)
+            n_pad = n - arr.shape[0]
+            pad = np.full((n_pad, arr.shape[1]), np.nan, dtype=arr.dtype)
             logger.warning(
                 "GTDR mosaic: padding %d missing south rows with NaN "
-                "(tile was %d rows, target %d)",
-                n - arr.shape[0], arr.shape[0], n,
+                "(tile was %d rows, target %d; ~%.1f deg gap at 8ppd). "
+                "Corlies 2017 gap-filler covers this region if available.",
+                n_pad, arr.shape[0], n, n_pad / 8.0,
             )
             return np.concatenate([arr, pad], axis=0)
         east_data = _pad_rows(east_data, target_rows)

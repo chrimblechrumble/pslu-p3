@@ -406,7 +406,7 @@ END
         """
         Mismatched tile row counts (both truncated, different amounts) must NOT
         raise -- instead the shorter tile is NaN-padded at the south end so the
-        mosaic can be assembled.  This reflects real GTDE files where both
+        mosaic can be assembled.  This reflects real GTIE files where both
         hemispheres arrive truncated but by different byte counts.
         """
         from titan.io.gtdr_reader import mosaic_gtdr_tiles
@@ -518,11 +518,11 @@ class TestAffineTransformExtended:
 
 
 # ---------------------------------------------------------------------------
-# Integration tests using real GTDR/GTDE files from tests/fixtures/gtdr/
+# Integration tests using real GTDR/GTIE elevation files from tests/fixtures/gtdr/
 #
 # Fixture availability (all auto-skip if absent):
-#   gtde_east_img -- GTDED00N090_T126_V01  (interpolated, ~90% coverage)
-#   gtde_west_img -- GTDED00N270_T126_V01  (interpolated, ~90% coverage)
+#   gtde_east_img -- GTIED00N090_T126_V01  (interpolated elevation, ~90% coverage north of 50S)
+#   gtde_west_img -- GTIED00N270_T126_V01  (interpolated elevation, ~90% coverage north of 51S)
 #   gtdr_east_img -- GT2ED00N090_T126_V01  (sparse) or GT0EB00N090_T077_V01 (legacy)
 #
 # Cornell archive: https://data.astro.cornell.edu/RADAR/DATA/GTDR/
@@ -531,7 +531,7 @@ class TestAffineTransformExtended:
 
 class TestGTDRIntegration:
     """
-    Integration tests against real GTDR/GTDE tiles in tests/fixtures/gtdr/.
+    Integration tests against real GTDR/GTIE elevation tiles in tests/fixtures/gtdr/.
     See tests/fixtures/README.md for setup instructions.
     """
 
@@ -620,11 +620,11 @@ class TestGTDRIntegration:
         valid = np.isfinite(d_plain)
         np.testing.assert_array_equal(d_plain[valid], d_gz[valid])
 
-    # -- GTDE interpolated DEM tests ---------------------------------------
+    # -- GTIE interpolated elevation DEM tests -----------------------------
 
-    def test_real_gtde_east_has_global_coverage(self, gtde_east_img: Any) -> None:
+    def test_real_gtie_east_has_global_coverage(self, gtde_east_img: Any) -> None:
         """
-        GTDE east tile (Dense interpolated) must have substantially higher
+        GTIE east tile (Interpolated Elevation, metres) must have substantially higher
         coverage than sparse GTDR: expect >80% valid pixels.
         This confirms the spline interpolation filled the track gaps.
         """
@@ -637,8 +637,8 @@ class TestGTDRIntegration:
 
         data, meta = read_gtdr_img(gtde_east_img, lbl)
 
-        # GTDE tiles may be at any resolution (2, 4, or 8 ppd depending on the
-        # specific Cornell file).  GTDED00N090_T126_V01 is 8 ppd -> 1440x1440.
+        # GTIE T126 tiles are at 8 ppd (5.62 km/px). Coverage is ~90N to ~48-51S due to
+        # specific Cornell file).  GTIED00N090_T126_V01 is 8 ppd -> 1440x1440.
         # Don't hardcode (360,360); derive from map_resolution instead.
         ppd = meta.get("map_resolution", 2.0)
         expected_cols = round(180.0 * ppd)
@@ -655,15 +655,15 @@ class TestGTDRIntegration:
 
         valid_frac = len(finite) / data.size
         assert valid_frac > 0.80, (
-            f"GTDE should have >80% valid pixels (spline-interpolated); "
-            f"got {valid_frac:.1%}.  Verify this is GTDED*, not sparse GT0E."
+            f"GTIE should have >80% valid pixels (interpolated elevation); "
+            f"got {valid_frac:.1%}.  Verify this is GTIED*, not sparse GT0E."
         )
         assert finite.min() >= -2000.0
         assert finite.max() <=  1000.0
 
-    def test_real_gtde_mosaic_near_global(self, gtde_east_img: Any, gtde_west_img: Any) -> None:
+    def test_real_gtie_mosaic_near_global(self, gtde_east_img: Any, gtde_west_img: Any) -> None:
         """
-        Mosaic both GTDE tiles and verify near-global coverage:
+        Mosaic both GTIE tiles and verify near-global coverage.
           - shape (360, 720), full 0-360 deg longitude span
           - >90% valid pixels (confirms interpolated fill)
           - east and west hemispheres have different mean elevations
@@ -681,7 +681,7 @@ class TestGTDRIntegration:
             _lbl(gtde_east_img), _lbl(gtde_west_img),
         )
 
-        # Shape depends on ppd: GTDE T126 is 8 ppd -> 1440 cols per tile -> 2880 mosaic
+        # Shape depends on ppd: GTIE T126 is 8 ppd -> 1440 cols per tile -> 2880 mosaic cols
         ppd = meta.get("map_resolution", 2.0)
         expected_ncols = round(360.0 * ppd)  # full 360 deg at this resolution
         assert mosaic.shape[1] == expected_ncols, (
@@ -694,7 +694,7 @@ class TestGTDRIntegration:
 
         valid_frac = float(np.sum(np.isfinite(mosaic))) / mosaic.size
         assert valid_frac > 0.90, (
-            f"GTDE mosaic should have >90% valid pixels; got {valid_frac:.1%}"
+            f"GTIE mosaic should have >90% valid pixels; got {valid_frac:.1%}"
         )
 
         half = mosaic.shape[1] // 2
@@ -708,7 +708,7 @@ class TestGTDRIntegration:
     def test_preprocess_uses_gtde_when_available(self, gtde_east_img: Path,
                                                    gtde_west_img: Path, tmp_path: Path) -> None:
         """
-        When GTDE tiles are present, _preprocess_topography should use them
+        When GTIE tiles are present, _preprocess_topography should use them
         (not fall back to sparse GT0E), and the output raster should have
         near-global coverage.
         Requires rasterio.
@@ -724,7 +724,7 @@ class TestGTDRIntegration:
         data_dir = tmp_path / "data"
         data_dir.mkdir()
 
-        # Symlink or copy GTDE tiles into a temp data_dir
+        # Symlink or copy GTIE tiles into a temp data_dir
         for src in (gtde_east_img, gtde_west_img):
             dst = data_dir / src.name
             shutil.copy2(src, dst)

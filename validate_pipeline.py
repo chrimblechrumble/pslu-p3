@@ -480,7 +480,7 @@ def check_animation_inputs() -> None:
 def check_code_version() -> None:
     """Verify the installed code is the expected version."""
     print(f"\n{BOLD}[Code version]{RESET}")
-    EXPECTED_VERSION = "4.32"
+    EXPECTED_VERSION = "5.0"
     try:
         import sys
         sys.path.insert(0, str(Path(".").resolve()))
@@ -498,7 +498,7 @@ def check_code_version() -> None:
     except ImportError:
         _err(
             "Cannot import PIPELINE_CODE_VERSION from titan/features.py. "
-            "The installed code pre-dates v4.18.  Install the new zip."
+            "The installed code pre-dates v5.0.  Install the new zip."
         )
 
     # Also check log for the version sentinel
@@ -520,7 +520,7 @@ def check_code_version() -> None:
         else:
             _warn(
                 "No version line found in pipeline.log -- "
-                "outputs were generated before v4.18. Re-run the pipeline."
+                "outputs were generated before v5.0. Re-run the pipeline."
             )
 
 

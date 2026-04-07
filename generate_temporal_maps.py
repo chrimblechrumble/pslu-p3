@@ -214,7 +214,13 @@ GS_BOTTOM: float = 0.500
 
 # --- Feature weights and priors ----------------------------------------------
 
-#: Feature weights (must match pipeline run_pipeline.py for the 8 PRESENT features).
+#: Feature weights for the MODELLED animation (Bayesian formula).
+#: These differ from temporal_config.py PRESENT_FEATURES weights by -0.02 per feature
+#: because ``impact_melt_bonus`` (weight 0.09) is an animation-only feature that
+#: requires redistribution from the pipeline weights.  The resulting mu0 is 0.281
+#: vs pipeline 0.331 — intentional; checked in diagnose_full_inference.py.
+#:
+#: Animation organic_abundance prior: 0.70 (Malaska 2025; matched to pipeline v5).
 #: ``impact_melt_bonus`` is an ANIMATION-ONLY feature synthesised on-the-fly from
 #: :func:`_impact_melt_global`; it is NOT a run_pipeline.py feature and has no TIF.
 WEIGHTS: Dict[str, float] = {
@@ -237,7 +243,7 @@ LAMBDA:  float = 6.0    # likelihood sharpness
 #: ``impact_melt_bonus`` prior is 0.0 because no active impact melts exist today.
 PRIOR_MEANS: Dict[str, float] = {
     "liquid_hydrocarbon":       0.020,
-    "organic_abundance":        0.600,
+    "organic_abundance":        0.700,  # revised: Malaska (2025) + Cable (2012); matched to pipeline v5
     "acetylene_energy":         0.350,
     "methane_cycle":            0.400,
     "surface_atm_interaction":  0.350,
@@ -248,7 +254,11 @@ PRIOR_MEANS: Dict[str, float] = {
 }
 
 #: Colourmap display range for P(habitable | features).
-VMIN, VMAX = 0.10, 0.65
+#: VMAX=0.75 is calibrated for both output systems:
+#:   - Animation Bayesian formula: hard max = 0.673  → sits at 88% of scale
+#:   - sklearn RandomForest anchors: p90 ≈ 0.780     → clips only ~10% of pixels
+#:   (VMAX=0.65 clipped 34% of sklearn pixels; VMAX=0.75 reduces this to ~10%)
+VMIN, VMAX = 0.10, 0.75
 
 # --- Epoch axis ---------------------------------------------------------------
 
@@ -355,7 +365,16 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
 # --- Solar / temperature models -----------------------------------------------
 
 def solar_luminosity_ratio(t: float) -> float:
-    """L(t) / L_present. Continuous through t=0."""
+    """L(t) / L_present.
+
+    Continuous at t=0 (main-sequence join).  Has a deliberate step
+    discontinuity at t=5.0 Gya: the main-sequence branch gives
+    L=2.05 at t=5.0-ε while the red-giant ramp starts at L=1.0 at
+    t=5.0+ε (ΔT≈18 K).  At t=5.0 all liquid-dependent scale functions
+    are zero (lakes gone, methane gone) so the posterior map is not
+    visually affected by this seam.  Acetylene scale has a +0.31 step
+    but contributes only Δw_sum≈0.017 → ΔP(hab)≈0.001 (imperceptible).
+    """
     age_now = 4.57
     age = age_now + t
     if age <= 0:
@@ -1006,6 +1025,7 @@ def render_frame(
     n_epochs:   int,
     dpi:        int = 120,
     narrative:  str = "",
+    source:     str = "MODELLED",
 ) -> "matplotlib.figure.Figure":
     """
     Render a single epoch as a matplotlib figure with three panels:
@@ -1648,7 +1668,22 @@ def render_frame(
     _pd = _PANEL[_panel_key]
 
     # -- Left column: Active features + excluded ---------------------------------
-    _feat_lines = ["ACTIVE FEATURES  (weight level: HIGH / MED / LOW / RAMP / DECL)"]
+    # Weight-level indicators reflect different systems per source:
+    #   MODELLED* : Bayesian formula weights (animation WEIGHTS dict)
+    #   PCHIP / CLAMPED / BLEND : sklearn RandomForest from pipeline runs
+    #                              (actual importances may differ from Bayesian)
+    _blend_alpha = float(source.split("α=")[1].rstrip(")")) if "TRANSITION_BLEND" in source else 0.0
+    _is_sklearn = (
+        any(s in source for s in ("PCHIP", "CLAMPED", "ANCHOR"))
+        or ("BLEND" in source and "TRANSITION_BLEND" not in source)
+        or ("TRANSITION_BLEND" in source and _blend_alpha > 0.0)
+    )
+    _wt_caveat = (
+        "  ← RF pipeline" if _is_sklearn else "  (Bayesian weights)"
+    )
+    _feat_lines = [
+        f"ACTIVE FEATURES  (weight level: HIGH / MED / LOW / RAMP / DECL{_wt_caveat})"
+    ]
     _feat_lines.append("─" * 70)
     for fname, level, desc in _pd["active"]:
         _lvl_col = {"HIGH": "▶▶▶", "MED": "▶▶○", "LOW": "▶○○",
@@ -1669,7 +1704,7 @@ def render_frame(
     )
 
     # -- Centre column: Colour trends --------------------------------------------
-    _colour_lines = ["COLOUR SCALE  ( 0.10 ← DARK          BRIGHT → 0.65 )"]
+    _colour_lines = [f"COLOUR SCALE  ( {VMIN:.2f} ← DARK          BRIGHT → {VMAX:.2f} )"]
     _colour_lines.append("─" * 42)
     for ln in _pd["colour"].split("\n"):
         _colour_lines.append(f"  {ln}")
@@ -1677,8 +1712,12 @@ def render_frame(
     _colour_lines.append(f"DOMINANT FEATURE THIS EPOCH:")
     _colour_lines.append("─" * 42)
     _top_feat = _pd["active"][0]
-    _colour_lines.append(f"  {_top_feat[0]}")
-    _colour_lines.append(f"  {_top_feat[2]}")
+    if _is_sklearn:
+        _colour_lines.append(f"  {_top_feat[0]}  (by Bayesian proxy)")
+        _colour_lines.append(f"  RF importances may differ — see pipeline logs")
+    else:
+        _colour_lines.append(f"  {_top_feat[0]}")
+        _colour_lines.append(f"  {_top_feat[2]}")
 
     fig.text(
         0.535, 0.448, "\n".join(_colour_lines),
@@ -1700,8 +1739,13 @@ def render_frame(
     _assump_lines.append("  • Grid: 1802 × 3603 px (Titan R = 2575 km)")
     _assump_lines.append("  • Organic abundance: Lopes (2019) geo_only mode")
     _assump_lines.append("  • Label balance: 50/50 (pure median split)")
-    _assump_lines.append("  • Backend: sklearn RandomForestClassifier")
-    _assump_lines.append("  • Temporal scaling: modelled (present TIFs scaled)")
+    if _is_sklearn:
+        _assump_lines.append("  • Backend: sklearn RandomForestClassifier")
+        _assump_lines.append(f"  • Source: {source}")
+    else:
+        _assump_lines.append("  • Backend: Bayesian Beta update (animation)")
+        _assump_lines.append(f"  • Source: {source}")
+        _assump_lines.append("  • Temporal scaling: modelled (present TIFs scaled)")
 
     fig.text(
         0.990, 0.448, "\n".join(_assump_lines),
@@ -2100,6 +2144,24 @@ def _encode_animation(
         print("  GIF encoding failed -- MP4 is the primary output")
 
 
+# ---------------------------------------------------------------------------
+# Bayesian -> sklearn probability rescaling  (module-level so both animation
+# functions can share it without redefinition)
+# The analytical Bayesian posterior spans [0.128, 0.673] under the present-
+# epoch prior (k=5, l=6); the sklearn RF posteriors span ~[0.142, 0.780].
+# Rescaling prevents a visible step at the MODELLED_RESCALED/PCHIP boundary
+# in full_inference mode.
+# ---------------------------------------------------------------------------
+_BAY_MIN, _BAY_MAX = 0.128, 0.673
+_SKL_MIN, _SKL_MAX = 0.142, 0.780
+
+
+def _rescale_bayesian(arr: np.ndarray) -> np.ndarray:
+    """Map Bayesian posterior scale onto sklearn RF probability scale."""
+    return (_SKL_MIN + (arr - _BAY_MIN) / (_BAY_MAX - _BAY_MIN)
+            * (_SKL_MAX - _SKL_MIN)).astype(np.float32)
+
+
 def _run_animation_modelled(
     args:             argparse.Namespace,
     epochs:           np.ndarray,
@@ -2251,18 +2313,38 @@ def _run_animation_full_inference(
         return
 
     # -- Anchor epoch -> posterior map -----------------------------------------
-    # Anchor epochs (Gya from present; negative = past)
-    # We only PCHIP-interpolate the well-constrained intervals.
+    # PCHIP covers only the well-constrained interval where Cassini feature
+    # maps are valid: lake_formation (-1.0 Gya) to near_future (+0.25 Gya).
+    #
+    # The past anchor (-3.5 Gya) is intentionally EXCLUDED from PCHIP because
+    # the past temporal mode still uses Cassini-era feature maps (organic_abundance,
+    # surface_atm_interaction, topographic_complexity) which encode north polar
+    # lake signatures even though no lakes existed at -3.5 Gya.  This makes the
+    # past posterior artificially bright at the poles (N.polar median ≈ 0.70).
+    #
+    # Instead, pre-lake-formation frames (t < -1.0 Gya) use the MODELLED scalar
+    # approach with a rescaling factor to match the sklearn probability range.
+    # The modelled approach correctly attenuates polar contributions through the
+    # feature scale functions (liquid_hydrocarbon → 0.10, etc.).
+    #
+    # Intervals:
+    #   t < -1.0 Gya        MODELLED_SCALAR (rescaled to sklearn range)
+    #   -1.0 → +0.25 Gya    PCHIP (lake_formation, present, near_future)
+    #   +0.25 → +5.0 Gya    CLAMPED_NEAR_FUTURE
+    #   +5.0 → +6.0 Gya     EUTECTIC_BLEND (near_future → future)
+    #   +6.0 → +6.5 Gya     REFREEZE_BLEND (future → past)
+
     PCHIP_ANCHOR_EPOCHS: List[float] = []
     PCHIP_ANCHOR_POSTS:  List[np.ndarray] = []
 
     anchor_epoch_map: Dict[str, float] = {
-        "past":           -3.5,
         "lake_formation": -1.0,
         "present":         0.0,
         "near_future":    +0.250,
+        "future":         +5.9,   # last ocean epoch (T=466K > 176K; t=6.0 already T=89K)
     }
-    for name in ["past", "lake_formation", "present", "near_future"]:
+    # Note: "past" is deliberately excluded — see comment above.
+    for name in ["lake_formation", "present", "near_future"]:
         if name in anchors:
             PCHIP_ANCHOR_EPOCHS.append(anchor_epoch_map[name])
             PCHIP_ANCHOR_POSTS.append(anchors[name])
@@ -2284,10 +2366,43 @@ def _run_animation_full_inference(
         pchip = None
         t_interp_lo = t_interp_hi = 0.0
 
-    # The near_future -> future gap uses modelled scalars
-    # The future anchor (+6 Gya) is used for frames near +6 Gya
-    future_post: Optional[np.ndarray] = anchors.get("future")
-    T_FUTURE_ANCHOR: float = 6.0   # Gya; frames within ±0.1 Gya use future anchor
+    # The near_future -> future gap uses LINEAR BLENDING between the two
+    # sklearn anchor posteriors.  Previously used MODELLED_SCALAR (the
+    # animation's Bayesian formula) but that has a hard max of 0.673 while
+    # sklearn posteriors reach 0.85, causing a visible step change in colour
+    # at the PCHIP/scalar boundary.  Linear blending stays entirely in
+    # sklearn probability space, eliminating the discontinuity.
+    #
+    # Linear blending is used rather than PCHIP for this interval because
+    # the trajectory is non-monotonic (lake evaporation → dry → ocean), so
+    # PCHIP would require intermediate anchor points that don't exist.  The
+    # visual impression of a smooth cross-fade is scientifically reasonable:
+    # it represents gradual surface change without claiming to model the
+    # precise intermediate state.
+    near_future_post: Optional[np.ndarray] = anchors.get("near_future")
+    future_post:      Optional[np.ndarray] = anchors.get("future")
+    past_post:        Optional[np.ndarray] = anchors.get("past")
+    T_BLEND_LO:   float = +4.0    # start blend at "solar warming ramp" (+4.0 Gya)
+    T_FUT:        float = +5.9    # future anchor: last ocean epoch (T=466K @ +5.9 Gya)
+    T_REFREEZE:   float = +6.5    # refreezing complete
+
+    # Blending strategy for t > +0.25 Gya:
+    #
+    #   +0.25 → +5.0 Gya  CLAMP to near_future anchor
+    #     The polar-lake spatial pattern is essentially unchanged for 4.75 Gyr:
+    #     lakes persist, equatorial remains dark, solar warming is modest.
+    #     Linear-blending over this whole window made the equatorial region
+    #     progressively orange even though it should stay dark until the lakes
+    #     actually evaporate (~+4.0 Gya).  Clamping avoids that artefact.
+    #
+    #   +5.0 → +6.0 Gya  LINEAR BLEND near_future → future
+    #     Rapid transition: lakes fully evaporated (+5.0), surface dry (+5.0–5.1),
+    #     eutectic crossing (+5.13), global water-ammonia ocean peak (+5.5–6.0).
+    #     The short blend window matches the physical timescale.
+    #
+    #   +6.0 → +6.5 Gya  REFREEZE BLEND future → past
+    #     Sun exits red-giant; L collapses 600× → 0.8×; ocean refreezes < 1 Myr.
+    #     Blend toward past anchor as a proxy for the cold, no-liquid state.
 
     fi_anim_dir = anim_dir.parent / "animation_full_inference"
     frames_dir  = fi_anim_dir / "frames"
@@ -2308,18 +2423,65 @@ def _run_animation_full_inference(
 
         # -- Determine posterior source for this epoch -------------------------
         source: str
-        if can_interpolate and t_interp_lo <= t <= t_interp_hi:
-            # PCHIP interpolation between past, lake_formation, present, near_future
+        if t < t_interp_lo - 0.5:
+            # t < -1.5 Gya: pure MODELLED_RESCALED (Bayesian formula).
+            # The past sklearn anchor is excluded — see comment above.
+            scaled    = scale_features_to_epoch(present, t)
+            posterior = _rescale_bayesian(bayesian_posterior_map(scaled))
+            source    = "MODELLED_RESCALED"
+        elif t < t_interp_lo:
+            # -1.5 → -1.0 Gya: BLEND between MODELLED_RESCALED and the
+            # lake_formation sklearn anchor.
+            # The Bayesian formula and sklearn RF don't agree in absolute
+            # probability scale.  Blending over 500 Myr before the PCHIP
+            # start prevents the visible step change at frame 16 (t=-1.0).
+            alpha = (t - (t_interp_lo - 0.5)) / 0.5   # 0 at -1.5, 1 at -1.0
+            alpha = float(np.clip(alpha, 0.0, 1.0))
+            scaled    = scale_features_to_epoch(present, t)
+            mod_post  = _rescale_bayesian(bayesian_posterior_map(scaled))
+            lf_post   = anchors.get("lake_formation", PCHIP_ANCHOR_POSTS[0])
+            posterior = ((1.0 - alpha) * mod_post
+                         + alpha       * lf_post).astype(np.float32)
+            source    = f"TRANSITION_BLEND(α={alpha:.2f})"
+        elif can_interpolate and t_interp_lo <= t <= t_interp_hi:
+            # PCHIP interpolation between lake_formation, present, near_future
             posterior = interpolate_posterior_at_epoch(
                 pchip, t, t_interp_lo, t_interp_hi)
             source = "INTERPOLATED_PCHIP"
-        elif future_post is not None and abs(t - T_FUTURE_ANCHOR) < 0.1:
-            # Exact future anchor ± 100 Myr
+        elif near_future_post is not None and future_post is not None and t > t_interp_hi:
+            # Blending strategy for t > +0.25 Gya:
+            #
+            # +0.25 → +4.0 Gya: CLAMP near_future (lakes stable)
+            # +4.0 → +6.0 Gya: EUTECTIC_BLEND aligned with solar-warming narrative
+            # +6.0 → +6.5 Gya: REFREEZE_BLEND future → past
+            if t <= T_BLEND_LO:
+                posterior = near_future_post
+                source    = "CLAMPED_NEAR_FUTURE"
+            elif t <= T_FUT:
+                alpha = float(np.clip(
+                    (t - T_BLEND_LO) / (T_FUT - T_BLEND_LO), 0.0, 1.0
+                ))
+                posterior = ((1.0 - alpha) * near_future_post
+                             + alpha       * future_post).astype(np.float32)
+                source = f"EUTECTIC_BLEND(α={alpha:.2f})"
+            else:
+                refreeze_ref = past_post if past_post is not None else near_future_post
+                beta = float(np.clip(
+                    (t - T_FUT) / (T_REFREEZE - T_FUT), 0.0, 1.0
+                ))
+                posterior = ((1.0 - beta) * future_post
+                             + beta        * refreeze_ref).astype(np.float32)
+                source = f"REFREEZE_BLEND(β={beta:.2f})"
+        elif near_future_post is not None and t > t_interp_hi:
+            # future anchor missing: clamp to near_future
+            posterior = near_future_post
+            source    = "CLAMPED_NEAR_FUTURE"
+        elif future_post is not None and t > T_FUT:
+            # well past future anchor: clamp to future
             posterior = future_post
-            source = "ANCHOR_FUTURE"
+            source    = "CLAMPED_FUTURE"
         else:
-            # Modelled scalars for the non-monotonic +0.25 -> +6 Gya gap
-            # (and any frames beyond the anchor ranges)
+            # Fallback: modelled scalars (should not be reached in normal runs)
             scaled    = scale_features_to_epoch(present, t)
             posterior = bayesian_posterior_map(scaled)
             source    = "MODELLED_SCALAR"
@@ -2334,7 +2496,8 @@ def _run_animation_full_inference(
         # Caption is ALWAYS shown; --pause only controls hold duration.
         frame_narrative = current_narrative if current_narrative else _narrative_for_epoch(t)
         fig = render_frame(posterior, t, i, len(epochs),
-                           dpi=args.dpi, narrative=frame_narrative)
+                           dpi=args.dpi, narrative=frame_narrative,
+                           source=source)
 
         fpath = frames_dir / f"frame_{i:03d}.png"
         fig.savefig(fpath, dpi=args.dpi, bbox_inches=None,
@@ -2380,6 +2543,13 @@ def main(args: argparse.Namespace) -> None:
 
     for d in [out_dir, tif_dir, anim_dir, poster_dir]:
         d.mkdir(parents=True, exist_ok=True)
+
+    # Optional per-epoch posterior .npy directory
+    npy_dir: Optional[Path] = None
+    if getattr(args, "save_posterior_npy", False):
+        npy_dir = anim_dir / "posteriors"
+        npy_dir.mkdir(parents=True, exist_ok=True)
+        print(f"  Saving per-epoch posteriors to: {npy_dir}")
 
     # --n-frames is an alias for --epochs
     _n_limit = args.n_frames or args.epochs or 0
@@ -2428,6 +2598,11 @@ def main(args: argparse.Namespace) -> None:
 
         # Cache for poster (6 key epochs)
         epoch_map_cache[t] = posterior
+
+        # Save per-epoch posterior .npy if requested
+        if npy_dir is not None:
+            t_str_npy = f"{t:+.4f}".replace("+", "").replace("-", "m").replace(".", "_")
+            np.save(npy_dir / f"posterior_{t_str_npy}.npy", posterior.astype(np.float32))
 
         # -- Save GeoTIFF ------------------------------------------------------
         t_str = f"{t:+.3f}".replace("+", "p").replace("-", "m").replace(".", "_")
@@ -2536,7 +2711,7 @@ def main(args: argparse.Namespace) -> None:
   | * Load any habitability_*_Gya.tif                                       |
   | * Layer -> Properties -> Symbology                                      |
   |     Render type: Singleband pseudocolor                                 |
-  |     Min: 0.10   Max: 0.65                                               |
+  |     Min: 0.10   Max: 0.80                                               |
   |     Color ramp: Magma or Plasma (perceptually uniform)                  |
   | * Set project CRS to Titan equirectangular (above)                      |
   +-------------------------------------------------------------------------+
@@ -2655,5 +2830,17 @@ if __name__ == "__main__":
             "at <DIR>/past/inference/posterior_mean.npy etc."
         ),
     )
+    p.add_argument(
+        "--save-posterior-npy",
+        action="store_true",
+        help=(
+            "Save each epoch's posterior probability map as a NumPy .npy file "
+            "in <output-dir>/animation/posteriors/posterior_<t>.npy. "
+            "These files are used by scripts/generate_temporal_trend.py to "
+            "produce the temporal habitability trend figure.  Not saved by "
+            "default because 72 frames x 6.5M pixels x float32 = ~1.9 GB."
+        ),
+    )
     args = p.parse_args()
     main(args)
+

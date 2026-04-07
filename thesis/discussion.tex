@@ -1,0 +1,432 @@
+%% ============================================================
+%% discussion.tex  — Chapter 4: Discussion
+%% ============================================================
+\chapter{Discussion}
+\label{ch:discussion}
+
+\section{Validation of the Dragonfly Landing Site}
+\label{sec:dragonfly_validation}
+
+\subsection{Mission Science Objectives}
+\label{sec:dragonfly_objectives}
+
+NASA's \dragonfly{} mission \citep{Lorenz2018Dragonfly}, selected as the
+fourth New Frontiers programme mission in 2019 and due to arrive at \titan{}
+in 2034, is a dual-quadcopter rotorcraft that exploits \titan{}'s dense
+atmosphere ($\rho \approx 5.4$\,kg\,m$^{-3}$) and low surface gravity to
+achieve powered flight.  The baseline mission covers approximately 175\,km
+of traverse over a 2.7-year nominal lifetime, beginning in the Belet dune
+field roughly 50\,km north-west of Selk crater and progressing through the
+crater ejecta blanket to the crater floor.  The three primary science
+objectives are: (1) characterisation of the organic chemical inventory at
+multiple surface locations and assessment of prebiotic potential; (2)
+measurement of the energy sources, chemical gradients, and biosignature
+potential at the Selk crater site; and (3) investigation of the geological
+record of past liquid-water environments in the crater ejecta and floor.
+The instrument suite --- DraMS (mass spectrometer), DraGNS (gamma-ray and
+neutron spectrometer), DragonCam (camera suite), and DraGMet (meteorology
+and geophysics including the EFIELD electric-field experiment) --- directly
+addresses these objectives through chemical analysis, subsurface hydrogen
+sensing, and contextual geological imaging.
+
+\subsection{Quantitative Validation of Site Selection}
+\label{sec:dragonfly_quant}
+
+The habitability analysis independently validates the \dragonfly{} landing
+site at Selk: the crater ranks in the \textbf{98th percentile} of the global
+present-epoch posterior distribution and in the \textbf{99th percentile} of
+the past-epoch distribution.  This validation is meaningful precisely because
+the model was constructed entirely from Cassini data and physical reasoning
+independent of the mission planning process.  No prior weight, feature
+specification, or backfill strategy was adjusted after examining the Selk
+region; Selk emerges as a top-ranked location because the framework
+independently recognises the same physical attributes that motivated the
+mission scientists.
+
+More consequential than the ranking alone is that the model validates the
+\textit{physical reasoning} behind the site selection.  The two features
+that most distinguish Selk from an average equatorial location are
+geomorphological diversity ($f_7 = 0.72$, 2.4$\times$ the global median)
+and subsurface ocean proximity ($f_8 = 0.22$, 7$\times$ the global mean).
+Geomorphological diversity captures the simultaneous presence of the
+dune--plains--labyrinth--crater terrain boundary, which is the physical
+expression of the organic--water-ice mixing environment central to the
+\dragonfly{} prebiotic chemistry case.  Subsurface ocean proximity captures
+the SAR-bright annulus evidence for past liquid-water front emplacement at
+this specific location.  Both features correspond precisely to aspects of
+Selk's geological character cited in the mission science rationale
+\citep{Lorenz2018Dragonfly}.
+
+The model also identifies a clear limitation of the current landing site
+selection relative to the global habitability distribution: the north polar
+lake margins score 15--20 percentage points above Selk ($P(H) \approx
+0.60$--0.63 vs $\sim$0.47) and are identified as the most productive
+present-day astrobiological environments.  Those shorelines are not
+accessible to the current \dragonfly{} trajectory for operational reasons
+--- communication geometry, landing ellipse uncertainty, and terrain
+characterisation requirements --- and this thesis does not suggest the
+landing site decision is scientifically suboptimal.  Rather, it
+provides a quantitative roadmap for the scientific case for a future
+mission targeting those north polar lake margins.
+
+\subsection{Instrument--Feature Correspondence}
+\label{sec:instrument_feature}
+
+Table~\ref{tab:instruments} maps the eight habitability features to specific
+\dragonfly{} instruments, providing a structured framework for interpreting
+measurements in the context of the habitability model.
+
+\begin{table}[H]
+\centering
+\small
+\caption{\dragonfly{} instrument--feature correspondence at Selk crater.
+``Direct'' indicates the instrument measures the specific physical quantity
+the feature proxies; ``indirect'' indicates the measurement constrains the
+feature without directly measuring it.}
+\label{tab:instruments}
+\begin{tabular}{p{3.0cm}p{3.0cm}p{1.8cm}p{5.0cm}}
+\toprule
+\textbf{Feature} & \textbf{Instrument} & \textbf{Type} & \textbf{Measurement} \\
+\midrule
+Organic abundance ($f_2$)         & DraMS    & Direct   & Tholin composition, amino acid inventory, nucleobase presence \\
+Chemical energy ($f_3$)           & DraMS    & Direct   & Surface \ce{C2H2}; depletion below photochemical models supports acetylenotrophy \\
+Subsurface ocean ($f_8$)          & DraGNS, EFIELD & Direct & Subsurface water-ice depth; Schumann resonance ocean-depth constraint \\
+Geomorphol.\ diversity ($f_7$)    & DragonCam & Direct  & Terrain class boundaries at metre scale; dune--ejecta geology \\
+Methane cycle ($f_4$)             & DraGMet  & Indirect & Atmospheric \ce{CH4}; temperature and pressure profile \\
+Surface--atm.\ interaction ($f_5$) & DraMS, DragonCam & Indirect & Chemistry at terrain boundaries; drainage morphology \\
+Liquid hydrocarbon ($f_1$)        & ---      & Gap      & No liquid-sampling instrument; no polar lake site visit \\
+Topographic complexity ($f_6$)    & DragonCam & Indirect & Surface relief at metre scale; far higher resolution than pipeline DEM \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The DraMS instrument is the most directly relevant for model calibration.
+If DraMS measures amino acid concentrations at both the crater floor and
+the Belet dune field, the ratio of these concentrations provides a direct
+test of the organic abundance feature at sub-pixel resolution.  The model
+assigns dune terrain an organic score of 0.82 versus 0.35 for crater terrain,
+predicting that the dune field has higher organic abundance per unit volume.
+However, the crater floor may have higher diversity of molecular species
+due to impact processing and water-ice mixing, even if bulk organic
+concentration is lower.  A discrepancy --- for instance, if the crater
+floor is found to be richer in complex prebiotic molecules than the dune
+field despite lower bulk tholin content --- would provide specific guidance
+for revising the organic abundance scoring for sediment-filled crater floors,
+directly improving the model for future analysis.
+
+The DraGNS hydrogen-abundance measurement tests the water-ice interpretation
+of the SAR-bright annulus and ejecta blanket.  The model predicts elevated
+water-ice content in the ejecta relative to the adjacent dune sand,
+consistent with excavation of ice-bearing crust.  Confirmation of this
+signature validates the geomorphological classification of crater terrain
+and the subsurface ocean proximity score at Selk.
+
+The EFIELD experiment aboard DraGMet, designed to detect Schumann resonances
+in \titan{}'s electromagnetic cavity, will attempt to constrain the ice
+shell thickness and hence the ocean depth \citep{Lagouanelle2024}.  A tighter
+constraint on ocean depth improves the physical basis of the $f_8$ prior:
+a shallow ocean ($<$40\,km) significantly increases the plausibility of
+past surface--interior liquid exchange, whilst a deep ocean ($>$80\,km)
+would reduce the probability that the SAR-bright annuli represent
+ocean-connected features.
+
+\section{Biosignature Framework}
+\label{sec:biosignatures}
+
+\subsection{The Detection Challenge}
+\label{sec:biosig_challenge}
+
+Interpreting potential biosignatures on \titan{} is complicated by the
+uncertain nature of the target biochemistry.  On Mars or Enceladus, the
+presumed biochemistry would be water-based and phylogenetically related
+to common terrestrial organisms, making standard isotopic and molecular
+biosignatures directly applicable.  On \titan{}'s surface, three distinct
+chemistry regimes are relevant to different epochs and locations: abiotic
+Strecker synthesis in ancient impact melts (water-based but prebiotic);
+acetylenotrophy in present-day hydrocarbon lake margins (potentially biotic
+but non-aqueous); and future red-giant ocean chemistry (water-based,
+aqueous).  Each regime has different biosignature targets, and the
+\dragonfly{} mission primarily addresses the first two.
+
+Following the framework of \citet{Catling2018}, a credible biosignature
+requires context-dependence (interpretable against background abiotic
+chemistry), reproducibility, and resistance to false positives.  Three
+measurement categories satisfy these criteria for \titan{}.
+
+\subsection{Enantiomeric Excess}
+\label{sec:enantiomers}
+
+Abiotic synthesis, including the Strecker reaction, produces racemic
+(equal L/D) amino acid mixtures.  Terrestrial life produces exclusively
+L-amino acids.  A statistically significant enantiomeric excess in DraMS
+amino acid measurements at Selk would be a strong biosignature.  DraMS
+has demonstrated sensitivity to amino acid enantiomeric ratios for
+compounds expected at \titan{} \citep{Brinckerhoff2019}.  However, small
+excesses ($<$10\%) can arise abiotically from asymmetric UV photodestruction
+or selective mineral surface adsorption; a biosignature interpretation
+requires excesses $\gg$10\%, reproducibility across multiple traverse
+waypoints, and consistency with a self-replicating biochemical system.
+
+\subsection{Carbon Isotopic Fractionation}
+\label{sec:isotopes}
+
+Biological carbon fixation preferentially incorporates $^{12}$C over
+$^{13}$C, producing $\delta^{13}$C depletions of $-25$ to $-30$\,\textperthousand{}
+(VPDB) in primary production organics on Earth.  Abiotic tholin synthesis
+produces a distinct fractionation pattern driven by the kinetic isotope
+effect in UV photolysis.  DraMS can measure organic carbon isotopic ratios;
+a $\delta^{13}$C anomaly at the biological-range magnitude, reproducible
+at multiple sites along the traverse and correlated with the model's
+highest-scoring terrain, would constitute a strong biosignature.
+
+\subsection{Acetylene Depletion}
+\label{sec:acetylenedep}
+
+If acetylenotrophy (Equation~\ref{eq:acetylenotrophy}) is active at the
+lake-margin environments identified as the globally highest-scoring in the
+present epoch, the surface \ce{C2H2} abundance should be measurably below
+photochemical model predictions \citep{Vuitton2007}.  The anomalous downward
+\ce{H2} flux reported by \citet{Strobel2010} is consistent with this
+hypothesis.  \citet{Yanez2024} estimated a predicted depletion of 5--15\%
+below photochemical equilibrium for acetylenotrophy at a metabolic energy
+density comparable to the most energy-sparse known terrestrial organisms ---
+within DraMS's projected sensitivity.  Crucially, the model identifies
+lake-margin terrain (not the Selk crater) as the highest-scoring environment
+for this biosignature, implying that a future mission directly targeting
+the north polar shorelines would be the most powerful test of the
+acetylenotrophy hypothesis.
+
+\subsection{Interpreting a Null Result}
+\label{sec:null_result}
+
+A null biosignature result at Selk would constrain specifically the
+``preserved impact-melt Strecker chemistry'' pathway at that location and
+epoch.  It would not constrain: (1) acetylenotrophy at the north polar lake
+margins, which score 15--20 percentage points higher than Selk in the present
+epoch and which \dragonfly{} does not visit; (2) life in the subsurface
+ocean, insensitive to surface sampling; or (3) extinct life from the LHB
+whose signatures may be buried below accessible depth.  The habitability maps
+provide a rigorous framework for reporting a null result in terms of which
+specific pathways have been tested and which remain open.
+
+\section{Titan in Solar System Habitability Context}
+\label{sec:solar_context}
+
+Figure~\ref{fig:solar_comparison} places \titan{}'s present-epoch and future
+habitability scores in the context of the principal candidate habitable
+environments in the solar system.  Two features distinguish \titan{} from all
+other candidates.  First, it is the only body with a confirmed cycling surface
+solvent in contact with a large organic inventory at the present epoch:
+Enceladus has confirmed hydrothermal activity but essentially no surface organic
+stockpile; Europa and Ceres have subsurface water but neither confirmed organics
+nor a surface solvent.  Second, future \titan{} uniquely combines a global
+water-based ocean with an organic feedstock accumulated over $\sim$16\,Gyr ---
+a combination unprecedented elsewhere in the solar system.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/solar_system_comparison.png}
+  \caption{Qualitative comparison of habitability-relevant properties for the
+    principal candidate habitable environments in the solar system.  Horizontal
+    bars show relative scores (1 = low to 5 = very high) for liquid availability,
+    organic inventory, and energy source.  Model $P(H)$ values from this work
+    are shown for \titan{} epochs; the Enceladus entry summarises the
+    \citet{Affholder2021} result.  The combination of cycling liquid and very
+    high organics at the present epoch, and the extraordinary organic--ocean
+    combination in the future, distinguishes \titan{} from all other candidates.}
+  \label{fig:solar_comparison}
+\end{figure}
+
+\section{Comparison with the Affholder et al.\ (2021) Enceladus Framework}
+\label{sec:affholder_comparison}
+
+The closest methodological precedent for this work is \citet{Affholder2021},
+who applied Bayesian inference to Cassini INMS plume data from Enceladus
+to compare the posterior probabilities of abiotic serpentinisation versus
+biological methanogenesis.  Their conclusion --- that the observed methane
+escape rate is most parsimoniously explained by methanogenesis if the prior
+probability of life exceeds $\sim$0.35 --- represents the most rigorous
+quantitative biosignature assessment published for any solar system body.
+
+The present work extends the Affholder et al.\ approach in three dimensions.
+It is spatial, producing a 6.49-million-pixel posterior map rather than a
+single-point estimate.  It is multi-feature, combining eight independent
+observational proxies rather than a single plume composition measurement.
+And it is multi-epoch, addressing three qualitatively distinct habitability
+regimes across geological time.
+
+A key conceptual difference also warrants emphasis.  \citet{Affholder2021}
+compute $P(\text{life}\mid\text{plume data})$ --- the posterior probability
+that life exists, given chemical measurements --- whilst this work computes
+$P(\text{habitable}\mid\featurevec)$ --- the probability that the environment
+is suitable for life.  This distinction, articulated by \citet{Cockell2014}
+in the concept of ``uninhabited but habitable'' environments, matters
+practically: a habitable environment is a necessary but not sufficient
+condition for life.  The present analysis identifies where to look; the
+Affholder-style framework tests, once measurements are made, whether life
+is actually present.  The two approaches are complementary and sequential:
+habitability mapping prioritises targets, in-situ chemistry quantifies
+whether those targets are actually inhabited.
+
+The recent results of \citet{Affholder2025} demonstrating thermodynamic
+viability of glycine fermentation in \titan{}'s subsurface ocean provide
+an important constraint on the subsurface ocean proximity feature ($f_8$).
+If the ocean is indeed habitable, then surface evidence of past
+subsurface--surface connectivity (the SAR-bright annuli at Selk and other
+crater sites) gains additional scientific weight.  A future framework
+integrating the Affholder (2025) ocean habitability posterior with the
+present surface habitability maps, propagated through a physical model
+of subsurface--surface transport, would represent a significant advance.
+
+\section{Limitations of the Framework}
+\label{sec:limitations}
+
+\subsection{Conditional Feature Independence}
+\label{sec:independence_limit}
+
+The Bayesian model treats the eight features as conditionally independent
+given the habitability latent variable $H$.  This assumption simplifies the
+posterior update to a closed-form Beta distribution but introduces potential
+bias where features are correlated.  In particular, organic abundance ($f_2$)
+and chemical energy ($f_3$) are positively correlated: both are elevated over
+tholin-rich organic terrain.  Liquid hydrocarbon ($f_1$) and surface--
+atmosphere interaction ($f_5$) are structurally correlated through the
+lake-margin component of $f_5$.  Under positive correlation, the posterior
+is slightly overestimated relative to a fully specified multivariate model.
+The magnitude of this bias can be estimated by comparing the independent-feature
+posterior with a correlated Gaussian copula model; preliminary assessment
+suggests the bias is $<$0.03 in posterior mean, smaller than the inter-epoch
+differences and the 94\% HDI width.  A full multivariate Bayesian model using
+a Gaussian copula structure is a natural extension for future work.
+
+\subsection{Static Geomorphological Template}
+\label{sec:static_template}
+
+The Lopes et al.\ (2019) geomorphological map is used for all five temporal
+configurations and all 72 interpolated epochs.  In reality, the surface
+at $-3.5\gya$ had substantially different geomorphology: fewer confirmed
+dunes (the tholin inventory was smaller), different crater density (many
+present-day craters did not yet exist, and many LHB craters may have been
+subsequently buried or eroded), and no polar lakes.  The future surface
+will be partially or completely submerged in the red-giant ocean.  The use
+of the present-day map as a proxy for all epochs is an unavoidable
+simplification given the absence of independent temporal geomorphological
+information, and represents the largest qualitative uncertainty in the
+temporal analysis.
+
+\subsection{The Past-Epoch Cassini Contamination}
+\label{sec:past_contamination}
+
+As documented in Appendix~\ref{app:assumptions} (A4), the PAST epoch
+posterior was computed using present-era Cassini SAR maps, which encode
+the present polar lake morphology even at $-3.5\gya$.  The resulting
+inflation of the north polar score ($P(H) \approx 0.70$, double the
+physically expected value) is mitigated in the multi-epoch reconstruction
+by using the Bayesian analytical formula for pre-lake-formation frames.
+However, the base-level inflation persists in the PAST static map.
+Readers should note that Table~\ref{tab:craters} reports crater scores
+from the PAST anchor, and these crater scores are not affected by the
+polar contamination (the impact-melt feature is spatially uncorrelated
+with the lake pattern).  The north polar PAST score of $\sim$0.70 is,
+however, an artefact and should be interpreted with caution.
+
+\section{Future Work}
+\label{sec:future_work}
+
+\subsection{Post-Dragonfly Model Calibration}
+\label{sec:postdragonfly}
+
+The most important near-term improvement to the framework will come from
+\dragonfly{} DraMS measurements at Selk crater and along the Belet--Selk
+traverse.  Direct measurements of amino acid concentration and molecular
+complexity at each terrain class visited will calibrate the organic abundance
+scoring ($f_2$) at per-pixel resolution for dune, crater, and ejecta terrain
+types.  These calibrated scores can be propagated globally via the Lopes
+(2019) terrain classification, reducing the dominant uncertainty in the
+organic abundance feature.  A post-\dragonfly{} version of the framework,
+incorporating these calibration measurements, would produce substantially
+tighter posterior distributions globally and would directly improve the
+scientific value of any follow-on \titan{} orbital mission.
+
+\subsection{Extension to a Full Multivariate Model}
+\label{sec:multivariate}
+
+The current Beta-conjugate model assumes feature independence.  A natural
+extension is a multivariate Bayesian model using a Gaussian copula to
+represent feature correlations, estimated from the within-class
+co-variation in feature values across the global pixel population.  The
+copula parameters can be estimated from the Cassini dataset directly,
+without requiring additional observations, and would reduce the positive
+bias associated with correlated positive features at lake margins.
+Implementation using PyMC or NumPyro is straightforward within the existing
+framework and would improve the credibility of the HDI estimates.
+
+\subsection{Additional Temporal Anchor Epochs}
+\label{sec:more_anchors}
+
+The current five-anchor temporal reconstruction has the largest uncertainties
+at the lake-formation transition ($-1.5$ to $-0.5\gya$) and the solar-warming
+collapse ($+4.0$ to $+5.5\gya$).  These transitions are physically
+important --- one represents the establishment of the present-day dominant
+habitability regime, the other its collapse --- and are currently represented
+by interpolation between widely-spaced anchors.  Adding three to five
+additional anchor epochs concentrated at these transitions, generated by
+running the full Bayesian pipeline with physically appropriate feature
+sets at those intermediate times, would substantially improve the temporal
+resolution and reduce the interpolation uncertainty.
+
+\section{Conclusions}
+\label{sec:conclusions}
+
+This thesis has presented the first quantitative, spatially-resolved,
+multi-epoch Bayesian habitability map of \titan{}'s surface, derived from
+eight observational proxy features extracted from the complete Cassini
+remote sensing dataset.  The principal conclusions are:
+
+\textbf{1. North polar lake margins are the most habitable present-day
+environments on \titan{}'s surface.}  The southern shoreline of Kraken Mare
+achieves $P(H) \approx 0.58$--0.63, in the global top 3--5\%.  The dominant
+drivers are the coincidence of liquid hydrocarbon solvent, continuous
+fluvial delivery of organic material from the equatorial dune belt, and
+seasonal wetting--drying cycles that thermodynamically concentrate organic
+chemistry.
+
+\textbf{2. During the Late Heavy Bombardment, impact-melt ponds at crater
+sites were the primary habitability environments.}  Selk crater ranks highest
+among all confirmed impact structures at the past epoch ($P(H) = 0.51$,
+99th percentile), because its position at the organic-rich dune--plains
+boundary maximises Strecker amino acid synthesis potential in the melt.
+
+\textbf{3. The temporal habitability trajectory is non-monotonic.}  The
+transition from the present hydrocarbon-lake regime to the future red-giant
+ocean passes through a transient minimum at $\sim$$+5.0\gya$, when the
+methane seas have evaporated but the surface is not yet warm enough for
+liquid water.
+
+\textbf{4. The red-giant ocean at $+5.9\gya$ represents an extraordinary
+future habitability scenario.}  A global water--ammonia ocean over a
+$\sim$70\,km accumulated organic sediment layer, maintained for
+$\sim$0.8\,Gyr, provides conditions for prebiotic chemistry of a richness
+unmatched elsewhere in the solar system.
+
+\textbf{5. The Dragonfly landing site is independently validated.}  Selk
+ranks in the 98th percentile present-epoch and 99th percentile past-epoch
+distributions.  The highest-scoring features at Selk (geomorphological
+diversity and subsurface ocean proximity) directly correspond to the
+mission's scientific rationale.
+
+\textbf{6. Feature importances validate the prior specification.}  All
+eight importance/weight ratios lie within 10\% of unity, confirming
+that the geographic discrimination provided by each Cassini observable
+matches the astrobiological importance assigned through independent
+physical reasoning.
+
+Together, these results demonstrate that \titan{} possesses a multilayered
+astrobiological significance extending from its geological past through the
+present to the far future, and that its habitability can be quantified
+spatially and temporally from the Cassini legacy dataset with sufficient
+precision to guide mission planning and interpret in-situ measurements.
+The Bayesian multi-feature framework presented here provides a reproducible,
+extendable foundation for this work, and the directly testable predictions it
+makes for \dragonfly{} DraMS and DraGNS measurements at Selk represent
+the most important near-term validation pathway.

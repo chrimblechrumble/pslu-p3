@@ -9,6 +9,7 @@ how would I know which VIMS cubes to use?
 - [x] Add text sections at the bottom of video for which features are and are not included. Add a more in 
 depth explanation for what is happening for each feature that is being used and which one dominates that explains the 
 coming colour trends in locations of interest, and also what assumptions are being made.
+- [ ] Make set of labelled sites consistent across phases
 
 ## Video/static frames
 - [x] Use the same habitability scoring data for all three maps in the video. The habitability colouring of eg.g Ligeia is 

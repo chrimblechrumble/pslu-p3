@@ -334,7 +334,7 @@ class FeatureStack:
 # ---------------------------------------------------------------------------
 # Pipeline version identifier -- logged at startup and checked by validator
 # ---------------------------------------------------------------------------
-PIPELINE_CODE_VERSION: str = "4.32"
+PIPELINE_CODE_VERSION: str = "5.0"
 
 # ---------------------------------------------------------------------------
 # Organic-abundance source mode
@@ -580,7 +580,6 @@ class FeatureExtractor:
         )
 
         # Version sentinel: this line confirms code version in the log.
-        # If you see "v4.18 SAR-cap active" in the log, the new code is running.
         # If this line is absent, the installed code is stale (old zip).
         logger.info(
             "_liquid_hydrocarbon: code v%s -- SAR cap=0.05; Birch Fl=1.0, El/Em=0.0, NODATA→SAR",

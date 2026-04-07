@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import logging
 import re
+import html as _html
 import time
 from pathlib import Path
 from typing import Optional
@@ -54,9 +55,11 @@ _RE_SUB_SC     = re.compile(
 _RE_DISTANCE   = re.compile(r"Distance\s+([\d,]+)\s+km")
 
 
-def _strip_html(html: str) -> str:
-    """Remove all HTML tags; collapses to whitespace so regexes span tag boundaries."""
-    return _RE_TAGS.sub(" ", html)
+def _strip_html(raw_html: str) -> str:
+    """Strip HTML tags, decode entities (e.g. &deg; -> °), collapse whitespace.
+    The portal serves degree symbols as &deg; entities which requests fetches
+    verbatim; html.unescape() converts them before regex matching."""
+    return _html.unescape(_RE_TAGS.sub(" ", raw_html))
 
 
 def _get(url: str, session, retries: int = 4, backoff: float = 2.0) -> str:
@@ -222,4 +225,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

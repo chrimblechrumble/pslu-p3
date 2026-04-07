@@ -73,6 +73,7 @@ import argparse
 import json
 import logging
 import re
+import html as _html
 import shutil
 import sys
 import time
@@ -103,9 +104,11 @@ _RE_DISTANCE   = re.compile(r"Distance\s+([\d,]+)\s+km")
 _RE_TAGS       = re.compile(r"<[^>]+>")
 
 
-def _strip_html(html: str) -> str:
-    """Remove all HTML tags, collapsing tags to whitespace for regex matching."""
-    return _RE_TAGS.sub(" ", html)
+def _strip_html(raw_html: str) -> str:
+    """Strip HTML tags, decode entities (e.g. &deg; -> °), collapse whitespace.
+    The portal serves degree symbols as &deg; entities which requests fetches
+    verbatim; html.unescape() converts them before regex matching."""
+    return _html.unescape(_RE_TAGS.sub(" ", raw_html))
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -127,6 +130,7 @@ def _get_text(url: str, session, retries: int = 4, backoff: float = 2.0) -> str:
         try:
             r = session.get(url, timeout=30)
             r.raise_for_status()
+            r.encoding = 'utf-8'  # force UTF-8; server omits charset in Content-Type header
             return r.text
         except Exception as exc:
             if attempt == retries - 1:
@@ -769,4 +773,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -2144,6 +2144,24 @@ def _encode_animation(
         print("  GIF encoding failed -- MP4 is the primary output")
 
 
+# ---------------------------------------------------------------------------
+# Bayesian -> sklearn probability rescaling  (module-level so both animation
+# functions can share it without redefinition)
+# The analytical Bayesian posterior spans [0.128, 0.673] under the present-
+# epoch prior (k=5, l=6); the sklearn RF posteriors span ~[0.142, 0.780].
+# Rescaling prevents a visible step at the MODELLED_RESCALED/PCHIP boundary
+# in full_inference mode.
+# ---------------------------------------------------------------------------
+_BAY_MIN, _BAY_MAX = 0.128, 0.673
+_SKL_MIN, _SKL_MAX = 0.142, 0.780
+
+
+def _rescale_bayesian(arr: np.ndarray) -> np.ndarray:
+    """Map Bayesian posterior scale onto sklearn RF probability scale."""
+    return (_SKL_MIN + (arr - _BAY_MIN) / (_BAY_MAX - _BAY_MIN)
+            * (_SKL_MAX - _SKL_MIN)).astype(np.float32)
+
+
 def _run_animation_modelled(
     args:             argparse.Namespace,
     epochs:           np.ndarray,
@@ -2175,14 +2193,6 @@ def _run_animation_modelled(
     frames_dir.mkdir(exist_ok=True)
 
     pause_idx, NORMAL_HOLD = _build_pause_timing(epochs, args)
-
-    # Rescaling: map Bayesian formula [0.128, 0.673] to sklearn [0.142, 0.780]
-    # Defined once outside the loop (efficiency + closure safety).
-    _BAY_MIN, _BAY_MAX = 0.128, 0.673
-    _SKL_MIN, _SKL_MAX = 0.142, 0.780
-    def _rescale_bayesian(arr: np.ndarray) -> np.ndarray:
-        return (_SKL_MIN + (arr - _BAY_MIN) / (_BAY_MAX - _BAY_MIN)
-                * (_SKL_MAX - _SKL_MIN)).astype(np.float32)
 
     concat_lines: List[str] = []
     frame_paths:  List[Path] = []
@@ -2534,6 +2544,13 @@ def main(args: argparse.Namespace) -> None:
     for d in [out_dir, tif_dir, anim_dir, poster_dir]:
         d.mkdir(parents=True, exist_ok=True)
 
+    # Optional per-epoch posterior .npy directory
+    npy_dir: Optional[Path] = None
+    if getattr(args, "save_posterior_npy", False):
+        npy_dir = anim_dir / "posteriors"
+        npy_dir.mkdir(parents=True, exist_ok=True)
+        print(f"  Saving per-epoch posteriors to: {npy_dir}")
+
     # --n-frames is an alias for --epochs
     _n_limit = args.n_frames or args.epochs or 0
     epochs = make_epoch_axis(n_limit=_n_limit if _n_limit > 0 else None)
@@ -2581,6 +2598,11 @@ def main(args: argparse.Namespace) -> None:
 
         # Cache for poster (6 key epochs)
         epoch_map_cache[t] = posterior
+
+        # Save per-epoch posterior .npy if requested
+        if npy_dir is not None:
+            t_str_npy = f"{t:+.4f}".replace("+", "").replace("-", "m").replace(".", "_")
+            np.save(npy_dir / f"posterior_{t_str_npy}.npy", posterior.astype(np.float32))
 
         # -- Save GeoTIFF ------------------------------------------------------
         t_str = f"{t:+.3f}".replace("+", "p").replace("-", "m").replace(".", "_")
@@ -2808,5 +2830,17 @@ if __name__ == "__main__":
             "at <DIR>/past/inference/posterior_mean.npy etc."
         ),
     )
+    p.add_argument(
+        "--save-posterior-npy",
+        action="store_true",
+        help=(
+            "Save each epoch's posterior probability map as a NumPy .npy file "
+            "in <output-dir>/animation/posteriors/posterior_<t>.npy. "
+            "These files are used by scripts/generate_temporal_trend.py to "
+            "produce the temporal habitability trend figure.  Not saved by "
+            "default because 72 frames x 6.5M pixels x float32 = ~1.9 GB."
+        ),
+    )
     args = p.parse_args()
     main(args)
+

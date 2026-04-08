@@ -939,6 +939,10 @@ class BayesianPriorConfig:
 
     # -- Prior means (Beta distribution: alpha = mean x kappa) ---------------------
     prior_mean_liquid_hydrocarbon:      float = 0.02
+    # NOTE: These default prior_means are superseded at runtime by
+    # configs/temporal_config.py which provides epoch-specific values.
+    # The PRESENT epoch runtime values are: organic=0.70, acetylene=0.35
+    # (giving mu_0=0.331 matching the thesis). The defaults here are stale.
     prior_mean_organic_abundance:       float = 0.60
     prior_mean_acetylene_energy:        float = 0.30
     prior_mean_methane_cycle:           float = 0.40

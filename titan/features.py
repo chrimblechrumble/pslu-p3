@@ -216,6 +216,29 @@ def _geo_class_to_organic(geo_int32: np.ndarray) -> np.ndarray:
     return result
 
 
+def _lon_wrap_fill_array(arr: np.ndarray, radius: int = 5) -> np.ndarray:
+    """
+    Fill NaN pixels in the first/last *radius* columns of a 2-D array
+    by copying from the opposite (longitude-wrapped) edge.
+
+    This corrects the bilinear-resampling edge artefact in rasterio.reproject
+    that leaves col=0 (0°W) NaN in topography_canonical.tif.  Applied
+    defensively on every in-memory DEM load so that feature extraction is
+    robust even against un-patched source TIFs.
+    """
+    out = arr.copy()
+    ncols = out.shape[1]
+    for offset in range(radius):
+        left, right = offset, ncols - 1 - offset
+        left_nan  = ~np.isfinite(out[:, left])
+        right_nan = ~np.isfinite(out[:, right])
+        if left_nan.any():
+            out[left_nan, left]  = out[left_nan, right]
+        if right_nan.any():
+            out[right_nan, right] = out[right_nan, left]
+    return out
+
+
 @dataclass
 class FeatureStack:
     """
@@ -1315,7 +1338,8 @@ class FeatureExtractor:
             energy = 1.0 - sar_norm
 
             if "topography" in stack:
-                dem = stack["topography"].values.astype(np.float32)
+                dem = _lon_wrap_fill_array(
+                    stack["topography"].values.astype(np.float32))
                 # Inverted elevation: low terrain -> higher accumulation
                 topo_inv = normalise_to_0_1(-dem, percentile_lo=2, percentile_hi=98)
                 topo_inv = np.where(np.isfinite(topo_inv), topo_inv, 0.0)
@@ -1476,7 +1500,7 @@ class FeatureExtractor:
             chan_density = uniform_filter(
                 np.where(np.isfinite(chan), chan, 0.0),
                 size=11,   # ~11 px * 4.49 km/px ~ 50 km
-                mode="constant", cval=0.0,
+                mode=("reflect", "wrap"),  # wrap in longitude, reflect in lat
             )
             channel_weight = normalise_to_0_1(chan_density).astype(np.float32)
             logger.debug("methane_cycle: channel density proxy used (secondary)")
@@ -1634,8 +1658,18 @@ class FeatureExtractor:
 
         # -- 1. Topographic slope ----------------------------------------------
         if "topography" in stack:
-            dem: np.ndarray = stack["topography"].values.astype(np.float64)
-            dy, dx = np.gradient(np.where(np.isfinite(dem), dem, 0.0))
+            dem: np.ndarray = _lon_wrap_fill_array(
+                stack["topography"].values.astype(np.float64))
+            dem_filled = np.where(np.isfinite(dem), dem, 0.0)
+            # Longitude-wrap fix: pad one column on each side so np.gradient
+            # uses the correct wrapped neighbor at the 0°W/360°W boundary,
+            # then crop the result back to the original width.
+            dem_wrapped = np.concatenate(
+                [dem_filled[:, -1:], dem_filled, dem_filled[:, :1]], axis=1
+            )
+            _, dx_w = np.gradient(dem_wrapped)
+            dy, dx  = np.gradient(dem_filled)   # dy (lat) unchanged
+            dx      = dx_w[:, 1:-1]             # central-diff lon column
             slope_f64: np.ndarray = np.sqrt(dx**2 + dy**2)
             slope: np.ndarray = np.clip(
                 slope_f64, 0.0, np.finfo(np.float32).max
@@ -1735,7 +1769,8 @@ class FeatureExtractor:
                 from scipy.ndimage import uniform_filter
                 # Smooth over ~45 km (~10 px) to capture proximity to basins
                 paleo_indicator: np.ndarray = normalise_to_0_1(
-                    uniform_filter(empty_mask, size=10, mode="constant", cval=0.0)
+                    uniform_filter(empty_mask, size=10,
+                                   mode=("reflect", "wrap"))
                 )
                 components.append(paleo_indicator)
                 weights.append(W_PALEO)
@@ -1828,7 +1863,8 @@ class FeatureExtractor:
         Lopes et al. (2020)    doi:10.1038/s41550-019-0917-6
         """
         if "topography" in stack:
-            dem = stack["topography"].values.astype(np.float32)
+            dem = _lon_wrap_fill_array(
+                stack["topography"].values.astype(np.float32))
             return compute_topographic_roughness(dem, window_radius=5)
 
         logger.warning(
@@ -2016,9 +2052,9 @@ class FeatureExtractor:
             sar_norm  = normalise_to_0_1(sar_valid, percentile_lo=2, percentile_hi=98)
 
             # Local mean in a small window (inner: ~5 px radius = potential bright rim)
-            inner_mean = uniform_filter(sar_norm, size=5)
+            inner_mean = uniform_filter(sar_norm, size=5, mode=('reflect', 'wrap'))
             # Local mean in a larger window (outer: ~25 px = surrounding terrain)
-            outer_mean = uniform_filter(sar_norm, size=25)
+            outer_mean = uniform_filter(sar_norm, size=25, mode=('reflect', 'wrap'))
 
             # Annular signal: pixel is brighter than outer neighbourhood
             # but the outer neighbourhood is darker than the global median.

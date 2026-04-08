@@ -8,6 +8,8 @@ Loads feature TIFs from outputs/present/features/tifs/ and renders
 them as a 2×4 grid of equirectangular maps.
 
 Output: outputs/diagnostics/feature_panel_present.pdf
+    outputs/diagnostics/feature_panel_present.png
+        outputs/diagnostics/feature_panel_present.png
 Run:    python scripts/generate_feature_panel.py
 """
 from __future__ import annotations
@@ -112,7 +114,8 @@ fig.suptitle(
     color="white", fontsize=12, y=1.01,
 )
 plt.tight_layout()
-out = OUT_DIR / "feature_panel_present.pdf"
-fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+for _ext in ("pdf", "png"):
+    out = OUT_DIR / f"feature_panel_present.{_ext}"
+    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    print(f"  Saved -> {out}")
 plt.close(fig)
-print(f"Saved: {out}")

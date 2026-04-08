@@ -8,6 +8,8 @@ as ocean bathymetry (Figure R5).
 Loads the future posterior and overlays topographic contours.
 
 Output: outputs/diagnostics/future_epoch_bathymetry.pdf
+    outputs/diagnostics/future_epoch_bathymetry.png
+        outputs/diagnostics/future_epoch_bathymetry.png
 Run:    python scripts/generate_future_bathymetry_map.py
 """
 from __future__ import annotations
@@ -117,7 +119,8 @@ for sp in axes:
 fig.suptitle("Titan Habitability at Red-Giant Ocean Peak (+5.9 Gya)",
              color="white", fontsize=11, y=1.01)
 plt.tight_layout()
-out = OUT_DIR / "future_epoch_bathymetry.pdf"
-fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+for _ext in ("pdf", "png"):
+    out = OUT_DIR / f"future_epoch_bathymetry.{_ext}"
+    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    print(f"  Saved -> {out}")
 plt.close(fig)
-print(f"Saved: {out}")

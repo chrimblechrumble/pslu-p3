@@ -6,6 +6,8 @@ Generate a Gantt-style chart showing feature scale factors across geologic time
 (Figure M4).  Uses FEATURE_SCALE_FUNCS from generate_temporal_maps.py.
 
 Output: outputs/diagnostics/epoch_feature_timeline.pdf
+    outputs/diagnostics/epoch_feature_timeline.png
+        outputs/diagnostics/epoch_feature_timeline.png
 Run:    python scripts/generate_epoch_timeline.py
 """
 from __future__ import annotations
@@ -165,7 +167,8 @@ cbar.ax.yaxis.set_tick_params(color="white")
 plt.setp(cbar.ax.yaxis.get_ticklabels(), color="white")
 
 plt.tight_layout()
-out = OUT_DIR / "epoch_feature_timeline.pdf"
-fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+for _ext in ("pdf", "png"):
+    out = OUT_DIR / f"epoch_feature_timeline.{_ext}"
+    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    print(f"  Saved -> {out}")
 plt.close(fig)
-print(f"Saved: {out}")

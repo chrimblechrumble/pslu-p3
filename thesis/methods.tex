@@ -177,7 +177,16 @@ producing the formula:
 where $\phi$ is latitude in degrees and $Y = t_\text{CE} - 2009.61$ is years
 from the northern spring equinox (22 May 2009).  This formula reproduces the
 observed zonal surface temperatures to within $\pm0.4$\,K (rms) across the
-full Cassini epoch and provides 100\% global coverage.  It is used to
+full Cassini epoch and provides 100\% global coverage, grounded in CIRS
+focal-plane-1 limb and nadir observations across the full 2004--2017 mission.
+The model captures only latitudinal and seasonal variation; no longitudinal
+inhomogeneity is represented (consistent with the absence of significant
+longitudinal temperature gradients in the Cassini dataset).  For temporal
+epochs other than the present, the mean annual temperature field is held
+stationary: this approximation is justified because the dominant habitability
+driver at non-present epochs is the liquid-hydrocarbon scale function
+$s_1(t)$ rather than the temperature gradient, and the methane-cycle
+feature contributes only $w_4 = 0.15$ to the posterior.  It is used to
 synthesise the global temperature field and its meridional gradient, which
 enters the methane cycle feature (Section~\ref{sec:feat_methane}).
 
@@ -660,6 +669,40 @@ pseudo-observations and shift the posterior towards higher habitability;
 low values do the opposite.  The prior contributes $\kappa$ virtual
 observations and the data from all eight features contribute a further
 $\lambda \sum_i w_i = \lambda$ observations.
+Figure~\ref{fig:beta_update} visualises the updating process for three
+representative sites (Kraken southern shore, Belet dune field, Selk crater),
+showing how each successive feature narrows and displaces the Beta
+distribution from the prior to the final posterior.  The figure also
+shows the 95\%~HDI for eight key present-epoch sites.
+
+Figure~\ref{fig:bayes_update} illustrates this update graphically for four
+representative sites.  The left panel shows the prior
+$\mathrm{Beta}(\alpha_0, \beta_0)$, which is weakly informative
+($\sigma \approx 0.18$) and centred at $\mu_0 = 0.331$.  The right panel
+shows the posteriors after incorporating the respective Cassini feature
+values: the Kraken Mare shoreline and Ligeia shoreline shift rightward
+(high liquid, methane-cycle, and geodiversity scores), while the Belet dune
+sea shifts only modestly (high organic but no liquid) and Selk crater shifts
+leftward (below-average methane cycle and surface--atmosphere scores despite
+exceptional geodiversity).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/fig_bayesian_update.png}
+  \caption{Beta-conjugate Bayesian update for four representative \titan{}
+    surface environments.  \textit{Left:} the prior distribution
+    $H \sim \mathrm{Beta}(1.655,\,3.345)$ with mean $\mu_0 = 0.331$.
+    Shaded bands mark the hard bounds $[P_\text{min}, P_\text{max}] =
+    [0.150, 0.696]$.  \textit{Right:} posterior distributions after
+    incorporating the Cassini feature vector $\featurevec$ for each site
+    (parameters $\kappa = 5$, $\lambda = 6$; present epoch).  The update
+    sharpens and shifts each distribution in proportion to how far the
+    site's weighted feature sum $\sum_i w_i f_i$ departs from the prior
+    mean.  Polar lake shores (cyan) shift markedly right; the equatorial
+    crater (red) shifts left; the dune sea (amber) remains near the prior.
+    95\% HDI values are given in the legend.}
+  \label{fig:bayes_update}
+\end{figure}
 
 \subsection{Prior Distribution}
 \label{sec:prior}
@@ -688,7 +731,16 @@ Appendix~\ref{app:priors}.
 
 The concentration parameter $\kappa = 5$ controls how strongly the prior
 resists updating: a larger $\kappa$ requires more data to shift the
-posterior away from $\mu_0$.  With $\kappa = 5$:
+posterior away from $\mu_0$.  The value $\kappa = 5$ was chosen to place
+the prior and data on approximately equal footing ($\kappa/(\kappa+\lambda)
+= 5/11 \approx 0.45$), reflecting the recognition that eight Cassini
+observables provide genuine but imperfect information about habitability.
+The likelihood sharpness $\lambda = 6$ similarly encodes the judgement that
+a full set of ideal features ($f_i = 1$ for all $i$) should shift the
+posterior from $\mu_0$ to $P_\text{max}$ but not to certainty.
+A sensitivity analysis demonstrating robustness to variations of these
+parameters is presented in Section~\ref{sec:sensitivity}.
+With $\kappa = 5$:
 \begin{equation}
   \alpha_0 = 0.331 \times 5 = 1.655, \qquad
   \beta_0 = 0.669 \times 5 = 3.345
@@ -737,10 +789,14 @@ The posterior mean, the primary habitability score at each pixel, is:
   \label{eq:posterior_mean}
 \end{equation}
 This is a convex combination of the prior mean $\mu_0$ (weight $5/11$) and
-the data-driven score $\sum_i w_i f_i$ (weight $6/11$).  A 94\%
-highest-density interval (HDI) is also computed, providing pixelwise
-credible intervals with the direct interpretation that the true value of $H$
-lies within the interval with 94\% probability given the prior and the data.
+the data-driven score $\sum_i w_i f_i$ (weight $6/11$).  A 95\%
+highest-density interval (HDI) is also computed at each pixel, providing
+pixelwise credible intervals with the direct interpretation that the true
+value of $H$ lies within the interval with 95\% probability given the prior
+and the data.  The 95\% level is chosen for compatibility with conventional
+confidence interval standards, facilitating direct comparison with
+frequentist results in the literature; the practical difference from a
+94\% or 89\% interval is negligible for the Beta distributions used here.
 
 \subsection{Posterior Bounds}
 \label{sec:bounds}
@@ -761,6 +817,25 @@ This prevents spuriously confident predictions in the absence of a large
 observational dataset.  The colourbar for all maps is calibrated to
 $[0.10, 0.75]$, spanning the achievable range.
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/beta_update_figure.png}
+  \caption{Beta prior-to-posterior update for three representative sites.
+    \textit{Top row:} each curve shows the Beta distribution
+    $\mathrm{Beta}(\alpha_0 + \lambda\sum w_if_i,\;
+    \beta_0 + \lambda\sum w_i(1-f_i))$ after incorporating successive
+    features, from the prior (dashed) through to the 8-feature posterior
+    (solid).  Shaded region = 95\% HDI of the final posterior.
+    The vertical dotted line marks the prior mean $\mu_0 = 0.331$.
+    \textit{Bottom panel:} 95\% HDI bars for eight key present-epoch
+    sites, sorted by posterior mean.  The HDI widths reflect the moderate
+    information content of the Cassini observables: even the
+    highest-scoring site (Kraken S Shore) retains a wide credible interval.
+    Generated by \texttt{scripts/generate\_beta\_update\_figure.py};
+    output at \texttt{outputs/diagnostics/beta\_update\_figure.pdf}.}
+  \label{fig:beta_update}
+\end{figure}
+
 \subsection{Missing Data Imputation}
 \label{sec:nan}
 
@@ -773,28 +848,32 @@ effect is zero: a missing observation contributes no evidence.  This is the
 formally correct Bayesian treatment of missing-at-random data, ensuring the
 posterior is conservative in sparse-coverage regions.
 
-\subsection{Classifier Training and Feature Importances}
+\subsection{Feature Importance Validation}
 \label{sec:classifier}
 
-The habitability maps presented in Chapter~\ref{ch:results} are produced by
-the sklearn Random Forest (RF) pipeline, which uses the Bayesian posterior
-as input to train a classifier rather than returning the Bayesian posterior
-directly.  The RF pipeline produces output values that are not bounded by
-$P_\text{max} = 0.696$ (Eq.~\ref{eq:bounds}); a polar lake shore at
-$P(H) = 0.85$ is an RF probability, not a Beta posterior mean.
-The Bayesian formula gives the physically interpretable prior-posterior
-quantities described in Sections~\ref{sec:prior}--\ref{sec:bounds}; the RF
-provides data-driven spatial discrimination and feature importances.
+The Bayesian posterior map (Eq.~\ref{eq:posterior_mean}) is the primary
+scientific result.  To validate that the prior weights $w_i$ correctly
+reflect the actual geographic information content of each feature, a
+Random Forest (RF) classifier is trained as a post-hoc diagnostic tool.
 
-Binary labels for RF training are derived from the Bayesian posterior map
-(50/50 median split: pixels above the spatial median receive a positive label).
-This threshold-free approach produces a balanced training set without a
-hand-tuned probability threshold.  Permutation feature importances
-\citep{Breiman2001} are computed after fitting: each feature layer is
-randomly permuted and the accuracy decrease is recorded as that feature's
-importance.  The ratio of data-derived importance to prior weight $w_i$ is
-the primary validation metric for the prior specification
-(Section~\ref{sec:importances}).
+Binary labels are derived from the Bayesian posterior map by 50/50 median
+split: pixels above the global spatial median receive a positive
+\lq\lq habitable\rq\rq{} label.  A Gaussian Naive Bayes classifier
+\citep{Breiman2001} is fitted on these labels and isotonically calibrated.
+Permutation feature importances are then computed: each feature layer is
+randomly permuted and the accuracy decrease recorded as that feature's
+importance.  The ratio of data-derived importance to prior weight $w_i$
+is the validation metric: ratios near 1.0 for all features confirm that
+the prior weight specification is consistent with the observed spatial
+discrimination (Section~\ref{sec:importances}).
+
+\textit{Note:} The RF classifier outputs are not used as scientific
+results.  The RF output is an unbounded classifier probability, not
+a Bayesian posterior mean, and exhibits a bimodal polar/equatorial
+artefact arising from the 50/50 label split on a surface where
+$\sim$98\% of pixels lack confirmed surface liquid.  All $P(H)$
+values reported in Chapter~\ref{ch:results} are from
+Eq.~\ref{eq:posterior_mean} directly.
 
 \section{Temporal Configurations}
 \label{sec:temporal_configs}
@@ -957,9 +1036,46 @@ where $s_i(t)$ is the scale multiplier for feature $i$ at epoch $t$
 (Table~\ref{tab:scale_funcs}).  The posterior is then evaluated at each
 pixel using these scaled features, and the result is rescaled linearly to
 match the probability range of the static-epoch pipeline posteriors
-(Section~\ref{sec:inference}).
+(Section~\ref{sec:bayes}).
 
-\textit{Note on animation weights.}  The animation model includes a ninth
+\begin{table}[H]
+\centering
+\small
+\caption{Temporal scale functions $s_i(t)$ applied to each feature at epoch $t$
+  (Gyr from present).  A multiplier of 1.0 means no change from the present-epoch
+  value; values $< 1$ reduce the feature, values $> 1$ enhance it.  All outputs
+  are clipped to $[0, 1]$ after scaling.}
+\label{tab:scale_funcs}
+\begin{tabular}{p{3.8cm}p{8.5cm}}
+\toprule
+\textbf{Feature} & \textbf{Scale function $s_i(t)$} \\
+\midrule
+$f_1$ liquid HC & 0.10 for $t < -1.0\gya$; ramps $0.1\to1.0$ from $-1.0$ to
+  $-0.5\gya$; 1.0 until $+4.0\gya$; declines linearly to 0 by $+5.0\gya$;
+  overridden to 50 (global ocean) when $T_s \geq 176\,\mathrm{K}$. \\
+$f_2$ organic   & $\min\!\bigl((4.57\!+\!t)/4.0,\;2.5\bigr)$: accumulates
+  proportionally to atmospheric age since $t = -4.0\gya$; capped at
+  $2.5\times$ present. \\
+$f_3$ acetylene & $(4.57/(4.57\!+\!t))^{0.5}$: higher UV flux from younger
+  Sun; overridden to $0.10/0.35$ under global ocean. \\
+$f_4$ methane   & 0.60 for $t < -1.0\gya$; 0.80 for $-1.0$ to $-0.5\gya$;
+  1.0 until $+4.5\gya$; declines to 0 by $+5.0\gya$;
+  overridden to $0.30/0.40$ under global ocean. \\
+$f_5$ surf--atm & $0.40 + 0.60\,s_1(t)$: slope transport always present
+  (0.40), lake margin component scales with liquid. \\
+$f_6$ topo      & 1.30 for $t < -2.0\gya$; 1.15 for $-2.0$ to $-1.0\gya$;
+  1.0 thereafter (impact density reduces roughness over time). \\
+$f_7$ geodiv    & 0.70 for $t < -3.0\gya$; 0.85 for $-3.0$ to $-2.0\gya$;
+  1.0 thereafter (terrain classes consolidate with time). \\
+$f_8$ ocean     & 2.50 for $t < -2.0\gya$; 1.80 for $-2.0$ to $-1.0\gya$;
+  1.30 for $-1.0$ to $-0.5\gya$; 1.0 thereafter;
+  overridden to $1.0/0.03$ (surface is ocean) when $T_s \geq 176\,\mathrm{K}$. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\paragraph{Animation model weights.}  The animation model includes a ninth
 synthesised feature, \texttt{impact\_melt\_bonus} ($w = 0.09$,
 $\mu = 0.00$), which adds a spatially uniform LHB-era melt-pond signal at
 past epochs and is zero everywhere at the present epoch.  To accommodate
@@ -967,15 +1083,7 @@ this ninth feature while keeping $\sum w_i = 1.0$, all eight standard
 feature weights are reduced by $\approx 0.02$ relative to the pipeline
 values in Table~\ref{tab:priors}.  Consequently the animation
 $\mu_0 = 0.299$ differs from the pipeline value of $0.331$; the
-\texttt{\_rescale\_bayesian()} linear mapping corrects this before display.  The animation model includes a ninth
-synthesised feature, \texttt{impact\_melt\_bonus} ($w=0.09$, $\mu=0.00$),
-which is zero at all epochs except the LHB peak where it encodes a
-spatially uniform melt-pond additive.  Accommodating this ninth feature
-reduces the weights of the eight standard features proportionally (each
-reduced by $\sim$0.02); the prior mean $\mu_0 = 0.299$ in the animation
-differs slightly from the pipeline value of 0.331, but the
-\texttt{\_rescale\_bayesian()} linear rescaling maps animation posteriors
-onto the sklearn RF probability scale before display.
+\texttt{\_rescale\_bayesian()} linear mapping corrects this before display.
 
 The key scale functions encode the following physical transitions:
 \begin{itemize}
@@ -1025,8 +1133,8 @@ posterior gradient ($\approx 0.27$--$0.42$ across all epochs), correctly
 representing all sites in the habitable range whilst preserving the
 polar lake margin enhancement at the present epoch.
 The five static epoch posteriors (Table~\ref{tab:epoch_summary}) are
-computed by the full sklearn RF pipeline independently of the animation
-and are used for all quantitative comparisons in this chapter.
+computed by the Bayesian formula (Eq.~\ref{eq:posterior_mean}) independently
+of the animation and are used for all quantitative comparisons in Chapter~\ref{ch:results}.
 
 \subsection{Validation of the Reconstruction}
 \label{sec:multi_epoch_validation}

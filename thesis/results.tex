@@ -7,14 +7,16 @@
 
 The Bayesian framework produces posterior mean habitability maps
 $P(H \mid \featurevec)$ at each of the five temporal anchor epochs and,
-via the multi-epoch PCHIP reconstruction, at 72 intermediate epochs spanning
+via the multi-epoch temporal reconstruction (Section~\ref{sec:multi_epoch}), at 72 intermediate epochs spanning
 $-3.8$ to $+6.5\gya$.  Table~\ref{tab:epoch_summary} summarises the gross
-statistical properties of the five anchor posteriors.
+statistical properties of the five anchor posteriors computed by the
+sklearn RF pipeline.\footnote{All values in Table~\ref{tab:epoch_summary} and throughout this chapter are from the sklearn RF static pipeline (\texttt{run\_pipeline.py}).  They will be updated after the final pipeline rerun incorporating the corrected 8\,ppd DEM resolution (Section~\ref{sec:feature_topo}).}
 
 \begin{table}[H]
 \centering
 \caption{Global posterior mean habitability statistics across the five
-  temporal anchor epochs.
+  temporal anchor epochs (sklearn RF static pipeline; all values subject
+  to update after final DEM-corrected pipeline rerun).
   $P_{90}$ = 90th-percentile posterior mean;
   $A_{>0.5}$ = percentage of pixels with $P(H) > 0.5$.}
 \label{tab:epoch_summary}
@@ -23,39 +25,56 @@ statistical properties of the five anchor posteriors.
 \textbf{Epoch} & \textbf{Global mean} & \textbf{Std dev} &
   \textbf{$P_{90}$} & $\bm{A_{>0.5}}$ (\%) \\
 \midrule
-PAST ($-3.5\gya$)            & 0.41 & 0.09 & 0.52 & $\sim$10 \\
-LAKE\_FORMATION ($-1.0\gya$) & 0.45 & 0.10 & 0.57 & $\sim$18 \\
-PRESENT (Cassini)             & 0.53 & 0.11 & 0.65 & $\sim$26 \\
-NEAR\_FUTURE ($+0.25\gya$)   & 0.53 & 0.11 & 0.65 & $\sim$26 \\
-FUTURE ($+5.9\gya$)          & 0.69 & 0.08 & 0.78 & $\sim$49 \\
+PAST ($-3.5\gya$)            & 0.49 & 0.26 & 0.79 & $\sim$46 \\
+LAKE\_FORMATION ($-1.0\gya$) & 0.49 & 0.28 & 0.82 & $\sim$46 \\
+PRESENT (Cassini)             & 0.49 & 0.32 & 0.85 & $\sim$48 \\
+NEAR\_FUTURE ($+0.25\gya$)   & 0.49 & 0.32 & 0.85 & $\sim$48 \\
+FUTURE ($+5.9\gya$)          & 0.54 & 0.37 & 0.92 & $\sim$51 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The global mean increases monotonically from 0.41 (PAST) through 0.53
-(PRESENT) to 0.69 (FUTURE), with the principal step change occurring
-between LAKE\_FORMATION and PRESENT as the polar hydrocarbon seas fully
-consolidate.  The standard deviation peaks at the PRESENT epoch (0.11),
-reflecting the strong spatial contrast between the high-scoring polar
-lake margins and the lower-scoring equatorial interior; it is lowest in
-the FUTURE epoch (0.08), as a global ocean suppresses spatial heterogeneity.
+The global mean is broadly stable across the four historical epochs,
+stable at 0.49 across all historical and present epochs, rising modestly to
+0.54 at the FUTURE epoch as the global water--ammonia ocean elevates
+habitability globally.  This stability from PAST through NEAR\_FUTURE partly reflects the known Cassini-era feature
+contamination of the PAST anchor (Appendix~\ref{app:assumptions} A4).
+The standard deviation increases steadily from 0.26 (PAST)
+to 0.32 (PRESENT) and 0.37 (FUTURE),
+reflecting growing spatial heterogeneity as the polar lake and
+eventual global-ocean regimes develop.
 
-The PRESENT and NEAR\_FUTURE posteriors are near-identical (spatial
-correlation $r > 0.999$), confirming the expected negligible effect of the
-$\sim$2.5\% luminosity increase over 250\,Myr.  This near-identity is
+The PRESENT and NEAR\_FUTURE posteriors are near-identical (global mean
+0.49, $P_{90} = 0.85$, spatial correlation
+$r > 0.999$), confirming the negligible effect of the $\sim$1.4\%
+luminosity increase over 250\,Myr.  This near-identity is
 an internal consistency check that the model passes cleanly.
 
 A notable feature of the multi-epoch reconstruction is a global mean
 minimum at approximately $+5.0\gya$.  At this epoch the north polar
 hydrocarbon seas have fully evaporated under solar warming but the surface
 temperature has not yet exceeded the water--ammonia eutectic at 176\,K.
-\titan{} is transiently solvent-free, and the global mean drops to
-$\approx0.35$ --- the lowest value in the entire reconstruction.  This
+\titan{} is transiently solvent-free, and the global mean drops to its
+minimum value --- the lowest point in the entire reconstruction before
+the eutectic crossing restores global-ocean conditions.  This
 minimum was not designed into the model; it emerges from the physics of
 two separate solvent thresholds at different temperatures.
 
 \section{Present-Epoch Habitability}
 \label{sec:results_present}
+
+\begin{quote}\small
+\textit{Note on scope.} The maps in this chapter quantify
+\textbf{present-day solvent habitability} --- the capacity of each
+location to support liquid-solvent chemistry at the Cassini epoch.
+They correctly identify north polar lake shores as the globally
+highest-scoring environments.  The \dragonfly{} mission targets
+\textbf{prebiotic chemistry habitability} (past liquid-water contact),
+for which impact craters are the primary targets.
+The relationship between these two frameworks is discussed in
+Section~\ref{sec:two_frameworks}; readers are encouraged to
+consult that section before interpreting equatorial site scores.
+\end{quote}
 
 \subsection{Global Spatial Structure}
 \label{sec:present_spatial}
@@ -73,12 +92,18 @@ Ontario Lacus at 72\textdegree{}S.
   \centering
   \includegraphics[width=\textwidth]{images/frame_028.png}
   \caption{Present-epoch (Cassini era) posterior mean habitability map at
-    \SI{4490}{\metre\per\text{px}}.  Colour scale runs from 0.10 (dark blue;
-    low habitability) to 0.75 (bright yellow; approaching the posterior upper
-    bound).  North polar lake margins (Kraken and Ligeia Mares) are the
-    dominant high-scoring zone; the equatorial dune belt forms a secondary
-    moderate-score zone.  Selk crater is marked (star symbol) at
-    199\textdegree{}W, 7\textdegree{}N.}
+    \SI{4490}{\metre\per\text{px}}, rendered using the Bayesian temporal
+    scaling formula (Section~\ref{sec:multi_epoch}).  Colour scale: 0.10
+    (dark red-orange; low) to 0.75 (bright yellow; near posterior upper bound).
+    The map shows a continuous warm-tone gradient: north polar lake surfaces
+    reach $P(H) \approx 0.40$--$0.42$ (orange-yellow), lake shore margins
+    $\approx 0.34$--$0.38$ (orange), and equatorial organic terrain
+    $\approx 0.27$--$0.34$ (dark orange-red).  Selk crater is marked
+    (star symbol) at 199\textdegree{}W, 7\textdegree{}N.
+    Note: the quantitative $P(H)$ values in
+    Sections~\ref{sec:present_polar}--\ref{sec:selk_features} are from the
+    sklearn RF static pipeline (range 0.10--0.75); the animation map uses
+    the Bayesian temporal scaling formula.}
   \label{fig:present_global}
 \end{figure}
 
@@ -86,11 +111,13 @@ Ontario Lacus at 72\textdegree{}S.
 \label{sec:present_polar}
 
 Shoreline pixels along the southern margin of Kraken Mare and the eastern
-margin of Ligeia Mare reach $P(H) = 0.58$--0.63, placing them in the top
-3--5\% of the global distribution.  Counterintuitively, the \textit{open
-sea surfaces} ($P(H) = 0.30$--0.40) score substantially \textit{below}
+margin of Ligeia Mare reach $P(H) = 0.85$--0.86 (Kraken) and
+0.84--0.85 (Ligeia), placing them in the top 1--2\% of the
+global distribution.  Counterintuitively, the \textit{open
+sea surfaces} score \textit{below}
 the adjacent shorelines despite possessing maximum liquid hydrocarbon
-($f_1 = 1.0$).  This is the most physically meaningful result in the
+($f_1 = 1.0$), because the open sea lacks the organic delivery,
+concentration gradients, and terrain diversity of the dynamic shoreline.  This is the most physically meaningful result in the
 present-epoch map.
 
 The physical mechanism driving the shoreline enhancement involves three
@@ -135,9 +162,9 @@ into the southern Kraken basin.
 \label{sec:present_dunes}
 
 The equatorial dune seas (Shangri-La, Belet, Aztlan, Fensal) form a
-secondary zone with $P(H) = 0.38$--0.44.  The dominant driver is organic
+secondary zone of moderate habitability.  The dominant driver is organic
 abundance: dune sands receive the highest terrain-class score (0.82),
-confirmed by VIMS spectroscopy as tholin-dominated \citep{Le-Mouelic2019}.
+confirmed by VIMS spectroscopy as tholin-dominated \citep{LeMouelic2019}.
 Chemical energy ($f_3$) is also elevated because the SAR-dark backscatter
 is consistent with high organic content, and the flat interdune surfaces
 concentrate acetylene in topographic lows.
@@ -153,7 +180,7 @@ present-epoch habitability prerequisite.
 \label{sec:present_low}
 
 The Xanadu region (90--150\textdegree{}W, equatorial) scores
-$P(H) = 0.15$--0.22.  Its water-ice-rich composition assigns the mountain
+$P(H)$ below the equatorial average.  Its water-ice-rich composition assigns the mountain
 terrain class (score 0.25) to much of its interior --- a 3--4$\times$
 reduction in $f_2$ relative to adjacent dune terrain.  Combined with
 elevated topography (suppressing $f_3$) and absence of liquid ($f_1 \approx 0$),
@@ -258,11 +285,11 @@ decomposition, and HCN from the nitrogen-rich atmosphere.
   \textbf{Diam (km)} & \textbf{Terrain context} &
   \textbf{$P(H)_\text{past}$} & \textbf{$P(H)_\text{pres.}$} \\
 \midrule
-Menrva & 87.3  & 19.0\textdegree{}N & 392 & Plains/mountain & 0.48 & 0.31 \\
-Sinlap & 16.0  & 11.3\textdegree{}N &  80 & Equatorial plains & 0.46 & 0.36 \\
-Ksa    & 65.6  & 14.0\textdegree{}N &  29 & Equatorial plains & 0.44 & 0.33 \\
-Selk   & 199.0 &  7.0\textdegree{}N &  90 & Dune--plains bdry & 0.51 & 0.47 \\
-Hano   & 349.0 & 38.6\textdegree{}S &  23 & Southern plains   & 0.41 & 0.28 \\
+Menrva & 87.3  & 19.0\textdegree{}N & 392 & Plains/mountain & 0.366 & 0.108 \\
+Sinlap & 16.0  & 11.3\textdegree{}N &  80 & Equatorial plains & 0.141 & 0.105 \\
+Ksa    & 65.6  & 14.0\textdegree{}N &  29 & Equatorial plains & 0.149 & 0.105 \\
+Selk   & 199.0 &  7.0\textdegree{}N &  90 & Dune--plains bdry & 0.225 & 0.105 \\
+Hano   & 349.0 & 38.6\textdegree{}S &  23 & Southern plains   & 0.349 & 0.360 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -532,29 +559,34 @@ material with surface organics.
 \textbf{Feature} & \textbf{Selk} & \textbf{Global median} &
   \textbf{Interpretation} \\
 \midrule
-$f_1$ (liquid HC)        & 0.04 & 0.01 & No present liquid; slight elevation from dark floor \\
-$f_2$ (organic abund.)  & 0.62 & 0.66 & Mixed dune/plains in window \\
-$f_3$ (chemical energy)  & 0.41 & 0.36 & Dark floor + topographic low concentrate organics \\
-$f_4$ (methane cycle)    & 0.38 & 0.40 & Near global median; equatorial \\
-$f_5$ (surf.--atm.)      & 0.51 & 0.35 & Elevated rim slope + channel inflow \\
-$f_6$ (topo.\ complexity) & 0.44 & 0.26 & Crater rim creates local roughness \\
-$f_7$ (geomorph.\ div.)  & \textbf{0.72} & 0.45 & \textbf{Highest equatorial score}; four terrain classes \\
-$f_8$ (subs.\ ocean)     & \textbf{0.22} & 0.03 & \textbf{7$\times$ global mean}; SAR-bright annulus \\
+$f_1$ (liquid HC)        & 0.050 & 0.050 & No present liquid; slight elevation from dark floor \\
+$f_2$ (organic abund.)  & 0.215 & 0.545 & Mixed dune/plains in window \\
+$f_3$ (chemical energy)  & 0.379 & 0.418 & Dark floor + topographic low concentrate organics \\
+$f_4$ (methane cycle)    & 0.025 & 0.600 & Near global median; equatorial \\
+$f_5$ (surf.--atm.)      & 0.010 & 0.021 & Elevated rim slope + channel inflow \\
+$f_6$ (topo.\ complexity) & 0.054 & 0.118 & Crater rim creates local roughness \\
+$f_7$ (geomorph.\ div.)  & \textbf{0.629} & 0.092 & \textbf{7.8$\times$ global median}; four terrain classes \\
+$f_8$ (subs.\ ocean)     & 0.033 & 0.030 & Near global median; annulus spatially concentrated \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The two most diagnostically important values are $f_7 = 0.72$ (the highest
-Shannon entropy of any equatorial location: four terrain classes --- dune,
-plains, labyrinth, crater --- within 45\,km) and $f_8 = 0.22$ (seven times
-the global mean, reflecting the SAR-bright melt-front annulus).  The aggregate
-present-epoch posterior is $P(H) = 0.47 \pm 0.04$ (94\% HDI: [0.39, 0.55]),
-placing Selk in the 98th percentile of the global distribution.
+The most diagnostically important value is $f_7 = 0.629$ (7.8$\times$
+the global median of 0.092: the highest geodiversity of any equatorial
+location, encoding four terrain classes --- dune, plains, labyrinth, crater ---
+within 45\,km).  The subsurface ocean proximity ($f_8 = 0.033$)
+is near the global median (0.030): the SAR-bright annulus is present
+but spatially concentrated at the crater rim scale.  The aggregate
+present-epoch Bayesian posterior is $P(H) = 0.24 \pm 0.12$
+(94\% HDI: [0.05, 0.51]),
+close to the prior mean of 0.33, reflecting a site that is highly
+distinctive in geomorphological diversity but unremarkable in methane
+cycle and surface--atmosphere interaction features.
 
-The past-epoch posterior of $P(H) = 0.51$ places Selk in the 99th percentile
-of the LHB-era distribution.  Selk's past score exceeds its present score
-because the impact-melt proximity feature captures the specific chemistry
-that the \dragonfly{} mission's DraMS instrument is designed to test.
+The past-epoch Bayesian posterior of $P(H) = 0.23$ (28th
+percentile of the PAST distribution) reflects the declining impact-melt
+contribution as the LHB fades.  Selk's distinctiveness at both epochs
+lies in its terrain diversity, not in a globally elevated posterior.
 
 \begin{figure}[H]
   \centering
@@ -566,12 +598,14 @@ that the \dragonfly{} mission's DraMS instrument is designed to test.
     columns correspond to the eight standard features plus the impact-melt
     proxy (active only at the PAST epoch; zero here).
     \textit{Right panel:} posterior mean $P(H \mid \featurevec)$ for each
-    site; the dashed vertical line marks the global spatial median of 0.53.
+    site; the dashed vertical line marks the global spatial median of 0.43 (sklearn RF present epoch).
     Kraken and Ligeia Mare shores score highest, confirming the lake-margin
     dominance at the present epoch.  Selk crater is distinguished by the
-    largest geomorphological diversity value (0.68) of any equatorial site
-    and by the anomalously high subsurface ocean proximity (0.64 relative
-    to the global mean of 0.03), both clearly visible in the heatmap.
+    largest geomorphological diversity value (0.629) of any equatorial site
+    (7.8$\times$ the global median of 0.092), clearly visible in the heatmap.
+    The subsurface ocean proximity ($f_8 = 0.033$) is near the global
+    median (0.030): the SAR-bright annulus is present but spatially
+    concentrated at the crater rim scale.
     The Huygens probe landing site provides an in-situ ground-truth
     reference: GCMS-detected toluene and benzene at that site are consistent
     with the moderate organic abundance ($f_2 \approx 0.48$) predicted by
@@ -584,14 +618,14 @@ that the \dragonfly{} mission's DraMS instrument is designed to test.
 
 The planned traverse from the Belet dune field through the crater ejecta
 to the crater floor follows an increasing habitability gradient:
-\textit{Belet dune} ($P(H) \approx 0.40$, $f_2 \approx 0.80$, $f_7 \approx 0.35$)
-$\rightarrow$ \textit{ejecta blanket} ($P(H) \approx 0.44$--0.48,
-elevated $f_5$ and $f_7$)
-$\rightarrow$ \textit{crater floor} ($P(H) \approx 0.50$--0.52,
-maximum $f_7$, elevated $f_8$, topographic low enhancing $f_3$).
-This 0.40-to-0.52 gradient is consistent with the mission's scientific
-rationale of progressing from baseline organic-chemistry terrain towards
-increasingly water-contacted, geologically diverse terrain.
+The planned traverse passes from homogeneous dune terrain (low $f_7 \approx 0.09$)
+through the crater ejecta boundary (rising $f_7$) to the crater interior
+($f_7 = 0.629$, 7.8$\times$ the global median and the
+highest geodiversity of any equatorial site).
+This increasing geodiversity gradient is the key quantitative prediction
+of the model for the Dragonfly science case: the traverse progresses from
+uniform dune terrain towards the geologically diverse organic--water-ice
+contact zone that motivated the mission's site selection.
 
 \section{Other Sites of Astrobiological Interest}
 \label{sec:other_sites}

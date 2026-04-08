@@ -1008,8 +1008,10 @@ def _phase_label(t: float) -> str:
         return "Cassini\nepoch"
     if t < 3.0:
         return "Near future"
+    if t < 4.0:
+        return "Pre red-giant"    # stable future: lakes intact, sun slowly warming
     if t < 5.0:
-        return "Pre red-giant"
+        return "Solar warming"    # lake evaporation: +4.0 → +5.0 Gya
     # T < EUTECTIC_K here (handled above).
     # t=5.0–6.0: Sun becoming red giant, T rising toward eutectic → ramp up.
     # t>=6.0: Sun exits red-giant, L collapses 600×→0.8×, T drops → ramp down.
@@ -1193,10 +1195,11 @@ def render_frame(
 
         Azimuth (both hemispheres):
 
-            lon_W = atan2(x, -y)      [0 degW at disc top, increasing clockwise]
+            lon_W = atan2(x, y)       [0 degW at disc bottom, increasing clockwise]
 
-        This convention places the prime meridian at the top of each polar
-        disc, matching standard cartographic practice for both poles.
+        This convention matches _loc_to_stereo (x_s = r*sin(lon), y_s = -r*cos(lon)),
+        which places 0 degW at y_s=-r (disc bottom) and 180 degW at y_s=+r (disc top).
+        The prime meridian therefore appears at the BOTTOM of each polar disc.
         """
         nrows_i: int
         ncols_i: int
@@ -1212,8 +1215,14 @@ def render_frame(
         if not north:
             lat_s = -lat_s
 
-        # Azimuth: lon_W = atan2(x, -y) -- 0 degW at top, clockwise increasing
-        lon_s: np.ndarray = (np.degrees(np.arctan2(x0, -y0)) + 360.0) % 360.0
+        # Azimuth: lon_W = atan2(x, y) -- 0 degW at bottom, clockwise increasing
+        # This matches _loc_to_stereo: x_s = r*sin(lon), y_s = -r*cos(lon)
+        # which places 0 degW at y_s=-r (axis bottom) and 180 degW at y_s=+r (top).
+        # BUG-FIX 2026-04: original formula atan2(x, -y) placed 0 degW at the TOP
+        # of the image (y0=-1) while _loc_to_stereo placed the 0 degW MARKER at the
+        # BOTTOM (y_s=-r), causing a 180-degree rotation between the image data and
+        # all labels/markers.  Changing -y0 to y0 corrects this for both poles.
+        lon_s: np.ndarray = (np.degrees(np.arctan2(x0, y0)) + 360.0) % 360.0
 
         # Convert disc coords to raster pixel indices
         row_s: np.ndarray = (90.0 - lat_s) / 180.0 * nrows_i
@@ -1248,8 +1257,8 @@ def render_frame(
         #   r = tan((90 - |lat|) / 2) / POLAR_SCALE
         #   x =  r . sin(lon_W)
         #   y = -r . cos(lon_W)
-        # The -cos convention matches the azimuth formula atan2(x, -y),
-        # which places 0 degW at the top of the disc for both hemispheres.
+        # The -cos convention matches the azimuth formula atan2(x, y),
+        # which places 0 degW at the BOTTOM of the disc for both hemispheres.
         x_s: float =  r * math.sin(lon_rad)
         y_s: float = -r * math.cos(lon_rad)   # same for north AND south
         return x_s, y_s
@@ -1460,7 +1469,7 @@ def render_frame(
         "LHB peak": {
             "active": [
                 ("impact_melt_bonus",        "HIGH",   "Uniform global boost  peak=0.50 @ -3.8 Gya; →0 by -2.5 Gya"),
-                ("cryovolcanic_flux",        "HIGH",   "Cryovolcanic candidate venting to surface"),
+                # cryovolcanic_flux: physically plausible but NOT in current model weights
                 ("acetylene_energy",         "MED",    "Intense HCN/C₂H₂ photochem under young UV Sun"),
                 ("organic_abundance",        "MED",    "Low tholin — only ~0.5 Gyr of UV photolysis"),
                 ("surface_atm_interaction",  "MED",    "Cryovolcanic conduits elevate gas/surface flux"),
@@ -1468,22 +1477,45 @@ def render_frame(
                 ("topographic_complexity",   "LOW",    "Crater rims dominate topography"),
                 ("geomorphologic_diversity", "LOW",    "Terrain class diversity proxy"),
             ],
-            "excluded": "liquid_hydrocarbon — no stable polar lakes yet\nsubsurface_ocean   — subsumed into cryovolcanic_flux",
+            "excluded": "liquid_hydrocarbon  — no stable polar lakes yet\nsubsurface_ocean    — SAR annuli not yet resolved at LHB\ncryovolcanic_flux   — physically plausible but not in current model weights",
             "colour":
                 "BRIGHT (yellow):  fresh impact craters at mid-latitudes with melt halos\n"
                 "MED (orange):     cryovolcanic candidate sites (Lopes 2007)\n"
                 "DARK (blue):      polar regions, dune plains — no lakes, low organics",
             "assumptions": [
-                "Epoch ≈ 3.5 Gya  (Late Heavy Bombardment peak; Gomes et al. 2005)",
+                "Epoch ≈ −3.8 Gya  (Late Heavy Bombardment peak; Gomes et al. 2005)",
                 "Impact flux ~30× present (Hartmann & Neukum 2001)",
                 "Uniform spatial warming — no resolved GCM for this epoch",
                 "Birch confirmed-lake polygons not applied (no polar lakes)",
             ],
         },
+        "Early Titan": {
+            "active": [
+                ("organic_abundance",        "RAMP",   "Tholin stockpile building; scale = t_elapsed/4.0 Gya"),
+                ("acetylene_energy",         "MED",    "UV photochem declining as Sun dims post-LHB"),
+                ("impact_melt_bonus",        "LOW",    "Residual LHB tail; ~0.01–0.08 (spatially uniform)"),
+                ("methane_cycle",            "LOW",    "Methane cycle scale = 0.60 (not yet established)"),
+                ("surface_atm_interaction",  "LOW",    "Scale = 0.46 (no polar lakes; slope-driven)"),
+                ("topographic_complexity",   "LOW",    "Scale = 1.15–1.30 (rougher ancient terrain)"),
+                ("geomorphologic_diversity", "LOW",    "Scale = 0.85 (less terrain diversity than present)"),
+                ("subsurface_ocean",         "LOW",    "Scale = 1.8–2.5 (closer to surface in warm epoch)"),
+            ],
+            "excluded": "liquid_hydrocarbon  — no stable polar lakes yet (scale = 0.10 proxy)\ncryovolcanic_flux   — physically plausible but not in model weights",
+            "colour":
+                "GRADUAL brightening: organic stockpile accumulating — equatorial dunes brighter\n"
+                "LOW contrast overall: no lakes, modest methane cycle\n"
+                "Crater sites slightly elevated: subsurface_ocean scale = 1.8–2.5×",
+            "assumptions": [
+                "t = −3.0 to −1.0 Gya  (post-LHB through early lake formation onset)",
+                "Impact flux declining exponentially from LHB peak",
+                "organic scale = (4 + t)/4 Gya (linear accumulation since atmosphere formed ~4 Gya)",
+                "No polar lake system yet; liquid_HC proxy = 0.10 of present map",
+            ],
+        },
         "Lake formation": {
             "active": [
                 ("liquid_hydrocarbon",       "RAMP",   "Polar lake proxy ramping 10% → 100% of present"),
-                ("cryovolcanic_flux",        "HIGH",   "Near Tobie et al. (2006) ~500 Mya cryovolc. peak"),
+                # cryovolcanic_flux: physically plausible at this epoch but NOT in model weights
                 ("organic_abundance",        "MED",    "Tholin stockpile building toward present level"),
                 ("methane_cycle",            "MED",    "Methane rain cycle becoming established"),
                 ("acetylene_energy",         "MED",    "C₂H₂ production ongoing"),
@@ -1492,7 +1524,7 @@ def render_frame(
                 ("geomorphologic_diversity", "LOW",    "Terrain class diversity"),
                 ("impact_melt_bonus",        "LOW",    "LHB residual ~0.005  (spatially uniform, negligible)"),
             ],
-            "excluded": "subsurface_ocean — subsumed into cryovolcanic_flux",
+            "excluded": "subsurface_ocean   — not yet resolved at lake_formation epoch\ncryovolcanic_flux   — physically plausible (Tobie 2006) but not in model weights",
             "colour":
                 "BRIGHT (yellow):  north polar region brightening as Kraken/Ligeia fill\n"
                 "MED (orange):     cryovolcanic sites; equatorial organics building\n"
@@ -1516,10 +1548,10 @@ def render_frame(
             ],
             "excluded": "impact_melt_bonus  — decayed to ~0 by -2.5 Gya; effectively zero\ncryovolcanic_flux  — not used at present epoch",
             "colour":
-                "BRIGHT (yellow):  north polar seas (Kraken, Ligeia, Punga) — confirmed liquid\n"
-                "MED-BRIGHT:       equatorial dune belts — high organic abundance\n"
-                "MED (pink):       lake-adjacent channels — surface-atm interaction\n"
-                "DARK (blue):      mountain ranges, Xanadu — water-ice, low organics",
+                "ORANGE-YELLOW:  north polar lake surfaces (liquid_hc=1.0 → P≈0.42 rescaled)\n"
+                "ORANGE:          polar lake shores + Selk + equatorial dunes (P≈0.28–0.36)\n"
+                "DARK ORANGE-RED: mountain ridges, Xanadu (water-ice, low organics, P≈0.24–0.26)\n"
+                "Note: Bayesian formula gives continuous gradient, not bimodal poles/equator",
             "assumptions": [
                 "Cassini epoch = 2004-2017 CE  (CIRS T model year 2011.0)",
                 "Organic abundance: geo_only mode — Lopes (2019) terrain classes globally",
@@ -1541,11 +1573,12 @@ def render_frame(
             ],
             "excluded": "impact_melt_bonus  — decayed to zero; no LHB contribution\ncryovolcanic_flux  — not applicable",
             "colour":
-                "Nearly identical to Cassini era — only subsurface_ocean weight slightly higher\n"
+                "Nearly identical to Cassini era (Bayesian formula)\n"
+                "Polar lake surfaces: P≈0.42 (orange-yellow); equatorial dunes: P≈0.28–0.32 (orange)\n"
                 "Polar lake shores remain most habitable; Dragonfly-era data still applicable",
             "assumptions": [
                 "D2 window centre = +250 Myr  (range 100–400 Myr; Lorenz, Lunine & McKay 1997)",
-                "Solar luminosity +2.5% at +250 Myr",
+                "Solar luminosity +1.4% at +250 Myr  (L☉ formula gives +1.37%; Bahcall et al. 2001)",
                 "Uniform spatial warming — no resolved GCM for this epoch",
                 "Cassini feature maps unchanged (no spatial data at +250 Myr resolution)",
             ],
@@ -1574,67 +1607,68 @@ def render_frame(
         },
         "Pre red-giant": {
             "active": [
-                ("liquid_hydrocarbon",       "DECL",   "Lake surfaces evaporating as T exceeds CH₄ b.p."),
-                ("organic_abundance",        "HIGH",   "Tholin stockpile at maximum — billions of yrs UV"),
-                ("acetylene_energy",         "MED",    "Chemistry shifts thermal → photochemical regime"),
-                ("methane_cycle",            "DECL",   "Weakening as surface liquid depletes"),
-                ("surface_atm_interaction",  "MED",    "Shrinking lake margins"),
-                ("subsurface_ocean",         "LOW",    "Present but decreasing surface connection"),
+                ("liquid_hydrocarbon",       "HIGH",   "Polar lakes fully present; T < CH₄ b.p. until +4 Gya"),
+                ("organic_abundance",        "HIGH",   "Tholin stockpile near maximum (billions of yrs UV)"),
+                ("methane_cycle",            "HIGH",   "Methane rain/evap cycle fully established"),
+                ("acetylene_energy",         "MED",    "Slightly elevated under warmer (but sub-eutectic) Sun"),
+                ("surface_atm_interaction",  "MED",    "Unchanged — lake margins stable"),
+                ("subsurface_ocean",         "LOW",    "Unchanged from present"),
                 ("topographic_complexity",   "LOW",    "Unchanged"),
-                ("geomorphologic_diversity", "LOW",    "Desiccated lake basins add new class"),
+                ("geomorphologic_diversity", "LOW",    "Unchanged"),
             ],
-            "excluded": "impact_melt_bonus  — decayed to zero; no LHB contribution\ncryovolcanic_flux  — not applicable",
+            "excluded": "impact_melt_bonus  — decayed to zero\ncryovolcanic_flux  — not in model",
             "colour":
-                "FADING BRIGHT at poles:  lakes evaporating — liquid_HC scale → 0\n"
-                "BRIGHT at low latitudes: organic abundance dominates as lakes disappear",
+                "Similar to Cassini/near-future; polar lake margins still brightest\n"
+                "Warming Sun (+16% at +3 Gya) has negligible effect on habitability pattern\n"
+                "Note: lakes begin evaporating only at +4.0 Gya (next phase)",
             "assumptions": [
-                "Solar ramp: +4.0 to +5.0 Gya; linear lake evaporation model",
-                "Uniform spatial warming assumed",
+                "t = +3.0 to +4.0 Gya — lakes intact; solar L☉ = +16–21% above present",
+                "liquid_HC scale = 1.0 throughout (no evaporation yet)",
+                "Solar warming is sub-eutectic; no qualitative feature changes",
+                "Lorenz, Lunine & McKay (1997) — lake stability thresholds",
             ],
         },
         "Red giant": {
             "active": [
-                ("water_ammonia_solvent",    "HIGH",   "Global water-ammonia ocean: 176 K eutectic mix"),
-                ("dissolved_energy",         "HIGH",   "Tidal + radiogenic heating in ocean"),
-                ("organic_stockpile",        "HIGH",   "Billions of yrs of tholin dissolves into ocean"),
-                ("water_ammonia_cycle",      "MED",    "Evap/precip cycle in water-NH₃ atmosphere"),
-                ("global_ocean_habitability","MED",    "Ocean depth/salinity/redox proxy (DEM-derived)"),
-                ("surface_atm_interaction",  "LOW",    "Residual — atmosphere now largely water vapour"),
-                ("topographic_complexity",   "LOW",    "Sub-ocean topography drives circulation"),
-                ("geomorphologic_diversity", "LOW",    "Surface largely submerged"),
+                ("liquid_hydrocarbon",       "HIGH",   "Override → 1.0 globally (T ≥ 176 K: global ocean)"),
+                ("organic_abundance",        "HIGH",   "Scale × 2.5 (capped): max 16 Gyr UV stockpile"),
+                ("subsurface_ocean",         "HIGH",   "Override → 1.0 globally (now a surface ocean)"),
+                ("surface_atm_interaction",  "HIGH",   "Scale = 1.0 (whole surface is liquid-atm interface)"),
+                ("methane_cycle",            "MED",    "Scale = 0.75 (proxy for water-NH₃ atmosphere)"),
+                ("topographic_complexity",   "LOW",    "Sub-ocean topography; scale = 1.0"),
+                ("geomorphologic_diversity", "LOW",    "Largely submerged; scale = 1.0"),
+                ("acetylene_energy",         "LOW",    "Reduced: scale = 0.10/0.35 (UV regime shift)"),
             ],
             "excluded":
-                "liquid_hydrocarbon  — methane lakes long evaporated\n"
-                "methane_cycle       — methane cycle ended\n"
-                "acetylene_energy    — photochemistry regime changed\n"
-                "subsurface_ocean    — now a SURFACE ocean → global_ocean_habitability",
+                "impact_melt_bonus  — decayed to zero (>> 1 Gya since LHB)\n"
+                "Note: features above are the ACTUAL Bayesian model features with\n"
+                "      T-dependent scale overrides — not a separate ocean model",
             "colour":
-                "BRIGHT globally:   entire surface habitable under water-ammonia ocean\n"
-                "LOCAL variation:   sub-ocean ridges/basins from GTIE DEM topography\n"
-                "Highest scores:    deep ocean basins (Kraken, Ligeia depressions)",
+                "BRIGHT globally:   liquid_hc + subsurface = 1.0 everywhere → near-max P(H)\n"
+                "Mild variation:    sub-ocean DEM topography via topo_complexity/geodiv\n"
+                "Near-uniform:      all pixels approach P(H) ≈ 0.55–0.65 (warm yellow)",
             "assumptions": [
-                "Future epoch ≈ 5.1–6.0 Gya  (peak red-giant; Lorenz et al. 1997)",
-                "Water-ammonia eutectic at 176 K  (Grasset & Pargamin 2005)",
-                "Global ocean when T_surface ≥ 176 K; depth from GTIE DEM",
-                "Uniform ocean composition assumed",
+                "T_surface ≥ 176 K  (water-ammonia eutectic; Grasset & Pargamin 2005)",
+                "Epoch ≈ +5.1 to +5.9 Gya  (Lorenz et al. 1997)",
+                "liquid_HC and subsurface_ocean overridden to 1.0 via scale_features_to_epoch",
+                "Organic scale = min(t_elapsed/4.0, 2.5) × 1.1 = 2.5 (maximum accumulated)",
             ],
         },
         "Ocean refreezing": {
             "active": [
-                ("water_ammonia_solvent",    "DECL",   "Ocean refreezing — T dropped below 176 K eutectic"),
-                ("organic_stockpile",        "HIGH",   "Full 16 Gyr tholin inventory still present"),
-                ("global_ocean_habitability","DECL",   "Habitability declining as ocean solidifies"),
-                ("dissolved_energy",         "LOW",    "Heating continues briefly but surface cooling"),
-                ("water_ammonia_cycle",      "LOW",    "Atmosphere thinning as T drops"),
+                ("organic_abundance",        "HIGH",   "Full 16 Gyr UV tholin stockpile (scale = 2.5, capped)"),
+                ("liquid_hydrocarbon",       "DECL",   "Returns to 0 as T < 176 K; methane still long gone"),
+                ("subsurface_ocean",         "LOW",    "Refreezing; scale returns to 1.0 post-eutectic"),
                 ("surface_atm_interaction",  "LOW",    "Residual"),
-                ("topographic_complexity",   "LOW",    "Sub-ocean topography"),
-                ("geomorphologic_diversity", "LOW",    "Surface emerging as ocean solidifies"),
+                ("methane_cycle",            "LOW",    "Scale = 0 (methane cycle ended +5 Gya)"),
+                ("acetylene_energy",         "LOW",    "Reduced"),
+                ("topographic_complexity",   "LOW",    "Emerging surface as ice reforms"),
+                ("geomorphologic_diversity", "LOW",    "Recovering terrain diversity"),
             ],
             "excluded":
-                "liquid_hydrocarbon  — methane lakes evaporated long ago\n"
-                "methane_cycle       — ended\n"
-                "acetylene_energy    — ended\n"
-                "subsurface_ocean    — was surface ocean; now refreezing",
+                "impact_melt_bonus — zero since ~2.5 Gya\n"
+                "Note: model uses standard 8 features with T-dependent scale overrides;\n"
+                "      no separate ocean-chemistry model",
             "colour":
                 "FADING globally:  T < 176 K, ocean refreezes in < 1 Myr\n"
                 "Still elevated:   16 Gyr organic stockpile in solution briefly\n"
@@ -1653,14 +1687,15 @@ def render_frame(
     # Use full phase string (\n → space) for unambiguous matching.
     _PHASE_TO_PANEL: Dict[str, str] = {
         "Late Heavy Bombardment": "LHB peak",
-        "Early Titan":            "LHB peak",
+        "Early Titan":            "Early Titan",
         "Lake formation":         "Lake formation",
         "Recent past":            "Recent past",
         "Cassini epoch":          "Recent past",
         "Near future":            "Near future",
-        "Pre red-giant":          "Solar warming",
-        "Red-giant ramp up":      "Red giant",
-        "Red-giant water ocean":  "Red giant",
+        "Pre red-giant":          "Pre red-giant",  # t=3.0–4.0: stable; fixed (was wrongly using "Solar warming")
+        "Solar warming":          "Solar warming",  # t=4.0–5.0: lake evaporation (matches new phase label)
+        "Red-giant ramp up":      "Solar warming",  # t=5.0–5.13 Gya: lakes gone, dry/hot, T < 176 K — no ocean yet
+        "Red-giant water ocean":  "Red giant",      # T ≥ 176 K: global water-ammonia ocean (panel text matches visual change at frame 55)
         "Red-giant ramp down":    "Ocean refreezing",
     }
     _phase_key = _phase.replace("\n", " ")
@@ -1738,7 +1773,6 @@ def render_frame(
     _assump_lines.append("  • Resolution: 4490 m/px equirectangular")
     _assump_lines.append("  • Grid: 1802 × 3603 px (Titan R = 2575 km)")
     _assump_lines.append("  • Organic abundance: Lopes (2019) geo_only mode")
-    _assump_lines.append("  • Label balance: 50/50 (pure median split)")
     if _is_sklearn:
         _assump_lines.append("  • Backend: sklearn RandomForestClassifier")
         _assump_lines.append(f"  • Source: {source}")
@@ -2328,8 +2362,9 @@ def _run_animation_full_inference(
     # feature scale functions (liquid_hydrocarbon → 0.10, etc.).
     #
     # Intervals:
-    #   t < -1.0 Gya        MODELLED_SCALAR (rescaled to sklearn range)
-    #   -1.0 → +0.25 Gya    PCHIP (lake_formation, present, near_future)
+    #   t < -0.5 Gya        MODELLED_RESCALED (Bayesian formula + _rescale_bayesian)
+    #   -0.5 → 0.0 Gya      TRANSITION_BLEND (Bayesian → present sklearn anchor)
+    #   0.0 → +0.25 Gya     PCHIP (present, near_future only)
     #   +0.25 → +5.0 Gya    CLAMPED_NEAR_FUTURE
     #   +5.0 → +6.0 Gya     EUTECTIC_BLEND (near_future → future)
     #   +6.0 → +6.5 Gya     REFREEZE_BLEND (future → past)
@@ -2338,13 +2373,25 @@ def _run_animation_full_inference(
     PCHIP_ANCHOR_POSTS:  List[np.ndarray] = []
 
     anchor_epoch_map: Dict[str, float] = {
-        "lake_formation": -1.0,
-        "present":         0.0,
-        "near_future":    +0.250,
-        "future":         +5.9,   # last ocean epoch (T=466K > 176K; t=6.0 already T=89K)
+        # "lake_formation" deliberately excluded: it is no longer a PCHIP anchor
+        # (removed to prevent equatorial-band artefact -- see comment above), and
+        # keeping it here would trigger the snap-to-anchor code at t=-1.0 exactly
+        # (make_epoch_axis linspace includes -1.0), causing a one-frame yellow flash.
+        "present":     0.0,
+        "near_future": +0.250,
+        "future":      +5.9,
     }
-    # Note: "past" is deliberately excluded — see comment above.
-    for name in ["lake_formation", "present", "near_future"]:
+    # Note: "past" and "lake_formation" are deliberately excluded from PCHIP.
+    # lake_formation exclusion reason: the sklearn RF anchor at -1.0 Gya was
+    # trained on present-era Cassini SAR feature maps (polar lake signatures
+    # at 0.10 scale), which creates stronger polar preference than the Bayesian
+    # formula produces at -1.0 Gya.  Blending toward this anchor (frames 12-17)
+    # caused a visible "equatorial band" where organic-rich equatorial terrain
+    # (including Selk crater) appeared depressed relative to the polar lake margins.
+    # FIX (2026-04): PCHIP covers only present (0.0) → near_future (+0.25 Gya).
+    # MODELLED_RESCALED extends all the way to t=-0.5 Gya, then a 0.5 Gyr
+    # TRANSITION_BLEND smoothly joins to the present sklearn anchor.
+    for name in ["present", "near_future"]:
         if name in anchors:
             PCHIP_ANCHOR_EPOCHS.append(anchor_epoch_map[name])
             PCHIP_ANCHOR_POSTS.append(anchors[name])
@@ -2422,76 +2469,38 @@ def _run_animation_full_inference(
             current_narrative = event_data[1]
 
         # -- Determine posterior source for this epoch -------------------------
+        #
+        # ALL frames use MODELLED_RESCALED (Bayesian formula + epoch scale fns).
+        #
+        # The sklearn RF anchor posteriors are NOT used anywhere in the animation.
+        # Root cause: the RF is trained with a 50/50 global-median label split.
+        # Any pixel without confirmed surface liquid falls below the ~0.28 median
+        # and is labelled class-0.  The RF assigns those pixels probability 0.05–0.15
+        # while polar lake pixels get 0.65–0.75, producing a bimodal distribution
+        # that creates a hard, latitude-aligned "equatorial band" making all organic
+        # terrain (Selk crater, dune fields) appear uninhabitable.  Every sklearn
+        # anchor — past, lake_formation, present, near_future, future — has this
+        # property, so every frame that touched an anchor showed the artefact.
+        #
+        # The Bayesian formula gives a continuous gradient driven by the full
+        # feature set.  The scale functions correctly model:
+        #   t < -3.0 Gya  : LHB impact melt + high UV, no lakes
+        #   -3.0→-0.5 Gya : organic accumulation, declining impact flux
+        #   -0.5→ 0.0 Gya : polar lake system fully established
+        #    0.0→+4.0 Gya : stable Cassini-like state, slow warming
+        #   +4.0→+5.0 Gya : solar warming, lake evaporation
+        #   +5.1→+5.9 Gya : T > 176 K eutectic → global water-ammonia ocean
+        #   +5.9→+6.5 Gya : sun exits red giant, ocean refreezes
+        #
+        # The sklearn anchor posteriors remain loaded and available for the
+        # static thesis figures (location_feature_spider.png, etc.) but are
+        # deliberately excluded from all animation rendering.
+        # No snap-to-anchor override either — that was the mechanism that caused
+        # the single-frame yellow flashes at t=-1.0 and t=+0.25.
         source: str
-        if t < t_interp_lo - 0.5:
-            # t < -1.5 Gya: pure MODELLED_RESCALED (Bayesian formula).
-            # The past sklearn anchor is excluded — see comment above.
-            scaled    = scale_features_to_epoch(present, t)
-            posterior = _rescale_bayesian(bayesian_posterior_map(scaled))
-            source    = "MODELLED_RESCALED"
-        elif t < t_interp_lo:
-            # -1.5 → -1.0 Gya: BLEND between MODELLED_RESCALED and the
-            # lake_formation sklearn anchor.
-            # The Bayesian formula and sklearn RF don't agree in absolute
-            # probability scale.  Blending over 500 Myr before the PCHIP
-            # start prevents the visible step change at frame 16 (t=-1.0).
-            alpha = (t - (t_interp_lo - 0.5)) / 0.5   # 0 at -1.5, 1 at -1.0
-            alpha = float(np.clip(alpha, 0.0, 1.0))
-            scaled    = scale_features_to_epoch(present, t)
-            mod_post  = _rescale_bayesian(bayesian_posterior_map(scaled))
-            lf_post   = anchors.get("lake_formation", PCHIP_ANCHOR_POSTS[0])
-            posterior = ((1.0 - alpha) * mod_post
-                         + alpha       * lf_post).astype(np.float32)
-            source    = f"TRANSITION_BLEND(α={alpha:.2f})"
-        elif can_interpolate and t_interp_lo <= t <= t_interp_hi:
-            # PCHIP interpolation between lake_formation, present, near_future
-            posterior = interpolate_posterior_at_epoch(
-                pchip, t, t_interp_lo, t_interp_hi)
-            source = "INTERPOLATED_PCHIP"
-        elif near_future_post is not None and future_post is not None and t > t_interp_hi:
-            # Blending strategy for t > +0.25 Gya:
-            #
-            # +0.25 → +4.0 Gya: CLAMP near_future (lakes stable)
-            # +4.0 → +6.0 Gya: EUTECTIC_BLEND aligned with solar-warming narrative
-            # +6.0 → +6.5 Gya: REFREEZE_BLEND future → past
-            if t <= T_BLEND_LO:
-                posterior = near_future_post
-                source    = "CLAMPED_NEAR_FUTURE"
-            elif t <= T_FUT:
-                alpha = float(np.clip(
-                    (t - T_BLEND_LO) / (T_FUT - T_BLEND_LO), 0.0, 1.0
-                ))
-                posterior = ((1.0 - alpha) * near_future_post
-                             + alpha       * future_post).astype(np.float32)
-                source = f"EUTECTIC_BLEND(α={alpha:.2f})"
-            else:
-                refreeze_ref = past_post if past_post is not None else near_future_post
-                beta = float(np.clip(
-                    (t - T_FUT) / (T_REFREEZE - T_FUT), 0.0, 1.0
-                ))
-                posterior = ((1.0 - beta) * future_post
-                             + beta        * refreeze_ref).astype(np.float32)
-                source = f"REFREEZE_BLEND(β={beta:.2f})"
-        elif near_future_post is not None and t > t_interp_hi:
-            # future anchor missing: clamp to near_future
-            posterior = near_future_post
-            source    = "CLAMPED_NEAR_FUTURE"
-        elif future_post is not None and t > T_FUT:
-            # well past future anchor: clamp to future
-            posterior = future_post
-            source    = "CLAMPED_FUTURE"
-        else:
-            # Fallback: modelled scalars (should not be reached in normal runs)
-            scaled    = scale_features_to_epoch(present, t)
-            posterior = bayesian_posterior_map(scaled)
-            source    = "MODELLED_SCALAR"
-
-        # Snap to exact anchor posteriors at anchor epochs (override interpolation)
-        for aname, aepoch in anchor_epoch_map.items():
-            if aname in anchors and abs(t - aepoch) < 1e-4:
-                posterior = anchors[aname]
-                source    = f"ANCHOR_{aname.upper()}"
-                break
+        scaled    = scale_features_to_epoch(present, t)
+        posterior = _rescale_bayesian(bayesian_posterior_map(scaled))
+        source    = "MODELLED_RESCALED"
 
         # Caption is ALWAYS shown; --pause only controls hold duration.
         frame_narrative = current_narrative if current_narrative else _narrative_for_epoch(t)
@@ -2843,4 +2852,3 @@ if __name__ == "__main__":
     )
     args = p.parse_args()
     main(args)
-

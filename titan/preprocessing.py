@@ -232,6 +232,76 @@ def _reproject_geotiff(
     _write_canonical_tif(dst_data, dst_path, grid)
 
 
+
+def _apply_lon_wrap_fill(tif_path: Path, radius: int = 5) -> int:
+    """
+    Fill NaN pixels near the 0°W/360°W longitude boundary using wrapped
+    data from the opposite edge.
+
+    Background
+    ----------
+    The GTDR canonical grid runs from col=0 (0°W) to col=3602 (360°W),
+    which are the SAME physical meridian.  rasterio.reproject with
+    bilinear resampling produces NaN at col=0 because bilinear
+    interpolation needs a source pixel at position -0.5 (left of the
+    mosaic edge) that does not exist.  The wrap-fill fixes this by
+    copying valid data from col=3602 → col=0 and vice versa, then
+    propagating inward up to *radius* columns using the wrapped edge
+    as the boundary condition.
+
+    Parameters
+    ----------
+    tif_path:
+        Path to the canonical TIF to fix in-place.
+    radius:
+        Number of edge columns to inspect on each side (default 5 =
+        ~22 km at 4490 m/px).
+
+    Returns
+    -------
+    int
+        Number of NaN pixels filled (0 means no action was needed).
+    """
+    import rasterio
+
+    with rasterio.open(tif_path) as ds:
+        profile = ds.profile.copy()
+        arr     = ds.read(1).astype(np.float32)
+        nodata  = ds.nodata
+
+    if nodata is not None:
+        arr[arr == nodata] = np.nan
+
+    ncols   = arr.shape[1]
+    filled  = 0
+
+    for offset in range(radius):
+        left_col  = offset
+        right_col = ncols - 1 - offset
+
+        left_nan  = ~np.isfinite(arr[:, left_col])
+        right_nan = ~np.isfinite(arr[:, right_col])
+
+        # Fill left edge from wrapped right edge
+        if left_nan.any() and (~right_nan).any():
+            arr[left_nan, left_col] = arr[left_nan, right_col]
+            filled += int(left_nan.sum())
+
+        # Fill right edge from wrapped left edge
+        if right_nan.any() and (~left_nan).any():
+            arr[right_nan, right_col] = arr[right_nan, left_col]
+            filled += int(right_nan.sum())
+
+    if filled > 0:
+        profile.update(dtype="float32", nodata=np.nan)
+        with rasterio.open(tif_path, "w", **profile) as dst:
+            dst.write(arr, 1)
+        logger.info(
+            "lon_wrap_fill: filled %d NaN edge pixels in %s",
+            filled, tif_path.name,
+        )
+    return filled
+
 def _reproject_gtdr(
     east_img: Path,
     west_img: Path,
@@ -269,14 +339,23 @@ def _reproject_gtdr(
     # Read and mosaic the two tiles
     mosaic, meta = mosaic_gtdr_tiles(east_img, west_img, east_lbl, west_lbl)
 
-    # Build a source rasterio-compatible transform for the mosaic
-    # Mosaic: 360 rows x 720 cols, 0.5 deg/pixel, west-positive, metres
+    # Build a source rasterio-compatible transform for the mosaic.
+    # BUG-FIX 2026-04: the original code hardcoded xsize=0.5*m_per_deg
+    # (2 ppd), which is correct for the old GT0E T077 tiles but WRONG
+    # for the GTIE T126 tiles (8 ppd, 5617 m/px).  With the wrong xsize,
+    # rasterio thought the mosaic spanned 4× the globe; only the first
+    # quarter (0°–90°W) of the GTIE data was used and the remaining 75%
+    # was filled by the coarser Corlies 4ppd gap-filler, reducing peak
+    # elevation from ~564 m (GTIE) to ~144 m (Corlies-smoothed).
+    # Fix: derive pixel size from meta["map_resolution"] (ppd from label).
     m_per_deg = 2.0 * math.pi * TITAN_RADIUS_M / 360.0
+    _ppd = float(meta.get("map_resolution", 2.0))
+    _pixel_m = m_per_deg / _ppd
     src_transform = from_origin(
         west=0.0,
         north=90.0 * m_per_deg,
-        xsize=0.5 * m_per_deg,
-        ysize=0.5 * m_per_deg,
+        xsize=_pixel_m,
+        ysize=_pixel_m,
     )
 
     dst_data = grid.empty()
@@ -376,7 +455,7 @@ def _rasterise_channels(
         )
 
     # Smooth with Gaussian kernel to create a density proxy
-    density = gaussian_filter(canvas, sigma=3.0)
+    density = gaussian_filter(canvas, sigma=3.0, mode=('reflect', 'wrap'))
 
     # Normalise to [0, 1]
     dmax = density.max()
@@ -661,6 +740,7 @@ class DataPreprocessor:
                     "Topography will have ~10%% NaN gaps. "
                     "Download titan_topo_corlies.zip for 100%% coverage."
                 )
+            _apply_lon_wrap_fill(out)  # fill NaN edge cols from wrapped counterpart
             return {"topography": out}
         logger.info(
             "GTIE tiles not found (GTIED00N090/270_T126_V01.IMG[.gz]). "
@@ -680,6 +760,7 @@ class DataPreprocessor:
                 gt0e_e, gt0e_w, out, self.grid,
                 _find_lbl(gt0e_e), _find_lbl(gt0e_w),
             )
+            _apply_lon_wrap_fill(out)
             return {"topography": out}
 
         # -- Priority 3: GT0E T077 legacy (partial mission) ----------------
@@ -698,6 +779,7 @@ class DataPreprocessor:
                 legacy_e, legacy_w, out, self.grid,
                 _find_lbl(legacy_e), _find_lbl(legacy_w),
             )
+            _apply_lon_wrap_fill(out)
             return {"topography": out}
 
         logger.warning(
@@ -1408,7 +1490,17 @@ def compute_topographic_roughness(
         return float(np.std(v)) if len(v) > 1 else 0.0
 
     size = 2 * window_radius + 1
-    roughness = generic_filter(dem, _nanstd, size=size)
+
+    # Longitude wrapping fix: scipy generic_filter does not accept
+    # per-axis mode sequences, so we pad the array manually in the
+    # column (longitude) direction before filtering and then crop.
+    # Latitude edges use the default reflect mode (correct: poles
+    # should not wrap to each other).
+    pad = window_radius
+    dem_padded = np.concatenate([dem[:, -pad:], dem, dem[:, :pad]], axis=1)
+    roughness_padded = generic_filter(dem_padded, _nanstd, size=size,
+                                      mode='reflect')
+    roughness = roughness_padded[:, pad:-pad]
     return normalise_to_0_1(roughness)
 
 
@@ -1447,6 +1539,13 @@ def compute_terrain_diversity(
         probs = counts[counts > 0] / total
         return float(-np.sum(probs * np.log(probs + 1e-12)))
 
-    size    = 2 * window_radius + 1
-    raw     = generic_filter(class_map.astype(float), _shannon, size=size)
+    size = 2 * window_radius + 1
+
+    # Longitude wrapping fix: manually pad columns before filtering
+    # (generic_filter does not support per-axis mode sequences).
+    pad          = window_radius
+    cm_f         = class_map.astype(float)
+    cm_padded    = np.concatenate([cm_f[:, -pad:], cm_f, cm_f[:, :pad]], axis=1)
+    raw_padded   = generic_filter(cm_padded, _shannon, size=size, mode='reflect')
+    raw          = raw_padded[:, pad:-pad]
     return normalise_to_0_1(raw)

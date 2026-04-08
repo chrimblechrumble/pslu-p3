@@ -773,28 +773,32 @@ effect is zero: a missing observation contributes no evidence.  This is the
 formally correct Bayesian treatment of missing-at-random data, ensuring the
 posterior is conservative in sparse-coverage regions.
 
-\subsection{Classifier Training and Feature Importances}
+\subsection{Feature Importance Validation}
 \label{sec:classifier}
 
-The habitability maps presented in Chapter~\ref{ch:results} are produced by
-the sklearn Random Forest (RF) pipeline, which uses the Bayesian posterior
-as input to train a classifier rather than returning the Bayesian posterior
-directly.  The RF pipeline produces output values that are not bounded by
-$P_\text{max} = 0.696$ (Eq.~\ref{eq:bounds}); a polar lake shore at
-$P(H) = 0.85$ is an RF probability, not a Beta posterior mean.
-The Bayesian formula gives the physically interpretable prior-posterior
-quantities described in Sections~\ref{sec:prior}--\ref{sec:bounds}; the RF
-provides data-driven spatial discrimination and feature importances.
+The Bayesian posterior map (Eq.~\ref{eq:posterior_mean}) is the primary
+scientific result.  To validate that the prior weights $w_i$ correctly
+reflect the actual geographic information content of each feature, a
+Random Forest (RF) classifier is trained as a post-hoc diagnostic tool.
 
-Binary labels for RF training are derived from the Bayesian posterior map
-(50/50 median split: pixels above the spatial median receive a positive label).
-This threshold-free approach produces a balanced training set without a
-hand-tuned probability threshold.  Permutation feature importances
-\citep{Breiman2001} are computed after fitting: each feature layer is
-randomly permuted and the accuracy decrease is recorded as that feature's
-importance.  The ratio of data-derived importance to prior weight $w_i$ is
-the primary validation metric for the prior specification
-(Section~\ref{sec:importances}).
+Binary labels are derived from the Bayesian posterior map by 50/50 median
+split: pixels above the global spatial median receive a positive
+\lq\lq habitable\rq\rq{} label.  A Gaussian Naive Bayes classifier
+\citep{Breiman2001} is fitted on these labels and isotonically calibrated.
+Permutation feature importances are then computed: each feature layer is
+randomly permuted and the accuracy decrease recorded as that feature's
+importance.  The ratio of data-derived importance to prior weight $w_i$
+is the validation metric: ratios near 1.0 for all features confirm that
+the prior weight specification is consistent with the observed spatial
+discrimination (Section~\ref{sec:importances}).
+
+\textit{Note:} The RF classifier outputs are not used as scientific
+results.  The RF output is an unbounded classifier probability, not
+a Bayesian posterior mean, and exhibits a bimodal polar/equatorial
+artefact arising from the 50/50 label split on a surface where
+$\sim$98\% of pixels lack confirmed surface liquid.  All $P(H)$
+values reported in Chapter~\ref{ch:results} are from
+Eq.~\ref{eq:posterior_mean} directly.
 
 \section{Temporal Configurations}
 \label{sec:temporal_configs}
@@ -1025,8 +1029,8 @@ posterior gradient ($\approx 0.27$--$0.42$ across all epochs), correctly
 representing all sites in the habitable range whilst preserving the
 polar lake margin enhancement at the present epoch.
 The five static epoch posteriors (Table~\ref{tab:epoch_summary}) are
-computed by the full sklearn RF pipeline independently of the animation
-and are used for all quantitative comparisons in this chapter.
+computed by the Bayesian formula (Eq.~\ref{eq:posterior_mean}) independently
+of the animation and are used for all quantitative comparisons in Chapter~\ref{ch:results}.
 
 \subsection{Validation of the Reconstruction}
 \label{sec:multi_epoch_validation}

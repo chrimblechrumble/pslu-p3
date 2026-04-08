@@ -48,7 +48,7 @@ hydrocarbon availability ($w_1 = 0.25$), methane cycle activity
 ($w_4 = 0.15$), and surface--atmosphere interaction ($w_5 = 0.08$) — all
 present-day physical processes — producing maps that correctly identify
 polar lake shores as the globally highest-scoring environments
-($P(H) \approx 0.85$ at the present epoch).
+($P(H) \approx 0.44$ at the present epoch; Kraken southern shore).
 
 \paragraph{Prebiotic chemistry habitability.}
 This framework asks: \textit{where has liquid water most plausibly
@@ -84,8 +84,7 @@ relevant prebiotic chemistry.
 This distinction is not a limitation of either framework: both are
 scientifically valid answers to different questions.  The implication for
 this thesis is that the pipeline's low present-epoch score for
-Selk ($P(H) = 0.24$ by the Bayesian formula; floor value in the sklearn
-RF analysis) is not a contradiction of the \dragonfly{} mission's rationale
+Selk ($P(H) = 0.24$) is not a contradiction of the \dragonfly{} mission's rationale
 --- it is a \textit{consequence} of targeting different habitability.
 Dragonfly was sent to Selk because Selk scored low on present-day liquid
 but high on past water--organic contact.
@@ -99,21 +98,26 @@ site, but through a different route than a global ranking.
 
 The pipeline is a present-day solvent habitability model.  By this
 metric, the north polar lake margins are the most habitable environments
-on \titan{} ($P(H) = 0.85$--0.86 by the sklearn RF; $\approx 0.35$--0.40
-by the Bayesian formula).  Selk scores at the distribution floor in the
-sklearn RF (0.105) and below the prior mean in the Bayesian formula (0.24).
+on \titan{}, reaching $P(H) \approx 0.44$ (Kraken southern shore) and
+$0.43$ (Ligeia eastern margin) --- the highest values in the present-epoch
+map.  Selk scores $P(H) = 0.24$, below the prior mean of $0.33$,
+because the crater lacks present-day surface liquid ($f_1 \approx 0.05$)
+and its methane-cycle and surface--atmosphere scores are equatorial-low.
 \textit{This is scientifically correct and consistent with Dragonfly's
-mission rationale}: the crater lacks present-day surface liquid, and a
-model that correctly captures present-day solvent habitability should
-rank it accordingly.
+mission rationale}: a model that correctly captures present-day solvent
+habitability should rank polar lake shores above a dry equatorial crater.
 
-The independent validation of Dragonfly's site selection comes instead
-from the geomorphological diversity feature.  Selk's $f_7 = 0.629$
+The independent validation of Dragonfly's site selection comes from
+the geomorphological diversity feature.  Selk's $f_7 = 0.629$
 is the highest value of any equatorial site and 7.8$\times$ the global
-median of 0.092 --- a result the pipeline reaches from Cassini terrain
-data alone, without reference to the mission planning process, and without
+median of 0.092 --- a result derived from Cassini SAR terrain data
+alone, without reference to the mission planning process, and without
 any weight, feature specification, or backfill strategy adjusted after
-examining Selk.  Geomorphological diversity captures the simultaneous
+examining Selk.  The Bayesian posterior at Selk ($P(H) = 0.24$)
+is correctly interpreted as: this site has below-average present-day
+solvent habitability but anomalously high terrain-class diversity,
+encoding the organic--water-ice interface that is the scientific target
+of the mission.  Geomorphological diversity captures the simultaneous
 presence of four terrain classes (dune, plains, labyrinth, crater floor)
 within 45\,km, which is the Cassini-era observational proxy for the
 organic--water-ice mixing interface that defines the prebiotic chemistry
@@ -277,33 +281,33 @@ whose signatures may be buried below accessible depth.  The habitability maps
 provide a rigorous framework for reporting a null result in terms of which
 specific pathways have been tested and which remain open.
 
-% \section{Titan in Solar System Habitability Context}
-% \label{sec:solar_context}
+\section{Titan in Solar System Habitability Context}
+\label{sec:solar_context}
 
-% Figure~\ref{fig:solar_comparison} places \titan{}'s present-epoch and future
-% habitability scores in the context of the principal candidate habitable
-% environments in the solar system.  Two features distinguish \titan{} from all
-% other candidates.  First, it is the only body with a confirmed cycling surface
-% solvent in contact with a large organic inventory at the present epoch:
-% Enceladus has confirmed hydrothermal activity but essentially no surface organic
-% stockpile; Europa and Ceres have subsurface water but neither confirmed organics
-% nor a surface solvent.  Second, future \titan{} uniquely combines a global
-% water-based ocean with an organic feedstock accumulated over $\sim$16\,Gyr ---
-% a combination unprecedented elsewhere in the solar system.
+Figure~\ref{fig:solar_comparison} places \titan{}'s present-epoch and future
+habitability scores in the context of the principal candidate habitable
+environments in the solar system.  Two features distinguish \titan{} from all
+other candidates.  First, it is the only body with a confirmed cycling surface
+solvent in contact with a large organic inventory at the present epoch:
+Enceladus has confirmed hydrothermal activity but essentially no surface organic
+stockpile; Europa and Ceres have subsurface water but neither confirmed organics
+nor a surface solvent.  Second, future \titan{} uniquely combines a global
+water-based ocean with an organic feedstock accumulated over $\sim$16\,Gyr ---
+a combination unprecedented elsewhere in the solar system.
 
-% \begin{figure}[H]
-%   \centering
-%   \includegraphics[width=\textwidth]{images/solar_system_comparison.png}
-%   \caption{Qualitative comparison of habitability-relevant properties for the
-%     principal candidate habitable environments in the solar system.  Horizontal
-%     bars show relative scores (1 = low to 5 = very high) for liquid availability,
-%     organic inventory, and energy source.  Model $P(H)$ values from this work
-%     are shown for \titan{} epochs; the Enceladus entry summarises the
-%     \citet{Affholder2021} result.  The combination of cycling liquid and very
-%     high organics at the present epoch, and the extraordinary organic--ocean
-%     combination in the future, distinguishes \titan{} from all other candidates.}
-%   \label{fig:solar_comparison}
-% \end{figure}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/solar_system_comparison.png}
+  \caption{Qualitative comparison of habitability-relevant properties for the
+    principal candidate habitable environments in the solar system.  Horizontal
+    bars show relative scores (1 = low to 5 = very high) for liquid availability,
+    organic inventory, and energy source.  Model $P(H)$ values from this work
+    are shown for \titan{} epochs; the Enceladus entry summarises the
+    \citet{Affholder2021} result.  The combination of cycling liquid and very
+    high organics at the present epoch, and the extraordinary organic--ocean
+    combination in the future, distinguishes \titan{} from all other candidates.}
+  \label{fig:solar_comparison}
+\end{figure}
 
 \section{Comparison with the Affholder et al.\ (2021) Enceladus Framework}
 \label{sec:affholder_comparison}
@@ -500,4 +504,3 @@ The Bayesian multi-feature framework presented here provides a reproducible,
 extendable foundation for this work, and the directly testable predictions it
 makes for \dragonfly{} DraMS and DraGNS measurements at Selk represent
 the most important near-term validation pathway.
-

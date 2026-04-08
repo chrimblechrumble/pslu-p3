@@ -22,7 +22,7 @@
 
 **/.idea
 **/.DS_Store
-**/*.pdf
+# **/*.pdf
 **/*.zip
 **/*.tif
 **/data

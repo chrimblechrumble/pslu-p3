@@ -1020,6 +1020,233 @@ def _phase_label(t: float) -> str:
     return "Red-giant\nramp down"
 
 
+# ---------------------------------------------------------------------------
+# Per-epoch top-10 computation
+# ---------------------------------------------------------------------------
+# Present-epoch Cassini-derived feature profiles for candidate sites.
+# impact_melt_bonus encodes site-specific SENSITIVITY to impact-melt activity
+# (0.0 = plain terrain with no crater history; 1.0 = major fresh impact crater).
+# At epoch t: f_impact = min(1, global_signal * (0.3 + 0.7 * sensitivity))
+# where global_signal = _impact_melt_global(t).  Non-crater sites therefore
+# receive 30% of the global LHB signal; major craters receive up to 100%.
+CANDIDATE_SITES: List[Dict] = [
+    # ── Lake / sea shores (sensitivity low: no crater structure) ──────────
+    {"lon_W": 310.0, "lat":  68.0, "label": "Kraken S",    "type": "lake",
+     "f": {"liquid_hydrocarbon":1.00,"organic_abundance":0.05,"acetylene_energy":0.20,
+           "methane_cycle":0.70,"surface_atm_interaction":0.65,"topographic_complexity":0.60,
+           "geomorphologic_diversity":0.76,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W":  78.0, "lat":  79.0, "label": "Ligeia E",    "type": "lake",
+     "f": {"liquid_hydrocarbon":1.00,"organic_abundance":0.05,"acetylene_energy":0.20,
+           "methane_cycle":0.70,"surface_atm_interaction":0.62,"topographic_complexity":0.55,
+           "geomorphologic_diversity":0.76,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 348.0, "lat":  80.0, "label": "Kraken N",    "type": "lake",
+     "f": {"liquid_hydrocarbon":1.00,"organic_abundance":0.05,"acetylene_energy":0.18,
+           "methane_cycle":0.68,"surface_atm_interaction":0.60,"topographic_complexity":0.52,
+           "geomorphologic_diversity":0.72,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 339.0, "lat":  85.5, "label": "Punga",       "type": "lake",
+     "f": {"liquid_hydrocarbon":0.90,"organic_abundance":0.06,"acetylene_energy":0.18,
+           "methane_cycle":0.65,"surface_atm_interaction":0.55,"topographic_complexity":0.45,
+           "geomorphologic_diversity":0.65,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 179.0, "lat": -72.0, "label": "Ontario",     "type": "lake",
+     "f": {"liquid_hydrocarbon":0.85,"organic_abundance":0.08,"acetylene_energy":0.22,
+           "methane_cycle":0.45,"surface_atm_interaction":0.48,"topographic_complexity":0.42,
+           "geomorphologic_diversity":0.60,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 336.3, "lat":  73.0, "label": "Jingpo",      "type": "lake",
+     "f": {"liquid_hydrocarbon":0.88,"organic_abundance":0.06,"acetylene_energy":0.18,
+           "methane_cycle":0.62,"surface_atm_interaction":0.52,"topographic_complexity":0.40,
+           "geomorphologic_diversity":0.60,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    # ── Equatorial dune / organic land sites (low sensitivity) ────────────
+    {"lon_W": 250.0, "lat":   7.0, "label": "Belet",       "type": "land",
+     "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.82,"acetylene_energy":0.45,
+           "methane_cycle":0.09,"surface_atm_interaction":0.09,"topographic_complexity":0.55,
+           "geomorphologic_diversity":0.09,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
+    {"lon_W": 155.0, "lat":  -5.0, "label": "Shangri-La",  "type": "land",
+     "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.82,"acetylene_energy":0.45,
+           "methane_cycle":0.09,"surface_atm_interaction":0.09,"topographic_complexity":0.52,
+           "geomorphologic_diversity":0.09,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
+    {"lon_W":  20.0, "lat":  15.0, "label": "Fensal",      "type": "land",
+     "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.80,"acetylene_energy":0.44,
+           "methane_cycle":0.09,"surface_atm_interaction":0.08,"topographic_complexity":0.50,
+           "geomorphologic_diversity":0.09,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
+    {"lon_W": 100.0, "lat":  10.0, "label": "Aztlan",      "type": "land",
+     "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.78,"acetylene_energy":0.44,
+           "methane_cycle":0.09,"surface_atm_interaction":0.08,"topographic_complexity":0.48,
+           "geomorphologic_diversity":0.09,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
+    # ── Cryovolcanic features (high sensitivity: subsurface conduits) ──────
+    {"lon_W":  75.0, "lat": -26.0, "label": "Hotei",       "type": "land",
+     "f": {"liquid_hydrocarbon":0.03,"organic_abundance":0.65,"acetylene_energy":0.42,
+           "methane_cycle":0.18,"surface_atm_interaction":0.22,"topographic_complexity":0.35,
+           "geomorphologic_diversity":0.58,"subsurface_ocean":0.14,"impact_melt_bonus":0.90}},
+    {"lon_W": 144.5, "lat":   9.8, "label": "Sotra",       "type": "land",
+     "f": {"liquid_hydrocarbon":0.03,"organic_abundance":0.62,"acetylene_energy":0.40,
+           "methane_cycle":0.16,"surface_atm_interaction":0.20,"topographic_complexity":0.38,
+           "geomorphologic_diversity":0.55,"subsurface_ocean":0.12,"impact_melt_bonus":0.85}},
+    # ── Impact craters (sensitivity proportional to diameter) ─────────────
+    {"lon_W":  87.3, "lat":  19.0, "label": "Menrva",      "type": "land",
+     "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.30,"acetylene_energy":0.38,
+           "methane_cycle":0.08,"surface_atm_interaction":0.08,"topographic_complexity":0.18,
+           "geomorphologic_diversity":0.55,"subsurface_ocean":0.22,"impact_melt_bonus":1.00}},
+    {"lon_W": 349.0, "lat": -38.6, "label": "Hano",        "type": "land",
+     "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.42,"acetylene_energy":0.35,
+           "methane_cycle":0.08,"surface_atm_interaction":0.10,"topographic_complexity":0.16,
+           "geomorphologic_diversity":0.40,"subsurface_ocean":0.08,"impact_melt_bonus":0.65}},
+    {"lon_W": 200.5, "lat":  -1.4, "label": "Afekan",      "type": "land",
+     "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.35,"acetylene_energy":0.36,
+           "methane_cycle":0.08,"surface_atm_interaction":0.08,"topographic_complexity":0.15,
+           "geomorphologic_diversity":0.38,"subsurface_ocean":0.09,"impact_melt_bonus":0.70}},
+    {"lon_W":  16.0, "lat":  11.3, "label": "Sinlap",      "type": "land",
+     "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.32,"acetylene_energy":0.36,
+           "methane_cycle":0.08,"surface_atm_interaction":0.08,"topographic_complexity":0.14,
+           "geomorphologic_diversity":0.36,"subsurface_ocean":0.09,"impact_melt_bonus":0.65}},
+    {"lon_W":  65.6, "lat":  14.0, "label": "Ksa",         "type": "land",
+     "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.34,"acetylene_energy":0.36,
+           "methane_cycle":0.08,"surface_atm_interaction":0.08,"topographic_complexity":0.14,
+           "geomorphologic_diversity":0.35,"subsurface_ocean":0.07,"impact_melt_bonus":0.60}},
+    # ── Named northern lacus (IAU-named lake bodies; smaller than the three
+    #    main mares but confirmed by Cassini RADAR/VIMS).  Feature profiles
+    #    reflect smaller liquid area (f1 0.65-0.80), moderate shoreline
+    #    geodiversity, and standard north-polar methane cycle. ──────────────
+    {"lon_W": 154.0, "lat":  73.0, "label": "Koitere",     "type": "lake",
+     "f": {"liquid_hydrocarbon":0.72,"organic_abundance":0.06,"acetylene_energy":0.18,
+           "methane_cycle":0.58,"surface_atm_interaction":0.48,"topographic_complexity":0.38,
+           "geomorphologic_diversity":0.55,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W":  93.5, "lat":  70.7, "label": "Hammar",      "type": "lake",
+     "f": {"liquid_hydrocarbon":0.68,"organic_abundance":0.06,"acetylene_energy":0.18,
+           "methane_cycle":0.56,"surface_atm_interaction":0.46,"topographic_complexity":0.36,
+           "geomorphologic_diversity":0.52,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 327.0, "lat":  72.0, "label": "Neagh",       "type": "lake",
+     "f": {"liquid_hydrocarbon":0.70,"organic_abundance":0.06,"acetylene_energy":0.18,
+           "methane_cycle":0.58,"surface_atm_interaction":0.50,"topographic_complexity":0.40,
+           "geomorphologic_diversity":0.54,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 262.8, "lat":  77.5, "label": "Mackay",      "type": "lake",
+     "f": {"liquid_hydrocarbon":0.80,"organic_abundance":0.05,"acetylene_energy":0.18,
+           "methane_cycle":0.60,"surface_atm_interaction":0.52,"topographic_complexity":0.42,
+           "geomorphologic_diversity":0.58,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 262.0, "lat":  74.5, "label": "Uvs",         "type": "lake",
+     "f": {"liquid_hydrocarbon":0.65,"organic_abundance":0.06,"acetylene_energy":0.18,
+           "methane_cycle":0.55,"surface_atm_interaction":0.44,"topographic_complexity":0.35,
+           "geomorphologic_diversity":0.50,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W":  12.3, "lat":  75.4, "label": "Bolsena",     "type": "lake",
+     "f": {"liquid_hydrocarbon":0.68,"organic_abundance":0.06,"acetylene_energy":0.18,
+           "methane_cycle":0.57,"surface_atm_interaction":0.46,"topographic_complexity":0.37,
+           "geomorphologic_diversity":0.52,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 254.0, "lat":  65.5, "label": "Kivu",        "type": "lake",
+     "f": {"liquid_hydrocarbon":0.60,"organic_abundance":0.07,"acetylene_energy":0.20,
+           "methane_cycle":0.48,"surface_atm_interaction":0.40,"topographic_complexity":0.35,
+           "geomorphologic_diversity":0.48,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+
+    # ── Additional named lacus (completing the IAU catalog) ─────────────────
+    # Freeman, Oib: north of Ligeia Mare (~210-220W, 82-83N)
+    {"lon_W": 210.0, "lat":  83.0, "label": "Freeman",    "type": "lake",
+     "f": {"liquid_hydrocarbon":0.80,"organic_abundance":0.05,"acetylene_energy":0.18,
+           "methane_cycle":0.62,"surface_atm_interaction":0.52,"topographic_complexity":0.42,
+           "geomorphologic_diversity":0.60,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 220.0, "lat":  82.0, "label": "Oib",         "type": "lake",
+     "f": {"liquid_hydrocarbon":0.65,"organic_abundance":0.06,"acetylene_energy":0.18,
+           "methane_cycle":0.58,"surface_atm_interaction":0.46,"topographic_complexity":0.36,
+           "geomorphologic_diversity":0.52,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    # Cardiel, Towada: east of Ligeia (~118-128W, 77-78N)
+    {"lon_W": 128.0, "lat":  78.0, "label": "Cardiel",     "type": "lake",
+     "f": {"liquid_hydrocarbon":0.78,"organic_abundance":0.05,"acetylene_energy":0.18,
+           "methane_cycle":0.60,"surface_atm_interaction":0.50,"topographic_complexity":0.40,
+           "geomorphologic_diversity":0.58,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 118.0, "lat":  77.5, "label": "Towada",      "type": "lake",
+     "f": {"liquid_hydrocarbon":0.65,"organic_abundance":0.06,"acetylene_energy":0.18,
+           "methane_cycle":0.57,"surface_atm_interaction":0.46,"topographic_complexity":0.36,
+           "geomorphologic_diversity":0.52,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    # Waikare, Logtak: west/southwest of Ligeia (~185-198W, 74-75N)
+    {"lon_W": 185.0, "lat":  75.0, "label": "Waikare",     "type": "lake",
+     "f": {"liquid_hydrocarbon":0.70,"organic_abundance":0.06,"acetylene_energy":0.18,
+           "methane_cycle":0.56,"surface_atm_interaction":0.46,"topographic_complexity":0.36,
+           "geomorphologic_diversity":0.52,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 197.5, "lat":  74.0, "label": "Logtak",      "type": "lake",
+     "f": {"liquid_hydrocarbon":0.65,"organic_abundance":0.06,"acetylene_energy":0.18,
+           "methane_cycle":0.55,"surface_atm_interaction":0.44,"topographic_complexity":0.35,
+           "geomorphologic_diversity":0.50,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    # Paxsi, Romo: western north polar small lacus
+    {"lon_W": 243.0, "lat":  72.0, "label": "Paxsi",       "type": "lake",
+     "f": {"liquid_hydrocarbon":0.60,"organic_abundance":0.07,"acetylene_energy":0.18,
+           "methane_cycle":0.52,"surface_atm_interaction":0.42,"topographic_complexity":0.33,
+           "geomorphologic_diversity":0.48,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    {"lon_W": 265.0, "lat":  70.0, "label": "Romo",        "type": "lake",
+     "f": {"liquid_hydrocarbon":0.55,"organic_abundance":0.07,"acetylene_energy":0.20,
+           "methane_cycle":0.50,"surface_atm_interaction":0.40,"topographic_complexity":0.32,
+           "geomorphologic_diversity":0.46,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    # Crveno: southern hemisphere, near Ontario (~177W, 70.5S)
+    {"lon_W": 177.0, "lat": -70.5, "label": "Crveno",      "type": "lake",
+     "f": {"liquid_hydrocarbon":0.55,"organic_abundance":0.08,"acetylene_energy":0.22,
+           "methane_cycle":0.38,"surface_atm_interaction":0.40,"topographic_complexity":0.32,
+           "geomorphologic_diversity":0.45,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
+    # Urmia, Sionascaig: southern temperate lacus (small, low methane cycle)
+    {"lon_W": 186.0, "lat": -52.0, "label": "Urmia",       "type": "lake",
+     "f": {"liquid_hydrocarbon":0.45,"organic_abundance":0.12,"acetylene_energy":0.30,
+           "methane_cycle":0.22,"surface_atm_interaction":0.32,"topographic_complexity":0.28,
+           "geomorphologic_diversity":0.38,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
+    {"lon_W": 278.1, "lat": -41.5, "label": "Sionascaig",  "type": "lake",
+     "f": {"liquid_hydrocarbon":0.40,"organic_abundance":0.14,"acetylene_energy":0.32,
+           "methane_cycle":0.18,"surface_atm_interaction":0.28,"topographic_complexity":0.26,
+           "geomorphologic_diversity":0.35,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
+
+    # ── Lander sites (always shown; included here for ranking) ─────────────
+    {"lon_W": 199.0, "lat":   7.0, "label": "Selk",        "type": "lander",
+     "f": {"liquid_hydrocarbon":0.05,"organic_abundance":0.215,"acetylene_energy":0.379,
+           "methane_cycle":0.025,"surface_atm_interaction":0.010,"topographic_complexity":0.054,
+           "geomorphologic_diversity":0.629,"subsurface_ocean":0.130,"impact_melt_bonus":0.80}},
+    {"lon_W": 192.3, "lat": -10.6, "label": "Huygens",     "type": "lander",
+     "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.54,"acetylene_energy":0.38,
+           "methane_cycle":0.09,"surface_atm_interaction":0.08,"topographic_complexity":0.14,
+           "geomorphologic_diversity":0.20,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
+]
+
+
+def _site_ph(site: Dict, t: float) -> float:
+    """Compute Bayesian P(H|features) for a candidate site at epoch t.
+
+    impact_melt_bonus in the site dict encodes the site's sensitivity
+    (0.0-1.0) to impact-melt activity.  The actual epoch feature is:
+        f_impact = min(1, global * (0.3 + 0.7 * sensitivity))
+    where global = _impact_melt_global(t).  This gives non-crater sites
+    30% of the global signal and major craters up to 100%.
+    """
+    mu0    = sum(PRIOR_MEANS[k] * WEIGHTS[k] for k in WEIGHTS)
+    alpha0 = mu0 * KAPPA
+    w_sum  = 0.0
+    for feat_name, f_present in site["f"].items():
+        if feat_name == "impact_melt_bonus":
+            global_signal  = _impact_melt_global(t)
+            sensitivity    = f_present           # 0.30 baseline … 1.0 crater
+            f_t = min(1.0, global_signal * (0.30 + 0.70 * sensitivity))
+        else:
+            scale = FEATURE_SCALE_FUNCS[feat_name](t)
+            f_t   = min(1.0, max(0.0, scale * f_present))
+        w_sum += WEIGHTS.get(feat_name, 0.0) * f_t
+    return (alpha0 + LAMBDA * w_sum) / (KAPPA + LAMBDA)
+
+
+def compute_epoch_top10(t: float) -> List[Tuple[float, float, str, int, str]]:
+    """
+    Rank all CANDIDATE_SITES by P(H|features) at epoch t.
+
+    Returns the top-10 as a list of
+        (lon_W, lat, label, rank, pole_hint)
+    in the same format as the former static TOP10 list.
+    pole_hint is "N" for lat>50, "S" for lat<-50, else "".
+    """
+    scored = [(s, _site_ph(s, t)) for s in CANDIDATE_SITES]
+    scored.sort(key=lambda x: x[1], reverse=True)
+    top10 = []
+    for rank, (s, _ph) in enumerate(scored[:10], start=1):
+        lat = s["lat"]
+        pole = "N" if lat > 50 else ("S" if lat < -50 else "")
+        top10.append((s["lon_W"], lat, s["label"], rank, pole))
+    return top10
+
+
+# Labels that should always appear on every frame regardless of ranking.
+# These sites are shown without a rank prefix unless they happen to be
+# in the epoch's computed top-10, in which case their rank is shown.
+ALWAYS_SHOW: set = {"Selk", "Huygens"}
+
 def render_frame(
     posterior:  np.ndarray,
     t:          float,
@@ -1057,32 +1284,33 @@ def render_frame(
 
     # -- Top-10 locations -----------------------------------------------------
     # (lon_W deg, lat deg, short_label, rank, pole: N/S/blank)
-    TOP10: List[Tuple[float, float, str, int, str]] = [
-        (310.0,  68.0, "Kraken",     1, "N"),
-        ( 78.0,  79.0, "Ligeia",     2, "N"),
-        (199.0,   7.0, "Selk",       3, ""),
-        ( 87.3,  19.0, "Menrva",     4, ""),
-        (155.0,  -5.0, "Shangri-La", 5, ""),
-        (250.0,   5.0, "Belet",      6, ""),
-        (192.3, -10.6, "Huygens",    7, ""),
-        (100.0,  -5.0, "Xanadu",     8, ""),
-        (179.0, -72.0, "Ontario",    9, "S"),
-        ( 78.0, -20.0, "Hotei",     10, ""),
-    ]
+    # Per-epoch top-10: computed dynamically from the Bayesian formula
+    # using CANDIDATE_SITES and the epoch-specific scale functions.
+    TOP10 = compute_epoch_top10(t)
 
-    # Northern polar seas and lakes -- labelled only when polar lakes exist.
-    # Epoch range: lakes established at -0.5 Gya; start evaporating at +4.0 Gya.
-    # Sources: Turtle et al. (2009), Hayes et al. (2008),
-    #          USGS Gazetteer of Planetary Nomenclature.
-    # Format: (lon_W deg, lat deg, label)
-    NORTH_LAKES: List[Tuple[float, float, str]] = [
-        (339.0,  85.5, "Punga Mare"),      # 3rd largest N-polar sea
-        (336.3,  73.1, "Jingpo Lacus"),    # large lake SW of Punga
-        ( 93.5,  70.7, "Hammar Lacus"),    # named lake NW of Ligeia
-        ( 12.3,  75.4, "Bolsena Lacus"),   # named lake E of Punga
-        (262.8,  77.5, "Mackay Lacus"),    # named lake W of Kraken
+    # Build a lookup: label -> site type, from CANDIDATE_SITES
+    SITE_TYPE: dict  = {s["label"]: s["type"] for s in CANDIDATE_SITES}
+    MARKER_SHAPE: dict = {
+        "lake":   "^",   # triangle-up
+        "land":   "s",   # square
+        "lander": "*",   # star
+    }
+    MARKER_SIZE_BY_TYPE: dict = {
+        "lake":   8,
+        "land":   7,
+        "lander": 11,
+    }
+
+    # Sites always shown (Huygens probe + Dragonfly target) - added after top-10
+    # so they appear on every frame.  If they rank in the top-10 they are already
+    # included with their rank number.
+    _top10_labels = {label for _, _, label, _, _ in TOP10}
+    ALWAYS_EXTRA: List[Tuple[float, float, str, int, str]] = [
+        (lon, lat, lbl, 0, ("N" if lat > 50 else "S" if lat < -50 else ""))
+        for s in CANDIDATE_SITES
+        if s["label"] in ALWAYS_SHOW and s["label"] not in _top10_labels
+        for lon, lat, lbl in [(s["lon_W"], s["lat"], s["label"])]
     ]
-    _lakes_visible: bool = -0.5 <= t <= 4.0
 
     MARKER_SIZE: int  = 6
     TEXT_SIZE:   float = 7.5
@@ -1135,13 +1363,16 @@ def render_frame(
 
     # Overlay location markers on equirectangular panel
     for lon_W, lat, label, rank, _pole in TOP10:
-        ax1.plot(lon_W, lat, "o", color=COLOUR_MARKER,
-                 ms=MARKER_SIZE, mew=1.2, markeredgecolor=COLOUR_MARKER_EDGE,
+        _stype  = SITE_TYPE.get(label, "land")
+        _mshape = MARKER_SHAPE[_stype]
+        _msize  = MARKER_SIZE_BY_TYPE[_stype]
+        ax1.plot(lon_W, lat, _mshape, color=COLOUR_MARKER,
+                 ms=_msize, mew=1.2, markeredgecolor=COLOUR_MARKER_EDGE,
                  zorder=10)
         dx, dy = _label_offset(lon_W, lat)
         ha: str = "left" if dx > 0 else "right"
         ax1.annotate(
-            f"#{rank} {label}",
+            (f"#{rank} {label}" if rank > 0 else label),
             xy=(lon_W, lat), xytext=(lon_W + dx, lat + dy),
             color=COLOUR_TEXT, fontsize=TEXT_SIZE,
             ha=ha, va="center",
@@ -1153,30 +1384,30 @@ def render_frame(
 
     ax1.set_xlabel("Longitude °W", color="white", fontsize=9)
     ax1.set_ylabel("Latitude °N", color="white", fontsize=9, labelpad=2)
+
+    # Always-present markers (Huygens + Dragonfly) not in this epoch's top-10
+    for lon_W, lat, label, rank, _pole in ALWAYS_EXTRA:
+        _stype  = SITE_TYPE.get(label, "lander")
+        _mshape = MARKER_SHAPE[_stype]
+        _msize  = MARKER_SIZE_BY_TYPE[_stype]
+        ax1.plot(lon_W, lat, _mshape, color=COLOUR_MARKER,
+                 ms=_msize, mew=1.2, markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+        dx, dy = _label_offset(lon_W, lat)
+        ha_ae: str = "left" if dx > 0 else "right"
+        ax1.annotate(
+            label,
+            xy=(lon_W, lat), xytext=(lon_W + dx, lat + dy),
+            color=COLOUR_TEXT, fontsize=TEXT_SIZE,
+            ha=ha_ae, va="center",
+            arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
+            zorder=11,
+            bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX, ec="none"),
+        )
     ax1.set_title("Global map  (equirectangular)", color="white",
                   fontsize=10, pad=5)
     for spine in ax1.spines.values():
         spine.set_edgecolor(COLOUR_SPINE)
 
-    # Northern polar lakes -- shown only when lakes are present (epoch-conditional)
-    if _lakes_visible:
-        for lon_W, lat, label in NORTH_LAKES:
-            dx = 6.0 if lon_W < 300 else -6.0
-            dy = 5.0
-            ha_nl: str = "left" if dx > 0 else "right"
-            ax1.plot(lon_W, lat, "s", color=COLOUR_MARKER,
-                     ms=MARKER_SIZE - 1, mew=1.0,
-                     markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
-            ax1.annotate(
-                label,
-                xy=(lon_W, lat), xytext=(lon_W + dx, lat + dy),
-                color=COLOUR_TEXT, fontsize=TEXT_SIZE - 1.0,
-                ha=ha_nl, va="center",
-                arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.7),
-                zorder=11,
-                bbox=dict(boxstyle="round,pad=0.12",
-                          fc=COLOUR_ANNOT_BOX, ec="none", alpha=0.85),
-            )
 
     # -- Polar reproject helper ------------------------------------------------
     def polar_reproject(img: np.ndarray, north: bool, size: int = 500) -> np.ndarray:
@@ -1309,14 +1540,17 @@ def render_frame(
         xs, ys = _loc_to_stereo(lon_W, lat, north=True)
         if xs is None:
             continue
-        ax2.plot(xs, ys, "o", color=COLOUR_MARKER,
-                 ms=MARKER_SIZE, mew=1.2, markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+        _stype  = SITE_TYPE.get(label, "land")
+        _mshape = MARKER_SHAPE[_stype]
+        _msize  = MARKER_SIZE_BY_TYPE[_stype]
+        ax2.plot(xs, ys, _mshape, color=COLOUR_MARKER,
+                 ms=_msize, mew=1.2, markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
         mag: float = math.sqrt(xs**2 + ys**2)
         scale_out: float = min(1.15 / max(0.05, mag), 4.0)
         tx: float = max(-0.90, min(0.90, xs * scale_out))
         ty: float = max(-0.90, min(0.90, ys * scale_out))
         ax2.annotate(
-            f"#{rank} {label}",
+            (f"#{rank} {label}" if rank > 0 else label),
             xy=(xs, ys), xytext=(tx, ty),
             color=COLOUR_TEXT, fontsize=TEXT_SIZE - 0.5,
             ha="center", va="center",
@@ -1325,30 +1559,30 @@ def render_frame(
             bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
         )
 
-    # Northern polar lakes on polar cap -- epoch-conditional
-    if _lakes_visible:
-        for lon_W, lat, label in NORTH_LAKES:
-            xs, ys = _loc_to_stereo(lon_W, lat, north=True)
-            if xs is None:
-                continue
-            ax2.plot(xs, ys, "s", color=COLOUR_MARKER,
-                     ms=MARKER_SIZE - 1, mew=1.0,
-                     markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
-            mag = math.sqrt(xs**2 + ys**2)
-            scale_out = min(1.15 / max(0.05, mag), 4.0)
-            tx = max(-0.90, min(0.90, xs * scale_out))
-            ty = max(-0.90, min(0.90, ys * scale_out))
-            ax2.annotate(
-                label,
-                xy=(xs, ys), xytext=(tx, ty),
-                color=COLOUR_TEXT, fontsize=TEXT_SIZE - 1.5,
-                ha="center", va="center",
-                arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.7),
-                zorder=11,
-                bbox=dict(boxstyle="round,pad=0.12",
-                          fc=COLOUR_ANNOT_BOX_POLAR, ec="none", alpha=0.85),
-            )
 
+
+    # Always-present markers on north polar cap
+    for lon_W, lat, label, rank, _ in ALWAYS_EXTRA:
+        xs, ys = _loc_to_stereo(lon_W, lat, north=True)
+        if xs is None:
+            continue
+        _stype  = SITE_TYPE.get(label, "lander")
+        ax2.plot(xs, ys, MARKER_SHAPE[_stype], color=COLOUR_MARKER,
+                 ms=MARKER_SIZE_BY_TYPE[_stype], mew=1.2,
+                 markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+        mag = math.sqrt(xs**2 + ys**2)
+        scale_out = min(1.15 / max(0.05, mag), 4.0)
+        tx = max(-0.90, min(0.90, xs * scale_out))
+        ty = max(-0.90, min(0.90, ys * scale_out))
+        ax2.annotate(
+            label,
+            xy=(xs, ys), xytext=(tx, ty),
+            color=COLOUR_TEXT, fontsize=TEXT_SIZE - 0.5,
+            ha="center", va="center",
+            arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
+            zorder=11,
+            bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
+        )
     # -- Right panel: South polar cap (POLAR_CAP_EDGE_DEG deg - 90 degS) ------------
     ax3 = fig.add_subplot(gs[0, 2], aspect="equal")
     ax3.set_facecolor(COLOUR_BACKGROUND)
@@ -1369,14 +1603,17 @@ def render_frame(
         xs, ys = _loc_to_stereo(lon_W, lat, north=False)
         if xs is None:
             continue
-        ax3.plot(xs, ys, "o", color=COLOUR_MARKER,
-                 ms=MARKER_SIZE, mew=1.2, markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+        _stype  = SITE_TYPE.get(label, "land")
+        _mshape = MARKER_SHAPE[_stype]
+        _msize  = MARKER_SIZE_BY_TYPE[_stype]
+        ax3.plot(xs, ys, _mshape, color=COLOUR_MARKER,
+                 ms=_msize, mew=1.2, markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
         mag = math.sqrt(xs**2 + ys**2)
         scale_out = min(1.15 / max(0.05, mag), 4.0)
         tx = max(-0.90, min(0.90, xs * scale_out))
         ty = max(-0.90, min(0.90, ys * scale_out))
         ax3.annotate(
-            f"#{rank} {label}",
+            (f"#{rank} {label}" if rank > 0 else label),
             xy=(xs, ys), xytext=(tx, ty),
             color=COLOUR_TEXT, fontsize=TEXT_SIZE - 0.5,
             ha="center", va="center",
@@ -1385,6 +1622,29 @@ def render_frame(
             bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
         )
 
+
+    # Always-present markers on south polar cap
+    for lon_W, lat, label, rank, _ in ALWAYS_EXTRA:
+        xs, ys = _loc_to_stereo(lon_W, lat, north=False)
+        if xs is None:
+            continue
+        _stype  = SITE_TYPE.get(label, "lander")
+        ax3.plot(xs, ys, MARKER_SHAPE[_stype], color=COLOUR_MARKER,
+                 ms=MARKER_SIZE_BY_TYPE[_stype], mew=1.2,
+                 markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+        mag = math.sqrt(xs**2 + ys**2)
+        scale_out = min(1.15 / max(0.05, mag), 4.0)
+        tx = max(-0.90, min(0.90, xs * scale_out))
+        ty = max(-0.90, min(0.90, ys * scale_out))
+        ax3.annotate(
+            label,
+            xy=(xs, ys), xytext=(tx, ty),
+            color=COLOUR_TEXT, fontsize=TEXT_SIZE - 0.5,
+            ha="center", va="center",
+            arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
+            zorder=11,
+            bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
+        )
     # -- Colourbar -------------------------------------------------------------
     # Bar axes: [left, bottom, width, height] in figure fraction.
     # Label is placed as fig.text() ABOVE the bar so it doesn't compete with
@@ -1399,6 +1659,37 @@ def render_frame(
     fig.text(0.50, 0.164, "P(habitable | features)",
              color="white", fontsize=10, ha="center", va="bottom",
              transform=fig.transFigure)
+
+    # -- Site-type marker legend ------------------------------------------
+    # Positioned equidistant between the bottom of the centre info panel
+    # (measured at y≈0.310) and the colourbar label (y=0.164).
+    # midpoint = (0.310 + 0.164) / 2 ≈ 0.241
+    # Three items centred at x=0.50, spread across x=0.38-0.62.
+    _leg_y      = 0.241
+    _leg_items  = [
+        (0.39, "^",  "Lake / sea shore"),
+        (0.50, "s",  "Land site"),
+        (0.61, "*",  "Mission lander"),
+    ]
+    _leg_fsize  = 10.0     # icon size in points
+    _leg_tsize  = 9.5      # label text size in points
+    for _lx, _lmark, _ltxt in _leg_items:
+        # Draw marker icon using fig.text with a marker-like Unicode substitute
+        # (actual marker drawn via a tiny single-point axes)
+        _icon_ax = fig.add_axes([_lx - 0.010, _leg_y - 0.012, 0.018, 0.024])
+        _icon_ax.set_facecolor("none")
+        _icon_ax.set_xlim(-1, 1)
+        _icon_ax.set_ylim(-1, 1)
+        _icon_ax.axis("off")
+        _ms = 11 if _lmark == "*" else 9
+        _icon_ax.plot(0, 0, _lmark, color=COLOUR_MARKER,
+                      ms=_ms, mew=1.2, markeredgecolor=COLOUR_MARKER_EDGE,
+                      zorder=5, transform=_icon_ax.transData)
+        fig.text(_lx + 0.013, _leg_y,
+                 _ltxt,
+                 color="white", fontsize=_leg_tsize,
+                 ha="left", va="center",
+                 transform=fig.transFigure)
 
     # -- Narrative text box ----------------------------------------------------
     # Vertical layout (11" figure, y in figure fraction, 0=bottom):
@@ -2254,6 +2545,8 @@ def _run_animation_modelled(
         fig.savefig(fpath, dpi=args.dpi, bbox_inches=None,
                     facecolor=fig.get_facecolor())
         plt.close(fig)
+
+
         frame_paths.append(fpath)
 
         concat_lines.append(f"file '{fpath.resolve()}'")
@@ -2512,6 +2805,8 @@ def _run_animation_full_inference(
         fig.savefig(fpath, dpi=args.dpi, bbox_inches=None,
                     facecolor=fig.get_facecolor())
         plt.close(fig)
+
+
         frame_paths.append(fpath)
 
         concat_lines.append(f"file '{fpath.resolve()}'")
@@ -2675,7 +2970,8 @@ def main(args: argparse.Namespace) -> None:
 
     # -- Six-panel poster ------------------------------------------------------
     print("Rendering key-epoch poster...")
-    render_poster(epoch_map_cache, poster_dir / "key_epochs_poster.png")
+    poster_path = poster_dir / "key_epochs_poster.png"
+    render_poster(epoch_map_cache, poster_path)
 
     # -- Animation -------------------------------------------------------------
     if not args.no_animation:

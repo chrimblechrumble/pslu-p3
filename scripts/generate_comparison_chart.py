@@ -5,6 +5,8 @@ scripts/generate_comparison_chart.py
 Generate solar system habitability comparison chart (Figure D1).
 
 Output: outputs/diagnostics/solar_system_comparison.pdf
+    outputs/diagnostics/solar_system_comparison.png
+        outputs/diagnostics/solar_system_comparison.png
 Run:    python scripts/generate_comparison_chart.py
 """
 from __future__ import annotations
@@ -102,7 +104,8 @@ ax.spines["left"].set_visible(False)
 ax.spines["top"].set_visible(False)
 
 plt.tight_layout()
-out = OUT_DIR / "solar_system_comparison.pdf"
-fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+for _ext in ("pdf", "png"):
+    out = OUT_DIR / f"solar_system_comparison.{_ext}"
+    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    print(f"  Saved -> {out}")
 plt.close(fig)
-print(f"Saved: {out}")

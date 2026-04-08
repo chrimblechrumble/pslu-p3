@@ -406,6 +406,32 @@ to test.
 \section{Scope and Research Questions}
 \label{sec:scope}
 
+Several preceding studies have attempted to place planetary habitability on
+a quantitative footing.  The \textit{Earth Similarity Index}
+\citep{Schulze-Makuch2011} scores planetary bodies against Earth on
+temperature, density, escape velocity, and surface chemistry, but
+produces a single scalar per body and cannot represent spatial or temporal
+variation.  \citet{Hendrix2019} reviewed the habitability potential of
+icy ocean worlds using qualitative multi-criteria matrices, providing rich
+scientific context but no spatial resolution or probabilistic framework.
+Logistic regression and machine-learning habitability classifiers
+(e.g.\ \citealt{Spiegel2012}) have been applied to exoplanet populations
+but require labelled training data that does not exist for Titan.
+The Bayesian approach adopted here differs from all of these: it encodes
+scientific prior knowledge as probability distributions, updates them
+with observational data via conjugate updating, and returns credible
+intervals rather than point estimates --- making uncertainty explicit
+rather than implicit.  The choice of a Beta-conjugate (Beta-Binomial)
+model is motivated by the bounded $[0,1]$ domain of habitability
+probability and by the analytical tractability that permits simultaneous
+evaluation at all 6.49 million grid pixels without numerical integration
+or MCMC.  A Gaussian process or multivariate logistic regression could
+in principle capture feature correlations more richly, but would require
+either strong covariance priors or prohibitively dense labelled sampling
+to estimate the correlation structure from Cassini data alone.  The
+Beta-conjugate approach is preferred as the most tractable framework
+that preserves physical interpretability at every pixel.
+
 Previous habitability assessments of \titan{} have shared four important
 limitations.  They are predominantly qualitative or point-specific, lacking
 global spatial resolution.  They treat the present epoch as the only relevant

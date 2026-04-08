@@ -5,6 +5,8 @@ scripts/generate_pipeline_diagram.py
 Generate a five-stage pipeline architecture flowchart for the thesis (Figure M1).
 
 Output: outputs/diagnostics/pipeline_flowchart.pdf
+    outputs/diagnostics/pipeline_flowchart.png
+        outputs/diagnostics/pipeline_flowchart.png
 Run:    python scripts/generate_pipeline_diagram.py
 """
 from __future__ import annotations
@@ -101,7 +103,8 @@ ax.text(7, 0.1,
         ha="center", va="center", fontsize=7, color="#888899", style="italic")
 
 plt.tight_layout()
-out = OUT_DIR / "pipeline_flowchart.pdf"
-fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+for _ext in ("pdf", "png"):
+    out = OUT_DIR / f"pipeline_flowchart.{_ext}"
+    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    print(f"  Saved -> {out}")
 plt.close(fig)
-print(f"Saved: {out}")

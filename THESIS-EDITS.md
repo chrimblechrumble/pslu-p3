@@ -3,12 +3,13 @@
 ## Overall
 
 - [x] Spacing is odd across Chapter ordinal/Chapter name/first sub section. Too much spacing
+- [ ] Remove all references to teh Random Forest Classifier - does it add anything?
 
 ## Introduction
 - [x] Remove Contents - not needed
 - [x] Remove rationale for title change - cover tis in submission
-- [ ] A lot of the intro can move to teh group report - share with group 
-
+- [ ] A lot of the intro can move to the group report - share with group
+- [ ] Move acknowledgements to Appendix
 
 ## Methods
 

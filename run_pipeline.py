@@ -560,6 +560,19 @@ def run_single_mode(
                          title=f"Titan Habitability — {mode_str.upper()} mode")
         log.info("  Figures -> %s", fig_dir)
 
+        # Annotate posterior PNG figures with top-10 site markers.
+        # overlay_sites.py uses only hard-coded Cassini cartography coordinates
+        # so this is fully reproducible from a clean run with no cached data.
+        try:
+            from overlay_sites import overlay_png_files
+            posterior_pngs = list(fig_dir.glob("fig1_posterior*.png"))
+            if posterior_pngs:
+                overlay_png_files(posterior_pngs, epoch=mode_str.upper())
+                log.info("  Posterior maps annotated with site markers"
+                         " (%d files)", len(posterior_pngs))
+        except Exception as _ov_err:
+            log.warning("overlay_sites annotation skipped: %s", _ov_err)
+
     t.done(log)
 
     return {

@@ -2,13 +2,16 @@
 %% main.tex  —  Titan Habitability MPhil Thesis
 %% Compile: pdflatex main && bibtex main && pdflatex main && pdflatex main
 %% ============================================================
-\documentclass[12pt,a4paper,twoside]{report}
+\documentclass[11pt,a4paper,twoside]{report}
+\raggedbottom
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 % lmodern fonts not in this TeX installation; using CM
 \usepackage[margin=2.5cm,inner=3.2cm]{geometry}
 \usepackage{setspace}
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{tabular}{\singlespacing} % single space for tables 
 % microtype disabled (requires scalable fonts)
 % \usepackage{microtype}
 \usepackage{emptypage}
@@ -24,6 +27,7 @@
 \usepackage{multirow}
 \usepackage{array}
 \usepackage{tabularx}
+\usepackage{makecell}
 \usepackage[dvipsnames]{xcolor}
 \usepackage[
   colorlinks=true,
@@ -39,9 +43,6 @@
 \usepackage{enumitem}
 \usepackage{siunitx}
 \sisetup{separate-uncertainty=true,per-mode=symbol}
-
-% Figure paths — all pipeline outputs are relative to ../titan_pipeline/
-\graphicspath{{../titan_pipeline/}}
 
 % Reduce the excessive vertical space before chapter titles
 \usepackage{titlesec}
@@ -67,7 +68,7 @@
 \DeclareMathOperator{\Beta}{Beta}
 
 \begin{document}
-\doublespacing
+\onehalfspacing
 
 %% ----- Title page -------------------------------------------------------
 \begin{titlepage}

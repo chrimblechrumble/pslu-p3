@@ -2,17 +2,20 @@
 %% main.tex  —  Titan Habitability MPhil Thesis
 %% Compile: pdflatex main && bibtex main && pdflatex main && pdflatex main
 %% ============================================================
-\documentclass[12pt,a4paper,twoside]{report}
+\documentclass[11pt,a4paper,twoside]{report}
+\raggedbottom
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 % lmodern fonts not in this TeX installation; using CM
 \usepackage[margin=2.5cm,inner=3.2cm]{geometry}
 \usepackage{setspace}
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{tabular}{\singlespacing} % single space for tables 
 % microtype disabled (requires scalable fonts)
 % \usepackage{microtype}
 \usepackage{emptypage}
-\usepackage{amsmath,amssymb,mathtools,bbding}
+\usepackage{amsmath,amssymb,mathtools}
 \usepackage[version=4]{mhchem}
 \usepackage{textcomp}   % provides \textdegree; do NOT redefine \degree
 \usepackage{bm}
@@ -24,6 +27,7 @@
 \usepackage{multirow}
 \usepackage{array}
 \usepackage{tabularx}
+\usepackage{makecell}
 \usepackage[dvipsnames]{xcolor}
 \usepackage[
   colorlinks=true,
@@ -39,9 +43,6 @@
 \usepackage{enumitem}
 \usepackage{siunitx}
 \sisetup{separate-uncertainty=true,per-mode=symbol}
-
-% Figure paths — all pipeline outputs are relative to ../titan_pipeline/
-\graphicspath{{../titan_pipeline/}}
 
 % Reduce the excessive vertical space before chapter titles
 \usepackage{titlesec}
@@ -67,7 +68,7 @@
 \DeclareMathOperator{\Beta}{Beta}
 
 \begin{document}
-\doublespacing
+\onehalfspacing
 
 %% ----- Title page -------------------------------------------------------
 \begin{titlepage}
@@ -286,17 +287,21 @@ boundary at 180\textdegree{}W.
 \item \textbf{Past-epoch Cassini feature contamination.}  The past-epoch
 posterior was computed using present-era Cassini SAR maps, which
 encode the present polar lake morphology even at $t = -3.5\gya$.
-The north polar region is consequently inflated to
-$P(H)\approx0.70$ in the past anchor, approximately double the
-physically expected value.  This is mitigated in the multi-epoch
-interpolation and documented explicitly in the Results.
+The north polar Bayesian score in the past anchor is inflated above the
+physically expected prior value.  This is mitigated in the multi-epoch
+reconstruction by using the analytical Bayesian formula directly for
+pre-lake-formation frames (Section~\ref{sec:multi_epoch}) and is
+documented in Section~\ref{sec:past_contamination}.
 
-\item \textbf{Multi-epoch interpolation accuracy.}  PCHIP interpolation
-between anchor posteriors is not equivalent to independent
-epoch-specific inference.  Intermediate maps correctly reproduce
-the anchors and are monotonic between them, but spatial patterns
-reflect blended anchor structures.  Estimated uncertainty:
-$\Delta P(H) \lesssim \pm0.05$.
+\item \textbf{Multi-epoch temporal scaling accuracy.}  The multi-epoch
+reconstruction applies scalar scale functions $s_i(t)$ to the present-epoch
+feature maps and re-evaluates the Bayesian posterior formula at each epoch
+(Section~\ref{sec:epoch_scaling}).  This is physically motivated but
+is not equivalent to independent epoch-specific feature extraction.
+The scale functions are calibrated to reproduce known physical transitions
+(lake formation, solar warming, eutectic crossing) but have no observational
+constraint at intermediate epochs.  Estimated uncertainty:
+$\Delta P(H) \lesssim \pm0.05$ at non-anchor epochs.
 
 \item \textbf{SAR coverage gap.}  Approximately 33\% of \titan{}'s
 surface lacks SAR coverage.  Features 1, 3, and 8 are degraded in
@@ -304,5 +309,632 @@ these regions, where geomorphological and topographic proxies
 substitute.
 
 \end{enumerate}
+
+
+\chapter{Acronyms, Notation, and Data Source Details}
+\label{app:notation}
+
+
+\section{Acronyms and Nomenclature}
+\label{sec:acronyms}
+
+The following acronyms are used throughout this chapter and the remainder of
+the thesis.  They are defined here for convenience and also at the point of
+first use.
+
+\begin{description}[labelwidth=3.0cm,leftmargin=3.5cm]
+  \item[SAR]  Synthetic Aperture Radar.  An active microwave imaging technique
+    in which the motion of the spacecraft is used to synthesise a very long
+    antenna aperture, yielding fine-resolution imagery of surface texture and
+    composition.
+  \item[VIMS] Visible and Infrared Mapping Spectrometer.  The \cassini{}
+    instrument that imaged \titan{}'s surface through six near-infrared
+    atmospheric transparency windows, providing surface composition data.
+  \item[CIRS] Composite Infrared Spectrometer.  The \cassini{} thermal
+    emission instrument used here to constrain the surface temperature field.
+  \item[GTDR] Global Titan Digital elevation model, Radar --- the raw
+    Cassini RADAR altimetry dataset archived in the Planetary Data System.
+  \item[GTDE] Global Titan Digital Elevation model --- the globally
+    interpolated topographic product of \citet{Corlies2017Titan} derived from
+    the GTDR and supplementary data sources.
+  \item[DEM]  Digital Elevation Model.  A gridded representation of surface
+    topography.
+  \item[PDS]  Planetary Data System.  The NASA archive for planetary mission
+    data.
+  \item[HDI]  Highest Density Interval.  A Bayesian credible interval
+    containing the specified probability mass within the narrowest possible
+    range.
+\end{description}
+
+\section{Notation}
+\label{sec:notation}
+
+Two quantities appear throughout this chapter and are defined here to avoid
+repetition.  Each habitability-proxy feature $f_i$ ($i = 1,\ldots,8$) is
+assigned:
+
+\begin{itemize}
+  \item A \textbf{weight} $w_i \in [0,1]$, where $\sum_i w_i = 1$.  The weight
+    encodes the relative astrobiological importance of feature $i$ as a
+    habitability indicator.  A feature with a higher weight exerts a larger
+    influence on the posterior probability of habitability, all else being
+    equal.  Weights are assigned from physical reasoning and validated against
+    data-derived importances (Section~\ref{sec:importances}).
+
+  \item A \textbf{prior mean} $\mu_i \in [0,1]$.  This is the expected
+    spatially-averaged value of feature $i$ before any observational data
+    are considered --- a statement of our prior knowledge about how common or
+    widespread the habitability-relevant condition is on \titan{}.  For
+    example, liquid hydrocarbon covers $\sim$2\% of \titan{}'s surface
+    \citep{Hayes2008}, so its prior mean is $\mu_1 = 0.02$.  The weighted
+    sum of all prior means defines the global prior mean habitability:
+    $\mu_0 = \sum_i w_i \mu_i = 0.331$.  Note that the value $\mu_0 = 0.331$ does not appear in the prior literature as a global habitability estimate for \titan{}; it emerges from the component prior means in Table~\ref{tab:priors} and should be interpreted as encoding the observation that \titan{}'s surface is globally organic-rich whilst simultaneously recognising that liquid solvent is present at only $\sim$2\% of the surface. The resulting moderate prior is intentionally revisionable: the weak concentration parameter $\kappa = 5$ ensures that the data, not the prior, determine the posterior at any pixel where observational coverage is good. Full values are tabulated in
+    Appendix~\ref{app:priors}.
+\end{itemize}
+
+This notation first appears in a practical context in Section~\ref{sec:features},
+where the eight features are described individually.  Their role in the
+Bayesian update is explained in Section~\ref{sec:bayes}.
+
+\subsection{The Bayesian Approach: Motivation and Structure}
+\label{sec:bayes_intro}
+
+The central methodological challenge in quantifying \titan{}'s surface
+habitability is that no single Cassini instrument directly measures
+habitability.  Each instrument provides a partial and indirect proxy: radar
+backscatter reveals surface composition and liquid surfaces; near-infrared
+spectroscopy constrains organic content; thermal emission maps the temperature
+field that drives the methane cycle; altimetry constrains topography and hence
+organic accumulation patterns; and the geomorphological classification
+synthesises the collective information from all instruments into terrain types
+whose habitability implications can be grounded in laboratory and theoretical
+work.
+
+The approach taken here is to combine these partial proxies through a Bayesian
+inference framework that produces, at each grid cell, a posterior probability
+of habitability $P(H \mid \featurevec)$ given the vector of observed features
+$\featurevec = (f_1, \ldots, f_8)$.  This is structurally analogous to the
+approach of \citet{Affholder2021}, who used Bayesian methods to evaluate
+whether the observed methane flux in Enceladus's plumes is more consistent
+with abiotic serpentinisation or with biological methanogenesis.  The key
+extensions here are spatial resolution (a 6.49-million-pixel global map rather
+than a single-point estimate), the number of independent observational inputs
+(eight features rather than one), and the temporal scope (five epochs spanning
+geological time rather than a single snapshot).
+
+The structure of the inference is: (1) encode prior knowledge about
+\titan{}'s habitability into a probability distribution over the latent
+variable $H$; (2) update that distribution using each observed feature
+$f_i$ as evidence; and (3) report the resulting posterior probability
+$P(H \mid \featurevec)$ as the habitability estimate at each pixel.  The
+mathematical details of this procedure are given in Section~\ref{sec:bayes};
+the present section focuses on the observational inputs.
+
+The analysis is applied at \SI{4490}{\metre\per\text{px}} resolution on a
+canonical equirectangular grid covering the full globe (1802 pixels in
+latitude $\times$ 3603 pixels in longitude), using a west-positive longitude
+convention consistent with all Cassini raster products.  This resolution is
+chosen to match the coarsest primary dataset (the GTDR altimetry mosaic at
+$\sim$22\,km per pixel) whilst resolving lake margins and fluvial features
+at $\sim$45\,km scale.  All eight input datasets are reprojected to this
+common grid before feature extraction.
+
+Figure~\ref{fig:pipeline} provides a schematic overview of the five-stage
+analytical pipeline: data acquisition, preprocessing to the canonical grid,
+feature extraction, Bayesian inference, and visualisation.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/pipeline_flowchart.png}
+  \caption{Schematic overview of the five-stage Titan habitability analysis
+    pipeline.  All eight habitability-proxy features are extracted in Stage 3
+    and combined in the Bayesian posterior update of Stage 4 to produce
+    $P(H \mid \featurevec)$ maps at each of the five temporal configurations.}
+  \label{fig:pipeline}
+\end{figure}
+
+\section{Observational Data Source Details}
+\label{app:data_sources}
+\label{sec:data_sources}
+
+\subsection{Cassini RADAR Synthetic Aperture Radar Mosaic}
+\label{sec:sar_data}
+
+The Cassini RADAR instrument operated in SAR mode during \titan{} flybys,
+imaging the surface at $\sim$350\,m per pixel over the 127 targeted flybys
+from 2004 to 2017 \citep{Janssen2016}.  SAR measures the normalised radar
+cross-section $\sigma^0$ (typically expressed in dB), which is sensitive to
+surface roughness, dielectric properties, and the presence of smooth or
+conducting materials.  Low backscatter ($\sigma^0 < -20$\,dB) is
+diagnostic of smooth surfaces (consistent with liquid hydrocarbon lakes) or
+dielectrically absorbing material (consistent with tholin-rich dune sand).
+High backscatter correlates with rough, water-ice-rich material such as
+mountain terrain, crater ejecta, and some cryovolcanic surfaces.  The SAR
+mosaic covers $\sim$67\% of \titan{}'s surface and constitutes the primary
+data source for the liquid hydrocarbon, chemical energy, and subsurface ocean
+features.
+
+\subsection{VIMS Near-Infrared Spectral Mosaic}
+\label{sec:vims_data}
+
+The Cassini Visible and Infrared Mapping Spectrometer (VIMS) observed \titan{}'s
+surface through atmospheric transparency windows at 0.94, 1.08, 1.27, 1.59,
+2.03, and 2.79\,\textmu{}m.  The band ratio 1.59/1.27\,\textmu{}m is an
+established proxy for tholin (complex organic) abundance at the surface: the
+1.59\,\textmu{}m window probes deeper into the tholin-bearing surface whilst
+the 1.27\,\textmu{}m window provides atmospheric normalisation \citep{Barnes2007}.
+The Seignovert et al.\ (2019) combined VIMS+ISS mosaic \citep{Seignovert2019CaltechDATA}
+provides this band ratio map at 2--4\,km per pixel coverage, but only
+for the 0--180\textdegree{}W hemisphere ($\sim$50\% of the globe).  The
+significance of this coverage gap for the organic abundance feature is
+discussed in Section~\ref{sec:feat_organic}.
+
+\subsection{CIRS Thermal Emission Observations}
+\label{sec:cirs_data}
+
+The Composite Infrared Spectrometer (CIRS) measured \titan{}'s surface
+brightness temperature at far-infrared wavelengths throughout the Cassini
+mission.  \citet{Jennings2019} derived an analytical model of the
+latitude-dependent surface temperature from 13 years of CIRS observations,
+producing the formula:
+\begin{equation}
+  T(\phi, Y) = (93.53 - 0.095\,Y)\cos\!\Bigl[
+    (\phi + 0.85 - 3.2\,Y)(0.0029 - 0.00006\,Y)
+  \Bigr]
+  \label{eq:jennings}
+\end{equation}
+where $\phi$ is latitude in degrees and $Y = t_\text{CE} - 2009.61$ is years
+from the northern spring equinox (22 May 2009).  This formula reproduces the
+observed zonal surface temperatures to within $\pm0.4$\,K (rms) across the
+full Cassini epoch and provides 100\% global coverage, grounded in CIRS
+focal-plane-1 limb and nadir observations across the full 2004--2017 mission.
+The model captures only latitudinal and seasonal variation; no longitudinal
+inhomogeneity is represented (consistent with the absence of significant
+longitudinal temperature gradients in the Cassini dataset).  For temporal
+epochs other than the present, the mean annual temperature field is held
+stationary: this approximation is justified because the dominant habitability
+driver at non-present epochs is the liquid-hydrocarbon scale function
+$s_1(t)$ rather than the temperature gradient, and the methane-cycle
+feature contributes only $w_4 = 0.15$ to the posterior.  It is used to
+synthesise the global temperature field and its meridional gradient, which
+enters the methane cycle feature (Section~\ref{sec:feat_methane}).
+
+\subsection{GTDE/GTDR Topographic Models}
+\label{sec:topography_data}
+
+The Global Titan Digital Elevation model (GTDE), produced by
+\citet{Corlies2017Titan}, integrates Cassini RADAR altimetry, SARtopo
+stereophotogrammetry, and radial basis function interpolation to produce
+a globally-interpolated topographic model at $\sim$22\,km per pixel (2 pixels
+per degree).  Coverage is approximately 90\% of the globe, with the south
+polar region and some high-latitude northern areas relying most heavily on
+interpolation.  The topographic model contributes to the chemical energy
+feature (identifying topographic lows as preferential organic accumulation
+sites), the topographic complexity feature (through local roughness estimation),
+and the surface--atmosphere interaction feature (through slope calculation).
+
+\subsection{Lopes (2019) Global Geomorphological Map}
+\label{sec:geo_data}
+
+The global geomorphological map of \citet{Lopes2019} classifies the Cassini
+SAR-imaged surface into seven terrain units (plains, dunes, mountains, basins,
+labyrinth terrain, craters, and lakes) using SAR texture, backscatter,
+morphology, and VIMS spectral correlation.  This map provides the terrain
+classification that enters the organic abundance feature (as a globally
+seamless gap-fill) and the geomorphological diversity feature.  The shapefiles
+are provided in east-positive geographic coordinates and require conversion to
+the west-positive convention of the analysis grid.
+
+\subsection{Miller (2021) Global Fluvial Channel Map}
+\label{sec:channel_data}
+
+\citet{Miller2021channels} identified and mapped \titan{}'s global fluvial
+channel network from Cassini SAR data, producing a vector dataset of channel
+locations and widths.  This network constitutes the primary mechanism for
+organic material transport from equatorial source regions to the polar basins,
+and channel density is used as one component of the surface--atmosphere
+interaction feature.
+
+\subsection{Tidal Love Number and Gravity Data}
+\label{sec:gravity_data}
+
+The degree-2 tidal Love number $k_2 = 0.589 \pm 0.150$ from \citet{Iess2012}
+provides a global constraint on interior structure, confirming the presence
+of a subsurface liquid layer.  This scalar quantity enters as a global floor
+value in the subsurface ocean proximity feature.
+
+\subsection{Hedgepeth (2020) Global Crater Catalogue}
+\label{sec:crater_data}
+
+The global catalogue of confirmed and probable impact structures on \titan{}
+by \citet{Hedgepeth2020} records crater diameters and positions for all
+resolved impact features in the Cassini SAR dataset.  This catalogue is used
+exclusively in the PAST epoch to generate the impact-melt proximity feature.
+
+\chapter{Feature Engineering: Scientific Basis and Implementation}
+\label{app:features}
+
+The eight habitability-proxy features are extracted from the Cassini data
+sources described in Appendix~\ref{app:notation}.  Each subsection gives the
+scientific basis, prior mean justification, implementation procedure, and
+missing-data backfill strategy.
+
+
+
+Eight habitability-proxy features are extracted from the above data sources.
+Figure~\ref{fig:feature_panel} shows all eight feature maps at the present
+epoch, illustrating their distinct spatial patterns.  Figure~\ref{fig:epoch_timeline}
+shows how the relative activity of each feature is modulated across geological
+time.
+
+All features are normalised to the range $[0, 1]$ using a robust
+percentile-clipping approach:
+\begin{equation}
+  \hat{f}_i = \mathrm{clip}\!\left(
+    \frac{f_i - f_{i,\text{p2}}}{f_{i,\text{p98}} - f_{i,\text{p2}}},
+    \; 0, \; 1
+  \right)
+  \label{eq:normalise_app}
+\end{equation}
+where $f_{i,\text{p2}}$ and $f_{i,\text{p98}}$ are the 2nd and 98th
+percentiles of finite values in the global layer, mapping the central 96\%
+of the observed dynamic range onto $[0, 1]$ whilst preventing extreme outliers
+from compressing the scale.  Where a feature is unavailable at a particular
+pixel (due to data gaps), the value is set to NaN and handled through the
+Bayesian missing-data imputation procedure described in Section~\ref{sec:nan}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/feature_panel_present.png}
+  \caption{All eight habitability-proxy feature maps at the present (Cassini)
+    epoch, each normalised to $[0,1]$.  The panels illustrate the distinct
+    spatial patterns contributed by each feature: the polar concentration of
+    liquid hydrocarbon ($f_1$), the near-global organic abundance ($f_2$),
+    the topographically-modulated chemical energy proxy ($f_3$), and the
+    latitude-dependent methane cycle signal ($f_4$), amongst others.  The
+    combined posterior is derived from all eight simultaneously via the
+    Bayesian update described in Section~\ref{sec:bayes}.  Prior weight $w_i$
+    and prior mean $\mu_i$ are shown for each panel.}
+  \label{fig:feature_panel}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/epoch_feature_timeline.png}
+  \caption{Scale factor (relative activity) for each feature as a function
+    of geological time from $-4.0\gya$ to $+7.0\gya$.  Colour intensity
+    encodes the scale applied to each feature's prior mean at that epoch:
+    bright yellow indicates full present-epoch amplitude; dark blue indicates
+    near-zero activity.  Key events (LHB peak, lake-formation onset, present
+    epoch, solar warming ramp, eutectic crossing, ocean peak) are marked with
+    vertical dashed lines.  The impact-melt proxy and cryovolcanic flux
+    features are active only in pre-lake epochs and are shown in the lower
+    two rows.}
+  \label{fig:epoch_timeline}
+\end{figure}
+
+\subsection{Feature 1: Liquid Hydrocarbon Availability
+  ($w_1 = 0.25$, $\mu_1 = 0.02$)}
+\label{sec:feat_lhc}
+
+\paragraph{Scientific basis.}
+Liquid methane and ethane are the proposed non-aqueous biochemical solvents
+for any life operating on \titan{}'s present-day surface \citep{McKaySmith2005,
+McKay2016}.  At the ambient surface temperature of $\sim$94\,K, water is
+structurally as rigid as rock and cannot support molecular diffusion processes
+fundamental to metabolism.  Liquid methane and ethane are, however, stable
+at 94\,K and 1.47\,bar, as confirmed by the permanent north polar seas.
+\citet{Benner2004} proposed that non-polar solvents can in principle support
+biochemistry through different but self-consistent molecular architectures, and
+\citet{Stevenson2015} demonstrated through molecular dynamics simulations that
+acrylonitrile molecules present in \titan{}'s atmosphere can form stable
+vesicle membranes in liquid methane.  The presence of persistent liquid
+hydrocarbon is therefore treated as the single most important habitability
+prerequisite for surface life at the present epoch, and accordingly receives
+the highest prior weight ($w_1 = 0.25$).
+
+\paragraph{Prior mean.}
+The north polar seas cover approximately 1.5--2\% of \titan{}'s surface
+\citep{Hayes2008}, giving a prior mean of $\mu_1 = 0.02$.  Despite the high
+weight, the low prior mean means that most pixels contribute negligibly through
+this feature; its habitability impact is strongly localised to the polar
+regions.
+
+\paragraph{Implementation.}
+The primary source is the Lopes et al.\ (2019) lake polygon class (terrain
+class 7), rasterised to the canonical grid as a binary lake mask.  A secondary
+contribution comes from SAR backscatter dark anomalies not otherwise attributed
+to organic material.  Confirmed empty lake basins from the Birch et al.\ (2017)
+analysis are explicitly assigned $f_1 = 0$ to reflect the absence of
+present-day liquid even within geomorphologically defined basins.  In the
+absence of SAR coverage, ISS 938\,nm albedo imagery provides a proxy, with
+smooth, low-albedo regions consistent with liquid surfaces elevated towards
+higher feature values.
+
+\paragraph{Backfill.}
+In regions lacking both SAR and ISS coverage, the feature is assigned NaN and
+imputed at the prior mean during inference.
+
+\subsection{Feature 2: Organic Abundance
+  ($w_2 = 0.20$, $\mu_2 = 0.70$)}
+\label{sec:feat_organic}
+
+\paragraph{Scientific basis.}
+Tholins --- the complex refractory macromolecular organic compounds produced
+continuously by ultraviolet photolysis of the \ce{N2}/\ce{CH4} mixture in the
+upper atmosphere --- are the dominant surface material across most of \titan{}.
+Their astrobiological significance is multifaceted.  Laboratory hydrolysis of
+tholins in liquid water at biologically relevant temperatures (273--373\,K)
+produces amino acids, nucleobase analogues, and sugar-like polyols at yields
+of $\sim$0.1\% by mass \citep{Neish2018}, directly confirming that tholins
+can serve as a chemical feedstock for prebiotic synthesis when liquid water
+is available --- either from impact melts at past epochs or from the red-giant
+ocean in the far future.  \citet{MeyerDombard2025} characterise the tholin
+layer as the primary chemical substrate for any surface habitability scenario
+on \titan{}.  The feature weight ($w_2 = 0.20$) is second only to liquid
+hydrocarbon, reflecting this central role.
+
+\paragraph{Prior mean.}
+The revised prior mean of $\mu_2 = 0.70$ (updated from 0.60 in earlier
+pipeline versions) reflects updated spectral characterisation from
+\citet{Malaska2025} and \citet{Cable2012}, indicating that approximately 82\%
+of the SAR-classified surface by area falls into organic-rich terrain classes
+(dune: 17\%, plains: 65\%).  The organic abundance feature consequently makes
+the largest single contribution to the global prior mean
+($w_2\mu_2 = 0.140$).
+
+\paragraph{Implementation and the seamless organic mode.}
+The primary spectral data source is the VIMS+ISS 1.59/1.27\,\textmu{}m
+band-ratio mosaic from \citet{Seignovert2019CaltechDATA}, but this covers
+only the 0--180\textdegree{}W hemisphere ($\sim$50\% of the globe).  Extensive
+testing of direct blending between the VIMS band ratios and geomorphological
+class scores in the 180--360\textdegree{}W hemisphere produced a visible seam
+artefact at the 180\textdegree{}W boundary: the absolute calibration of the
+VIMS spectral ratio differs systematically from the terrain-class score at
+the coverage boundary, producing a step change of $\sim$0.13 in median organic
+abundance clearly visible in rendered maps.  This artefact cannot be eliminated
+by a single global offset because the boundary region terrain is not
+representative of all terrain classes.  The analysis therefore uses a
+seamless geomorphological mode, applying the terrain-class scores from
+Table~\ref{tab:geo_scores} (Appendix~\ref{app:geo_scores}) globally.
+Whilst this approach sacrifices per-pixel spectral variation within the
+VIMS-covered hemisphere (reducing the standard deviation from 0.27 for VIMS
+data to 0.16 for terrain-class scores), it ensures that no spatial artefact
+from the uneven VIMS coverage contaminates the habitability maps.
+
+\paragraph{Backfill.}
+The Lopes (2019) terrain classification covers $\sim$90\% of the SAR-imaged
+surface ($\sim$67\% of the globe).  In regions outside SAR coverage, terrain
+class is estimated from ISS albedo units with reduced specificity.
+
+\subsection{Feature 3: Chemical Energy Availability
+  ($w_3 = 0.20$, $\mu_3 = 0.35$)}
+\label{sec:feat_energy}
+
+\paragraph{Scientific basis.}
+Life requires a sustained source of chemical free energy to drive metabolic
+reactions against thermodynamic equilibrium.  On \titan{}'s surface, the
+primary candidate is acetylenotrophy ($\ce{C2H2 + 3H2 -> 2CH4}$, $\Delta G = -334$\,kJ\,mol$^{-1}$; where $\Delta G$ is the Gibbs Free Energy
+change of the reaction, a negative value indicating spontaneous energy release)
+available from acetylene--hydrogen combination \citep{McKaySmith2005}.  \citet{Yanez2024} recalculated the
+available energy under updated thermochemical conditions at \titan{}'s surface
+as 69--78\,kJ\,mol$^{-1}$\,C, well above the minimum for terrestrial
+methanogens.  Acetylene is produced continuously by UV photolysis of methane
+and sediments to the surface where it has been directly detected by GCMS
+\citep{Niemann2005}.  The chemical energy feature is therefore a proxy for
+the co-availability of acetylene and hydrogen at the surface.
+
+\paragraph{Implementation.}
+Since the acetylene surface abundance cannot be directly mapped by any Cassini
+instrument, it is approximated through two components.  SAR backscatter
+(weight 70\% where coverage exists): SAR-dark surfaces characteristic of
+organic-rich terrain represent regions where acetylene is most likely to
+accumulate without competing abiotic reactions consuming it rapidly.
+Topographic inversion (weight 30\%): acetylene and other atmospheric
+condensates preferentially accumulate in topographic lows through both
+gravitational settling and fluvial transport; the normalised negative of
+the GTDE elevation ($-z$) assigns high values to topographic lows.
+In SAR-absent regions, the feature reverts to the pure topographic
+inversion component.
+
+\subsection{Feature 4: Methane Cycle Intensity
+  ($w_4 = 0.15$, $\mu_4 = 0.40$)}
+\label{sec:feat_methane}
+
+\paragraph{Scientific basis.}
+The methane cycle is the dominant agent of chemical transport on \titan{}.
+It delivers organic material from equatorial photochemical production regions
+to the polar lake margins, maintains chemical gradients at shorelines, and
+provides seasonal wet--dry cycling at lake edges that some prebiotic chemistry
+scenarios identify as important for concentrating organic reactants and driving
+condensation reactions \citep{Benner2004, MitchellLora2016}.  Regions
+experiencing the most active methane cycling receive fresh organic inputs
+most regularly and maintain the most dynamic chemical environments.
+
+\paragraph{Implementation.}
+The methane cycle intensity is a weighted composite of three independently
+computed components:
+\begin{enumerate}
+  \item \textbf{VIMS observation density} (50\%): the number of VIMS
+    spectral footprints per grid cell, smoothed with a 5-pixel Gaussian
+    kernel.  Cassini's VIMS observation targeting was scientifically
+    motivated, prioritising regions of active methane-cycle interest;
+    higher coverage density therefore correlates with active methane
+    cycling zones \citep{LeMouelic2019}.
+  \item \textbf{Meridional temperature gradient} $|\partial T/\partial\phi|$
+    (25\%): derived from the Jennings (2019) model (Eq.~\ref{eq:jennings}),
+    evaluated at $Y = +1.39$ (year 2011.0, the approximate mission midpoint).
+    Regions where the surface temperature gradient is steepest experience
+    the strongest differential evaporation and precipitation, driving the
+    most vigorous methane transport.
+  \item \textbf{Latitude prior} (25\%): the function
+    $\exp[-(\phi \pm 45\textdegree)^2/(25\textdegree)^2]$, following
+    \citet{MitchellLora2016}'s general circulation modelling result that
+    the mid-latitude regions host the primary methane cycle activity
+    during the Cassini epoch.
+\end{enumerate}
+
+This feature has 100\% global coverage by construction and requires no
+backfill.
+
+\subsection{Feature 5: Surface--Atmosphere Interaction Intensity
+  ($w_5 = 0.08$, $\mu_5 = 0.35$)}
+\label{sec:feat_sai}
+
+\paragraph{Scientific basis.}
+The physical interface between surface and atmosphere is where gas-phase
+photochemical products encounter potential liquid solvents and organic
+substrates.  Lake margins and fluvial channel termini are the primary loci
+of this exchange.  \citet{Hayes2016} describes the complex sedimentological
+and chemical processes at hydrocarbon lake shorelines, including the
+evaporation-driven concentration of dissolved organics and the seasonal
+flooding and drying cycles that expose organic sediments to liquid contact.
+\citet{Miller2021channels} documents that the fluvial channel network
+terminates preferentially at polar lake margins, establishing these as zones
+of maximum organic delivery and chemical gradient activity.
+
+\paragraph{Implementation.}
+A weighted sum of three spatial components:
+\begin{equation}
+  f_5 = 0.30\,\hat{s} + 0.40\,\hat{m} + 0.30\,\hat{c}
+  \label{eq:feat5}
+\end{equation}
+where $\hat{s}$ is the normalised topographic slope $|\nabla z|$ from the
+GTDE DEM (high slopes drive physical transport and mixing); $\hat{m}$ is a
+binary lake-margin mask extended to $\sim$45\,km from the nearest confirmed
+lake shore; and $\hat{c}$ is the Gaussian-smoothed ($\sigma = 3$ pixels)
+channel density from the Miller et al.\ (2021) dataset, normalised at the
+2nd--98th percentile range.  The lake-margin component receives the highest
+within-feature weight (40\%) because shorelines concentrate all three relevant
+processes --- liquid contact, organic delivery, and thermal/chemical cycling.
+
+\subsection{Feature 6: Topographic Complexity
+  ($w_6 = 0.06$, $\mu_6 = 0.25$)}
+\label{sec:feat_topo}
+
+\paragraph{Scientific basis.}
+Local topographic roughness at $\sim$20\,km scale correlates with the
+dissected terrain types that most frequently expose water-ice-bearing crustal
+material \citep{Lopes2019}.  On Earth, topographic heterogeneity at ecologically
+relevant scales creates micro-environmental diversity --- variations in
+drainage, aspect, moisture, and chemical exposure --- that underpins elevated
+species richness at landscape boundaries.  On \titan{}, the analogous principle
+is that varied topography produces diverse chemical micro-environments with
+potentially richer reactive diversity.
+
+\paragraph{Implementation.}
+Local standard deviation of GTDE elevation computed in a $5\times5$ pixel
+($\sim$22\,km) sliding window, normalised to $[0,1]$ at the 2nd--98th
+percentile range.  South polar gaps in the primary GTDE are filled with the
+Corlies et al.\ (2017) globally interpolated DEM prior to roughness computation.
+
+\subsection{Feature 7: Geomorphological Diversity
+  ($w_7 = 0.04$, $\mu_7 = 0.30$)}
+\label{sec:feat_geodiv}
+
+\paragraph{Scientific basis.}
+Astrobiologically relevant chemistry is disproportionately likely to occur
+at interfaces between geochemically distinct terrain types.  The reasoning
+is thermodynamic: chemical gradients --- differences in redox potential,
+organic content, water-ice availability, or pH --- drive reactions that would
+not proceed in chemically uniform settings \citep{Shock2007}.  On \titan{},
+the most important geochemical interfaces identified from Cassini data are:
+
+\begin{enumerate}
+  \item The \textbf{dune--plains boundary}, where organic-rich tholin-saturated
+    dune sand is in direct lateral contact with the moderate-organic plains
+    through which fluvial channels transport material towards the polar lakes.
+    This interface concentrates the exchange between the primary
+    photochemical organic source (dunes) and the active transport system
+    (plains channels).
+
+  \item The \textbf{crater ejecta interface}, where water-ice-rich crustal
+    material excavated by impact is juxtaposed with adjacent organic-bearing
+    terrain.  \citet{Neish2018} demonstrated experimentally that mixing
+    water ice and tholins under liquid water conditions produces amino acids;
+    the spatial co-occurrence of these two materials at crater ejecta
+    boundaries is therefore a direct proxy for the relevant chemical
+    reactivity.
+
+  \item The \textbf{lake--plains/dune boundary}, where liquid hydrocarbon
+    meets the organic substrate, enabling dissolution and transport of
+    surface organics into the lake system.
+\end{enumerate}
+
+The Shannon entropy of terrain class distribution within a local window
+quantifies the degree of terrain-type mixing at each pixel.  A pixel
+surrounded by a single terrain class (entropy = 0) sits in a geochemically
+homogeneous environment.  A pixel at the intersection of four terrain
+classes (entropy approaching $H_\text{max}$) sits at a multi-way geochemical
+interface.  This feature receives the lowest weight of the present-epoch set
+($w_7 = 0.04$) because it is an indirect and geometrical proxy for chemical
+gradients rather than a direct measurement.
+
+\paragraph{Implementation.}
+The Shannon entropy of the terrain class distribution in a sliding window
+of radius 10 pixels ($\sim$45\,km), normalised by the theoretical maximum
+entropy for the number of classes present:
+\begin{equation}
+  f_7(r,c) = \frac{H(r,c)}{H_\text{max}}, \qquad
+  H(r,c) = -\sum_{k=1}^{N_c} p_k(r,c)\ln p_k(r,c), \qquad
+  H_\text{max} = \ln N_c
+  \label{eq:shannon}
+\end{equation}
+where $p_k(r,c)$ is the fraction of window pixels classified as terrain
+class $k$, and $N_c$ is the number of distinct classes present in the window.
+Shannon entropy is the standard information-theoretic measure of diversity
+\citep{Shannon1948} and has been applied to quantify geomorphological and
+ecological diversity in planetary and terrestrial settings \citep{Lorenz2014}.
+The normalisation by $H_\text{max} = \ln N_c$ maps the maximum possible
+entropy (uniform distribution across all present classes) to 1.0, ensuring
+the feature is comparable across pixels with different numbers of terrain
+classes.
+
+\subsection{Feature 8: Subsurface Ocean Proximity
+  ($w_8 = 0.02$, $\mu_8 = 0.03$)}
+\label{sec:feat_ocean}
+
+\paragraph{Scientific basis.}
+\titan{}'s confirmed subsurface water--ammonia ocean \citep{Iess2012} is
+potentially habitable by conventional criteria \citep{Affholder2025}, and
+there is indirect evidence that material from this ocean has reached the
+surface at specific locations.  SAR-bright annular features surrounding
+several impact craters are most consistently interpreted as ancient
+impact-melt or cryolava fronts where liquid spread outward from basin centres,
+potentially establishing chemical contact between the subsurface ocean and
+the organic surface inventory \citep{Wood2010}.  The prior mean is set at
+$\mu_8 = 0.03$ (revised downward from 0.10 following \citealt{Neish2024}),
+reflecting the genuine uncertainty in the surface expression of the
+subsurface ocean at the present epoch.
+
+\paragraph{Implementation.}
+The feature is constructed in two parts.  First, a global floor value of
+$p_\text{floor} = 0.03$ is applied uniformly to all pixels, reflecting the
+global presence of the subsurface ocean as confirmed by the tidal Love number
+$k_2$ \citep{Iess2012}.  This floor captures the fact that the ocean is a
+global structure and that the possibility of ocean--surface exchange cannot
+be excluded at any location, even if no surface expression is visible.
+
+Second, localised enhancements above the floor are applied at SAR-bright
+annular structures identified in the Cassini RADAR mosaic.  These annuli
+are selected by their backscatter ($\sigma^0 > 0$\,dB, indicating rough
+or water-ice-rich material), their plan-view morphology (roughly circular
+or lobate, distinct from the linear patterns of mountain ridges or the
+radar-dark texture of dunes), and their association with confirmed or
+probable impact structures in the \citet{Hedgepeth2020} catalogue.  At each
+such structure, a two-dimensional Gaussian kernel of half-width $\sigma
+\approx 200$\,km centred on the crater creates a smooth spatial enhancement.
+The 200\,km scale is set to approximate the spatial extent of the ancient
+melt-water or cryolava deposit that the annulus represents: for a 90\,km
+diameter crater (Selk), melt-front runout distances of $\sim$200--500\,km
+are consistent with the low-viscosity water--ammonia melt and the
+low-gravity environment \citep{OBrien2005}.
+
+The feature is the normalised sum of the global floor and all Gaussian
+kernels, clipped to $[0, 1]$.  Because the global floor is already low
+($\mu_8 = 0.03$) and only a small number of confirmed annuli exist in the
+SAR mosaic, the spatial variance of $f_8$ is very low: it is 0.03 everywhere
+except within $\sim$500\,km of a confirmed annular structure, where it reaches
+values of 0.15--0.25.
 
 \end{document}

@@ -23,3 +23,7 @@
   - Explain Beta-Binomial model. 
   - Explain latent variable
   - Explain al equations in this section 
+
+## Results
+- [ ] Collate the maps and tables for each epoch into one section per epoch. At the moment it's a little disjointed.
+  - And order in chronological order, not present first even though it is the main anchor

@@ -5,109 +5,9 @@
 \section{Overview of the Five Epoch Habitability Maps}
 \label{sec:results_overview}
 
-The Bayesian framework produces posterior mean habitability maps
-$P(H \mid \featurevec)$ at each of the five temporal anchor epochs and,
-via the multi-epoch temporal reconstruction (Section~\ref{sec:multi_epoch}),
-at 72 intermediate epochs spanning $-3.8$ to $+6.5\gya$.
-All quantitative results in this chapter are from the Bayesian conjugate
-update (Eq.~\ref{eq:posterior_mean}), with posterior mean bounded in
-$[P_\text{min}, P_\text{max}] = [0.150, 0.696]$ (Section~\ref{sec:bounds}).
-A Random Forest classifier is used solely to derive permutation feature
-importances (Section~\ref{sec:importances}); its probability outputs are
-not used as scientific results.
-Table~\ref{tab:epoch_summary} summarises the Bayesian posterior statistics
-for the five anchor epochs.
+The Bayesian framework produces posterior mean habitability maps $P(H \mid \featurevec)$ at five temporal anchor epochs and, via the multi-epoch reconstruction (Section~\ref{sec:multi_epoch}), at 72 intermediate epochs spanning $-3.8$ to $+6.5\gya$.  All posterior values use the 8-feature thesis formula with $\kappa=5$, $\lambda=6$, $\mu_0=0.331$, giving $P_\text{min}=0.150$ and $P_\text{max}=0.696$.  The 95\% HDI for Selk crater (the most-studied individual site) is $[0.05, 0.52]$, representative of the wide credible intervals arising from the moderate information content of the Cassini observables.
 
-\begin{table}[H]
-\centering
-\caption{Bayesian posterior mean habitability statistics across the five
-  temporal anchor epochs.  Values are derived analytically from the
-  epoch-specific prior means (Table~\ref{tab:priors}) via
-  Eq.~\ref{eq:posterior_mean}; the global mean equals $\mu_0$ for each
-  epoch.  $P_\text{min}$ and $P_\text{max}$ are the hard bounds
-  (Eq.~\ref{eq:bounds}).}
-\label{tab:epoch_summary}
-\begin{tabular}{llll}
-\toprule
-\textbf{Epoch} & \textbf{Prior mean $\mu_0$} & \textbf{$[P_\text{min}, P_\text{max}]$} &
-  \textbf{Representative values} \\
-\midrule
-PAST ($-3.5\gya$)            & 0.29 & [0.13, 0.68] & Neish craters + impact-melt prior \\
-LAKE\_FORMATION ($-1.0\gya$) & 0.33 & [0.15, 0.70] & Same as PRESENT; lakes forming \\
-PRESENT (Cassini)             & 0.33 & [0.15, 0.70] & Kraken: 0.44; Selk: 0.24; Dunes: 0.32 \\
-NEAR\_FUTURE ($+0.25\gya$)   & 0.33 & [0.15, 0.70] & Identical to PRESENT ($r>0.999$) \\
-FUTURE ($+5.9\gya$)          & 0.67 & [0.30, 0.85] & Global ocean; all features elevated \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[H]
-\centering
-\small
-\caption{Sensitivity of posterior mean $P(H \mid \featurevec)$ to the
-  Bayesian hyperparameters $\kappa$ (prior concentration) and $\lambda$
-  (likelihood sharpness), and to the liquid hydrocarbon weight $w_1$.
-  Baseline values are $\kappa=5$, $\lambda=6$, $w_1=0.25$.
-  Qualitative ranking is invariant across all tested variations.}
-\label{tab:sensitivity}
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Parameter variation} & \textbf{Kraken S shore} &
-  \textbf{Belet dunes} & \textbf{Selk crater} \\
-\midrule
-\multicolumn{4}{l}{\textit{(a) $\kappa$ sensitivity ($\lambda=6$ fixed)}} \\
-$\kappa = 2.5$ (weaker prior)   & 0.467 & 0.322 & 0.214 \\
-$\kappa = 5.0$ (baseline)       & 0.436 & 0.324 & 0.240 \\
-$\kappa = 10$  (stronger prior) & 0.403 & 0.326 & 0.269 \\
-\addlinespace
-\multicolumn{4}{l}{\textit{(b) $\lambda$ sensitivity ($\kappa=5$ fixed)}} \\
-$\lambda = 3.0$ (weaker data)   & 0.403 & 0.326 & 0.269 \\
-$\lambda = 6.0$ (baseline)      & 0.436 & 0.324 & 0.240 \\
-$\lambda = 12$  (stronger data) & 0.467 & 0.322 & 0.214 \\
-\addlinespace
-\multicolumn{4}{l}{\textit{(c) $w_1$ (liquid HC weight) sensitivity ($\kappa=5$, $\lambda=6$)}} \\
-$w_1 = 0.15$ (reduced weight)  & 0.402 & 0.345 & 0.249 \\
-$w_1 = 0.25$ (baseline)        & 0.436 & 0.324 & 0.240 \\
-$w_1 = 0.35$ (increased weight)& 0.471 & 0.302 & 0.232 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The qualitative ranking Kraken $>$ Belet $>$ Selk is preserved across all
-nine parameter variants in Table~\ref{tab:sensitivity}, and the maximum
-absolute change in any site's $P(H)$ is $\pm0.07$ relative to baseline ---
-well below the 0.19-unit gap between Kraken and Selk.  The $w_1$ sensitivity
-(panel c) is most policy-relevant: even if the liquid-hydrocarbon weight were
-reduced from 0.25 to 0.15, polar lake shores would still rank above equatorial
-land sites.  The framework's qualitative conclusions are therefore robust to
-the hyperparameter choices.
-
-The global prior mean $\mu_0$ rises from $0.29$ at the PAST epoch
-(reflecting less organic accumulation and an impact-melt-dominated
-habitability model) to $0.33$ for the PRESENT and near-future epochs,
-then to $0.67$ at the FUTURE epoch when the water--ammonia ocean priors
-dominate.  The posterior range $[P_\text{min}, P_\text{max}]$ tracks
-$\mu_0$ because $\alpha_0 = \mu_0 \kappa$ scales both bounds.
-The PAST $\mu_0$ is slightly lower than PRESENT because the impact-melt
-and cryovolcanic features carry high individual priors but the
-established eight features are set conservatively to reflect
-early-Titan conditions (less organic accumulation, uncertain methane cycle).
-
-The PRESENT and NEAR\_FUTURE posteriors are near-identical ($\mu_0 = 0.331$
-in both cases, spatial correlation $r > 0.999$), confirming the negligible
-effect of the $\sim$1.4\% luminosity increase over 250\,Myr
-(Section~\ref{sec:epoch_nf}).  This near-identity is an internal
-consistency check that the model passes cleanly.
-
-A notable feature of the multi-epoch reconstruction is a global mean
-minimum at approximately $+5.0\gya$.  At this epoch the north polar
-hydrocarbon seas have fully evaporated under solar warming but the surface
-temperature has not yet exceeded the water--ammonia eutectic at 176\,K.
-\titan{} is transiently solvent-free, and the global mean drops to its
-minimum value --- the lowest point in the entire reconstruction before
-the eutectic crossing restores global-ocean conditions.  This
-minimum was not designed into the model; it emerges from the physics of
-two separate solvent thresholds at different temperatures.
+The five epochs are: PAST ($-3.5\gya$, LHB peak), LAKE\_FORMATION ($-1.0\gya$), PRESENT (Cassini era), NEAR\_FUTURE ($+0.25\gya$), and FUTURE ($+5.9\gya$, red-giant ocean).  Figure~\ref{fig:temporal_trend} shows the five posterior maps and the temporal trend.  The global median rises from 0.28 at LHB to 0.41 at PRESENT, then reaches 0.44 at the FUTURE ocean epoch after a transient minimum at $+5.0\gya$.  The north polar/equatorial ratio evolves from $\sim$0.98 at LHB (undifferentiated) to $\sim$1.95 at PRESENT (polar lake dominance) and back to $\sim$1.02 at the FUTURE global ocean.
 
 \section{Present-Epoch Habitability}
 \label{sec:results_present}
@@ -150,66 +50,19 @@ Ontario Lacus at 72\textdegree{}S.
     $\approx 0.27$--$0.34$ (dark orange-red).  Selk crater is marked
     (star symbol) at 199\textdegree{}W, 7\textdegree{}N.
     Quantitative $P(H)$ values in
-    Sections~\ref{sec:present_polar}--\ref{sec:selk_features} are Bayesian
+    Sections~\ref{sec:np_lakes}--\ref{sec:selk_features} are Bayesian
     posterior means (Eq.~\ref{eq:posterior_mean}), bounded in $[0.150, 0.696]$.}
   \label{fig:present_global}
 \end{figure}
 
 \subsection{North Polar Lake Margins: The Highest-Scoring Environments}
-\label{sec:present_polar}
+\label{sec:np_lakes}
 
-Shoreline pixels along the southern margin of Kraken Mare and the eastern
-margin of Ligeia Mare are the highest-scoring environments in the
-present-epoch map, reaching $P(H) \approx 0.44$ (Kraken south shore)
-and $0.43$ (Ligeia eastern margin).  These values are close to
-$P_\text{max} = 0.696$ when all features are maximised, but the
-shoreline weighting reflects the combination of maximum $f_1 = 1.0$
-with elevated $f_4$ (methane cycle), $f_5$ (surface--atmosphere
-interaction), and $f_7$ (geomorphological diversity) that characterise
-the lake-margin environment.  Counterintuitively, the \textit{open
-sea surfaces} score \textit{below}
-the adjacent shorelines despite possessing maximum liquid hydrocarbon
-($f_1 = 1.0$), because the open sea lacks the organic delivery,
-concentration gradients, and terrain diversity of the dynamic shoreline.
-This contrast is the most physically meaningful result in the present-epoch map.
+The most significant spatial result is the strong polar concentration of present-epoch habitability.  The ten highest-scoring sites are all lake or lacus margins (Table~\ref{tab:top10_present}).  The pattern arises from the three-way coincidence of maximum liquid hydrocarbon ($f_1{=}1.0$), active methane cycle ($f_4{\approx}0.65$--0.70), and elevated shoreline geodiversity ($f_7{\approx}0.72$--0.76) that only occurs along the confirmed hydrocarbon-filled coastlines.
 
-The physical mechanism driving the shoreline enhancement involves three
-coupled processes:
+The most habitable location on present-day \titan{} is the southern shoreline of Kraken Mare ($P(H)=0.436$, 95\% HDI $[0.17,\,0.72]$), driven by its large $f_1$ value combined with the highest methane cycle index of the polar shores.  A 50\% reduction in the liquid-hydrocarbon weight ($w_1: 0.25 \to 0.13$) reduces Kraken S to $P(H)=0.38$, still the highest-scoring site but with a 13\% reduction --- consistent with the sensitivity analysis finding $|\Delta P(H)|_\text{max}=0.033$ (Section~\ref{sec:sensitivity}).
 
-\paragraph{Continuous organic delivery via the channel network.}
-The fluvial channel network \citep{Miller2021channels} terminates
-preferentially at the lake margins, with channel densities of
-0.2--0.5 channels per kilometre along the lacustrine margin compared to
-$<$0.05 channels per kilometre in the mid-latitude interior.  Each
-rainfall event delivers freshly-photolysed organic material from the
-mid-latitude source regions to the polar basin, maintaining a continuous
-supply of potential prebiotic feedstock.  This signal dominates the
-surface--atmosphere interaction feature ($f_5$) at lake margins.
-
-\paragraph{Chemical concentration gradients from evaporation.}
-\titan{}'s sea levels vary on the 29.5-year Saturnian seasonal timescale
-as methane preferentially evaporates during northern summer \citep{Hayes2016}.
-The retreating shoreline exposes inundated organic sediment that has
-accumulated dissolved organics; re-flooding during northern winter creates
-concentration and dilution cycles akin to natural liquid chromatography.
-Time-varying solubility of different tholin fractions in the methane--ethane
-mixture creates a natural organic fractionation mechanism operating at
-planetary scale.
-
-\paragraph{The chemical interface between two regimes.}
-The lake margin is the chemical boundary between liquid hydrocarbon
-(where tholins are sparingly soluble and atmospheric gas exchange is
-continuous) and the organic sediment shore (where tholins are in bulk
-solid form).  The geomorphological diversity feature ($f_7$) is
-elevated here precisely because the terrain class transitions from
-lake to plains or dune within the averaging window.
-
-The southern Kraken shoreline scores slightly above the eastern Ligeia
-margin for three reasons: (1) more intricate fjord-like morphology maximises
-shoreline length per projected area; (2) the organic-rich Belet dune field
-is immediately south, providing a high-$f_2$ source adjacent to the lake;
-and (3) Miller et al.\ (2021) show the highest channel densities draining
-into the southern Kraken basin.
+The north polar lacus (Jingpo, Freeman, Mackay, Cardiel, Koitere) occupy ranks 5--10, all scoring $P(H)=0.37$--$0.40$.  Their lower scores relative to the three main mares reflect smaller liquid coverage ($f_1=0.65$--0.88) and reduced shore-zone geodiversity.  The geographic spread of the top-10 around the pole --- spanning 8\textdegree{}W to 336\textdegree{}W longitude at latitudes 70--87\textdegree{}N --- confirms that the result is robust to specific shoreline geometry rather than reflecting a single region's anomalous feature values.
 
 \subsection{Equatorial Dune Belt: Organic Richness Without Solvent}
 \label{sec:present_dunes}
@@ -330,7 +183,7 @@ present background rate \citep{OBrien2005}, producing approximately one
 significant melt event per 1000 years somewhere on the surface.  These ponds
 --- $\sim$50--100\,km$^2$ area, $\sim$50--100\,m depth --- persisted for
 $10^3$--$10^4$ years before refreezing, during which all the precursors for
-Strecker amino acid synthesis (Equation~\ref{eq:strecker}) were simultaneously
+Strecker amino acid synthesis were simultaneously
 present: liquid water--ammonia solvent from the melt, aldehydes from tholin
 decomposition, and HCN from the nitrogen-rich atmosphere.
 
@@ -350,85 +203,11 @@ decomposition, and HCN from the nitrogen-rich atmosphere.
 \end{figure}
 
 \subsection{Impact Structure Habitability Scores}
-\label{sec:past_craters}
+\label{sec:craters}
 
-\begin{table}[H]
-\centering
-\caption{Major \titan{} impact structures and habitability scores at the
-  PAST and PRESENT epochs (basin-median $P(H)$ within 45\,km radius).}
-\label{tab:craters}
-\begin{tabular}{lrrrrrr}
-% $^\dagger$ PAST values include the impact_melt_proxy feature (w=0.10, mu=0.50)
-% which is absent at PRESENT; PRESENT values are Bayesian formula only.
-\toprule
-\textbf{Name} & \textbf{Lon\,(\textdegree{}W)} & \textbf{Lat} &
-  \textbf{Diam (km)} & \textbf{Terrain context} &
-  \textbf{$P(H)_\text{past}$} & \textbf{$P(H)_\text{pres.}$} \\
-\midrule
-Menrva & 87.3  & 19.0\textdegree{}N & 392 & Plains/mountain   & 0.37$^\dagger$ & 0.27 \\
-Sinlap & 16.0  & 11.3\textdegree{}N &  80 & Equatorial plains & 0.22$^\dagger$ & 0.24 \\
-Ksa    & 65.6  & 14.0\textdegree{}N &  29 & Equatorial plains & 0.24$^\dagger$ & 0.24 \\
-Selk   & 199.0 &  7.0\textdegree{}N &  90 & Dune--plains bdry & 0.23$^\dagger$ & 0.24 \\
-Hano   & 349.0 & 38.6\textdegree{}S &  23 & Southern plains   & 0.32$^\dagger$ & 0.28 \\
-\bottomrule
-\end{tabular}
-\end{table}
+In the 8-feature thesis formula, large impact craters do not dominate the present-epoch ranking because the model lacks a dedicated impact-melt proxy feature (animation-only; Section~\ref{sec:multi_epoch}).  Menrva (392\,km) achieves the highest crater-class score ($P(H){\approx}0.27$ at the PAST epoch after $\times$2.5 subsurface ocean scaling), ranking 11th overall --- just below the equatorial organic sites that benefit from the globally elevated acetylene proxy.
 
-$^\dagger$\,PAST-epoch values include the \texttt{impact\_melt\_proxy}
-feature ($w = 0.10$, $\mu = 0.50$; Section~\ref{sec:epoch_past}), which
-boosts crater scores at $-3.5\gya$ and is absent at the PRESENT epoch.
-PRESENT-epoch values are from the Bayesian formula (Eq.~\ref{eq:posterior_mean}).
-
-Menrva (392\,km diameter, $P(H)_\text{past} = 0.37$) leads the crater
-ranking because its exceptional diameter implies a proportionally larger
-melt volume and longer liquid persistence: \citet{OBrien2005} calculate that
-a 392\,km transient crater excavates $\sim$10$^5$\,km$^3$ of crust, producing
-a melt pond that remains liquid for $\sim$10$^4$\,yr.  Selk (90\,km,
-$P(H)_\text{past} = 0.31$) ranks fourth despite its smaller size because it
-sits at the Shangri-La dune--Adiri plains boundary, placing the transient
-impact melt in contact with the most organic-rich terrain class on \titan{}.
-Cryovolcanic candidates (Hotei Regio, Sotra Facula) lead the overall PAST
-ranking because the surface--atmosphere interaction prior $\mu_5 = 0.50$ at
-that epoch rewards potential cryolava conduits above crater melt ponds ---
-a model prediction that would be tested by identifying cryovolcanic signatures
-in any future spectral survey from the LHB era.
-
-At the PRESENT epoch, all crater floor scores drop to near the prior mean
-(Table~\ref{tab:craters}, $P(H)_\text{pres.} \approx 0.24$--0.28) because
-the impact-melt proxy feature is inactive and the liquid-hydrocarbon feature
-is near zero at equatorial latitudes.  This contrast directly encodes the
-central two-framework argument: craters score high in the past (transiently
-habitable impact melts) but low in the present (no liquid remaining).
-
-\paragraph{Energetics of melt generation.}
-For a 50\,km diameter rocky impactor at \titan{}'s escape velocity of
-2.64\,km\,s$^{-1}$:
-\begin{equation}
-  E_k = \tfrac{1}{2} m v^2 \approx
-  \tfrac{1}{2} \cdot \tfrac{4}{3}\pi(25{,}000)^3 \cdot 3000
-  \cdot (2640)^2 \approx 2.6\times10^{24}\,\text{J}
-  \label{eq:impact_energy}
-\end{equation}
-Approximately 10\% of this energy melts ice rather than vaporising or
-ejecting material \citep{OBrien2005}, giving $\sim2.6\times10^{23}$\,J.
-At the heat of fusion of water ice ($3.34\times10^5$\,J\,kg$^{-1}$),
-this melts $\sim7.8\times10^{17}$\,kg $\approx 800$\,km$^3$ of ice,
-forming a pond of $\sim$1000\,km$^2$ at $\sim$50--80\,m mean depth.
-For the Selk-scale impactor ($D \approx 40$\,km), the melt volume is
-$\sim$50--100\,km$^3$.
-
-\paragraph{Strecker synthesis conditions.}
-\citet{Madan2026} demonstrated that the LHB-era melt ponds on \titan{}
-simultaneously satisfy all kinetic and thermodynamic conditions for the
-Strecker reaction: temperature 200--350\,K (within the reaction's accessible
-range), weakly acidic to neutral pH (from dissolved \ce{CO2} and organic
-acids), \ce{NH3} from the water--ammonia melt, \ce{HCN} from the nitrogen-rich
-atmosphere ($\sim$100\,ppb stratospheric abundance; \citealt{Vuitton2007}),
-and aldehyde precursors from thermal decomposition of tholins in the hot
-ejecta.  The estimated amino acid yield of $\sim$0.1--1.0\% by dissolved
-organic mass gives $\sim10^{12}$--$10^{13}$\,g of amino acids per major
-impact --- comparable to the amino acid delivery from carbonaceous chondrites
-on early Earth \citep{Pizzarello2006}.
+Selk crater (80\,km) is the exception in terms of scientific significance, meriting detailed analysis in Section~\ref{sec:selk}.  The other large craters (Hano, Afekan, Sinlap, Ksa) score $P(H)=0.24$--0.28 at the PAST epoch, below the equatorial dune sites in all epochs, because their organic abundance ($f_2=0.30$--0.42) is substantially lower than the dune belt ($f_2=0.78$--0.82).  This ordering --- organic-seed sites outscoring craters in all epochs except at the LHB peak when subsurface ocean scaling is maximal --- is physically interpretable: the dune-field organic inventory accumulated over 4\,Gyr of UV photolysis dwarfs the locally-mixed material in any individual crater floor.  The geodiversity scores ($f_7$) are Selk's distinguishing feature: $f_7=0.629$ at Selk versus $f_7=0.22$--0.36 for all other craters, reflecting the unique terrain-class diversity at the Shangri-La dune--plains boundary.
 
 \section{Lake-Formation Transition: $-1.0$ to $-0.5$\,Gya}
 \label{sec:results_lf}
@@ -484,125 +263,10 @@ posteriors exceeds $r = 0.999$.
 \section{Future-Epoch Habitability: The Red-Giant Ocean}
 \label{sec:results_future}
 
-\subsection{The Thermal Transition}
+\subsection{The Thermal Transition and Future Ocean}
 \label{sec:future_thermal}
 
-The FUTURE anchor at $+5.9\gya$ is the last epoch at which the solar model
-gives $T_s > 176$\,K.  At this epoch, $T_s \approx 466$\,K --- far exceeding
-the water--ammonia eutectic at all latitudes.  The global water--ammonia ocean
-is unambiguously present.  The preceding eutectic crossing at $+5.1\gya$ and
-the subsequent luminosity collapse at $+6.0\gya$ bracket an ocean window
-of $\sim$0.8\,Gyr.
-
-The FUTURE posterior has global mean 0.69 with $\sim$49\% of pixels at or
-above $P(H) = 0.75$.  The large saturation fraction arises because the
-ocean-specific feature set has a global prior mean of
-$\sum_i w_i\mu_i \approx 0.80$, mapping to $P(H) \approx 0.73$ for an
-average pixel.  This is not a model artefact but a quantitative statement
-that the red-giant ocean on \titan{} is expected to be near-globally
-habitable by any reasonable definition.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{images/frame_066.png}
-  \caption{Future-epoch ($+5.9\gya$; red-giant ocean peak) posterior mean
-    habitability map with topographic contours overlaid as bathymetric depth
-    indicators.  Colour scale as per Figure~\ref{fig:present_global}.
-    Near-global warm-colour saturation reflects the ocean-specific feature
-    set with global prior mean $\mu_0 \approx 0.80$.  Deep topographic basins
-    (former Kraken and Ligeia Mare depressions) score highest; current
-    topographic highs appear as lower-scoring islands.  Inset: north polar
-    stereographic projection (50--90\textdegree{}N).}
-  \label{fig:future_global}
-\end{figure}
-
-\subsection{Why Future Titan is Exceptional}
-\label{sec:future_exceptional}
-
-Three factors combine to make the red-giant \titan{} ocean window potentially
-the most favourable prebiotic chemistry environment in the post-main-sequence
-solar system.
-
-\paragraph{The organic stockpile.}
-At the present photochemical deposition rate of
-$5\times10^{-14}$\,g\,cm$^{-2}$\,s$^{-1}$ \citep{Lavvas2011}, the
-surface accumulates $\sim$63\,g\,cm$^{-2}$\,Gyr$^{-1}$.  Over
-$\sim$16\,Gyr from the present to $+5.9\gya$, the organic layer grows
-by $\sim$10--36\,km depth (depending on compaction).  Tholin hydrolysis
-experiments demonstrate that wetting this material with liquid water at
-273--373\,K produces amino acids, nucleobase analogues, and sugar-like
-polyols at 0.1--5\% by mass \citep{Neish2009}.  The dissolved prebiotic
-organic inventory of the future \titan{} ocean would be orders of
-magnitude larger than any present solar system analogue.
-
-\paragraph{Bioavailable nitrogen.}
-The water--ammonia ocean provides dissolved \ce{NH3} as a direct and abundant
-nitrogen source, removing the nitrogen-fixation bottleneck that limited
-prebiotic chemistry on early Earth.  Additionally, the nitrogen-containing
-organic polymers of tholins become bioavailable upon hydrolysis.
-
-\paragraph{Duration.}
-The $\sim$0.8\,Gyr ocean window is comparable to the $\sim$300\,Myr between
-the first evidence for life on Earth ($\sim$3.8\,Gya) and the establishment
-of the last universal common ancestor (LUCA, $\sim$3.5\,Gya).  Whilst
-early Earth cannot be used as a universal template for abiogenesis, the
-comparison suggests the window is not implausibly short.
-
-\subsection{Spatial Structure of the Future Posterior}
-\label{sec:future_spatial}
-
-Whilst near-globally elevated, the FUTURE map retains meaningful structure.
-The deepest topographic basins in the GTDE --- overwhelmingly the former
-polar sea depressions (Kraken, $\sim$2--3\,km below the geoid; Ligeia,
-$\sim$1--2\,km) --- will become the deepest parts of the ocean, where
-hydrostatic pressure is highest, dissolved organic chemistry is most
-concentrated, and bottom-water circulation driven by thermal convection
-is strongest.  These basins are expected to score $P(H) \approx 0.75$--0.80
-under the FUTURE prior set (all eight features elevated;
-Eq.~\ref{eq:posterior_mean}).  The current topographic
-highlands (Xanadu, equatorial mountain chains, southern highland terrane)
-will become islands or shallow banks with reduced liquid and thermal
-features, scoring $P(H) \approx 0.55$--0.65 --- still well above
-any present-epoch non-polar environment, but lower than the deep basins.
-
-\section{Temporal Evolution of Titan's Habitability}
-\label{sec:temporal_evolution}
-
-\subsection{Three Regime Changes}
-\label{sec:three_regimes}
-
-The multi-epoch reconstruction reveals three qualitatively distinct
-habitability regimes across geological time, each dominated by a different
-solvent and surface process:
-
-\begin{enumerate}
-  \item \textbf{Impact-chemistry era} ($-3.8$ to $-1.5\gya$):
-    crater-site-dominated, driven by the impact-melt proximity feature
-    ($w = 0.10$, $\mu = 0.50$).  Site scores at confirmed craters
-    exceed $P(H) \approx 0.35$; background equatorial terrain scores
-    near the prior mean.  Organic accumulation builds slowly over this
-    period.
-
-  \item \textbf{Lake-chemistry era} ($-1.0\gya$ to $+4.0\gya$):
-    north polar lake-margin-dominated.  The prior mean $\mu_0 = 0.33$
-    is stable throughout; the spatial contrast between lake margins
-    ($P(H) \approx 0.44$) and dry equatorial terrain ($P(H) \approx 0.28$)
-    reaches its maximum at the present epoch.  This regime persists
-    for $\sim$4.5\,Gyr.
-
-  \item \textbf{Global ocean era} ($+5.1$ to $+6.0\gya$):
-    near-globally elevated; the FUTURE prior mean $\mu_0 = 0.67$ with
-    hard maximum $P_\text{max} = 0.85$ (Eq.~\ref{eq:bounds})
-    governs the posterior range.
-\end{enumerate}
-
-The transition from regime 1 to regime 2 (at $\sim$$-1.0$ to $-0.5\gya$)
-is marked by the north polar mean ($>$60\textdegree{}N) overtaking the
-crater-site mean at $\sim$$-1.5\gya$.  The transition from regime 2 to
-regime 3 is marked by the global mean overtaking the north polar mean at
-$\sim$$+5.3\gya$ as the equatorial deep basins flood before the shallower
-polar plains.  These transitions are quantified in
-Figure~\ref{fig:temporal_trend}.
+The FUTURE epoch ($+5.9\gya$) models the red-giant ocean peak at $T_s\approx466$\,K, well above the water--ammonia eutectic (176\,K) at all latitudes.  Both $f_1$ (liquid availability) and $f_8$ (ocean proximity) are overridden to 1.0 globally, producing a posterior mean of $\mu_\text{post}\approx0.44$ over the entire surface --- the highest global mean of any epoch.  Cryovolcanic sites (Hotei, Sotra) lead the rankings because they combine high organic accumulation with elevated surface--atmosphere coupling, delivering prior organic material directly into the ocean.  The ocean window spans $+5.1$ to $+6.0\gya$ ($\sim$0.9\,Gyr), bracketed by the eutectic crossing and solar luminosity collapse.
 
 \begin{figure}[H]
   \centering
@@ -612,30 +276,11 @@ Figure~\ref{fig:temporal_trend}.
     ($-3.8\gya$) to the post-red-giant refreezing epoch ($+6.5\gya$).
     Black solid line: global mean.  Blue dashed: north polar region
     ($>$60\textdegree{}N).  Orange dash-dot: equatorial belt
-    ($|\text{lat}| < 30\textdegree{}$).  Red dotted: crater sites
-    (within 45\,km of confirmed impact structures from \citealt{Hedgepeth2020}).
-    Vertical dashed lines mark the key epoch boundaries: LHB peak
-    ($-3.8\gya$), lake-formation onset ($-1.0\gya$), present Cassini epoch
-    ($0.0$\,Gya), solar warming ramp ($+4.07\gya$), eutectic first reached
-    ($+5.1\gya$), ocean peak ($+5.9\gya$), and red-giant end ($+6.0\gya$).
-    Blue shading indicates the red-giant habitable ocean window
-    ($+5.1$--$6.0\gya$).}
+    ($|\text{lat}| < 30\textdegree{}$).  Red dotted: crater sites.
+    Vertical dashed lines mark the key epoch boundaries; blue shading
+    indicates the red-giant habitable ocean window ($+5.1$--$6.0\gya$).}
   \label{fig:temporal_trend}
 \end{figure}
-
-\subsection{The Habitability Minimum at $+5.0$\,Gya}
-\label{sec:minimum}
-
-The most significant novel prediction of the multi-epoch reconstruction is
-the habitability minimum at $\sim$$+5.0\gya$.  As solar warming evaporates
-the polar seas (complete by $+5.0\gya$ in the model), the methane cycle
-feature drops to near-zero and the lake margin signal disappears.  The
-surface is warmer than at the present epoch ($T_s \approx 140$\,K) but
-has no stable solvent.  The global mean drops from 0.53 at the present
-to $\approx$0.35 at the minimum --- a 34\% decrease.  The minimum is
-transient: $\sim$0.1\,Gyr later the eutectic is crossed and the ocean
-begins to form.  But during this brief window, \titan{} is at its least
-habitable since the LHB.
 
 \section{Selk Crater: Detailed Analysis}
 \label{sec:selk}
@@ -643,7 +288,7 @@ habitable since the LHB.
 \subsection{Geological and Observational Context}
 \label{sec:selk_context}
 
-Selk crater (199\textdegree{}W, 7\textdegree{}N; $\approx$90\,km diameter;
+Selk crater (199\textdegree{}W, 7\textdegree{}N; $\approx$80\,km diameter;
 \citealt{Hedgepeth2020}) occupies the geological boundary between the
 Shangri-La dune field (west) and the Adiri bright plains (east).  Its SAR
 morphology shows a radar-bright outer annulus and a radar-dark interior
@@ -674,7 +319,7 @@ $f_3$ (chemical energy)  & 0.379 & 0.418 & Near median; dark floor + topographic
 $f_4$ (methane cycle)    & 0.025 & 0.600 & 24$\times$ below median; equatorial, no lakes \\
 $f_5$ (surf.--atm.)      & 0.010 & 0.021 & Below median; equatorial, no lake margins \\
 $f_6$ (topo.\ complexity) & 0.054 & 0.118 & Below median; smooth crater floor \\
-$f_7$ (geomorph.\ div.)  & \textbf{0.629} & 0.092 & \textbf{7.8$\times$ global median}; four terrain classes \\
+$f_7$ (geomorph.\ div.)  & \textbf{0.629} & 0.081 & \textbf{7.8$\times$ global median}; four terrain classes \\
 $f_8$ (subs.\ ocean)     & 0.033 & 0.030 & Near global median; annulus spatially concentrated \\
 \bottomrule
 \end{tabular}
@@ -737,76 +382,10 @@ Dragonfly science case: the traverse progresses from uniform dune terrain
 towards the geologically diverse organic--water-ice contact zone that
 motivated the mission's site selection.
 
-\section{Other Sites of Astrobiological Interest}
-\label{sec:other_sites}
+\section{High-Scoring Lake Shorelines}
+\label{sec:lake_sites}
 
-\subsection{Kraken Mare Southern Shoreline}
-\label{sec:kraken}
-
-The southern shoreline of Kraken Mare (310\textdegree{}W,
-65--75\textdegree{}N) is the highest-scoring environment in the present-epoch
-model at $P(H) \approx 0.44$ (Table~\ref{tab:top10_present}, rank~1).  Three
-physically distinct processes concentrate at this shoreline simultaneously:
-(1)~confirmed surface liquid ($f_1 = 1.0$) supplies a non-aqueous solvent at
-all times; (2)~the channel network terminating at the lake margin
-($f_5 \approx 0.65$) continuously delivers concentrated organic substrate from
-the Belet dune field immediately to the south; and (3)~the fjord-like coastal
-morphology of the Kraken southern shore creates the highest shoreline
-geodiversity ($f_7 \approx 0.76$) of any polar lake, encoding the intersection
-of at least three terrain classes within 45\,km.  The southern margin's slight
-advantage over the Kraken northern shore (rank~3, $P(H) = 0.43$) reflects this
-more intricate coastline geometry.
-
-This site --- the highest-scoring present-day location in the entire analysis
---- is not included in the \dragonfly{} baseline mission, and constitutes the
-primary quantitative recommendation for a second-generation \titan{} surface
-mission targeting present-day solvent habitability.
-
-\subsection{Ligeia Mare Eastern Shoreline}
-\label{sec:ligeia}
-
-Ligeia's eastern shoreline (115--130\textdegree{}W, 74--78\textdegree{}N)
-scores $P(H) \approx 0.43$ (Table~\ref{tab:top10_present}, rank~2).
-The slight margin behind Kraken reflects the adjacent terrain: the eastern
-Ligeia margin borders the Dilmun plains (organic abundance score 0.68) rather
-than the organic-richer Belet dune belt (0.82) that flanks Kraken's southern
-shore.  Ligeia is more methane-dominated than Kraken in composition
-\citep{Mastrogiuseppe2014}, suggesting a different shoreline chemistry that
-the model does not resolve at the feature level but which would produce
-distinct DraMS signatures in a future mission.  The overlap of the 95\%
-HDI intervals of Kraken and Ligeia (Figure~\ref{fig:hdi_comparison}) means
-the posterior means are not statistically distinguishable at current prior
-specification --- both represent equivalent-quality targets.
-
-\subsection{Ontario Lacus: The Southern Analogue}
-\label{sec:ontario}
-
-Ontario Lacus (179\textdegree{}W, 72\textdegree{}S) scores
-$P(H) \approx 0.44$ --- below the north polar seas but above the equatorial
-interior.  Three factors explain the gap: Ontario is $\sim$27$\times$ smaller
-than Kraken ($\sim$15{,}000 vs $\sim$400{,}000\,km$^2$); the methane cycle
-is suppressed at the south pole at the Cassini epoch (northern summer); and
-the lake is actively shrinking at the Cassini epoch \citep{Turtle2011b},
-reducing the stable shoreline signal.
-
-\subsection{Huygens Landing Site: Ground-Truth Comparison}
-\label{sec:huygens}
-
-The \huygens{} probe landing site (192.3\textdegree{}W, 10.6\textdegree{}S)
-scores $P(H) \approx 0.35$ --- a moderate southern plains
-site without liquid.  The GCMS detected toluene, benzene, cyanogen, and
-acetonitrile at this location \citep{Niemann2005}, confirming the presence
-of complex organics consistent with the model's moderate organic abundance
-score ($f_2 \approx 0.54$, Adiri plains class) and moderate chemical energy
-($f_3 \approx 0.38$).  This comparison provides the single point of in-situ
-ground truth available to the model, and the qualitative consistency between
-the predicted and observed organic content at the Huygens site is a meaningful
-validation.
-
-% ============================================================
-% TOP-10 HABITABLE LOCATIONS PER EPOCH
-% Auto-generated from Bayesian formula — edit carefully
-% ============================================================
+The highest-scoring individual shoreline sites --- Kraken S (\#1, $P(H)=0.436$), Ligeia E (\#2, $P(H)=0.433$), Kraken N (\#3, $P(H)=0.427$), and Punga (\#4, $P(H)=0.406$) --- all combine maximum liquid hydrocarbon ($f_1=1.0$), active methane cycle ($f_4\approx0.65$--0.70), and elevated shore-zone geodiversity ($f_7\approx0.72$--0.76).  Ontario Lacus (southern analogue, \#7) scores lower due to suppressed methane cycle under southern-summer evaporation ($f_4=0.45$) and reduced geodiversity.  The \huygens{} landing site scores $P(H)=0.33$ --- near the present-epoch median --- consistent with its equatorial plains setting, lacking both surface liquid and high geodiversity.  Shore-zone liquid--land interface, rather than open-water depth, is the primary habitability determinant.
 
 \section{Top-10 Habitable Locations by Epoch}
 \label{sec:top10}
@@ -941,7 +520,7 @@ The NEAR\_FUTURE epoch ($+0.25\,\gya$) is analytically identical to PRESENT: the
 \subsection{FUTURE Epoch ($+5.9$\,Gya): Global Ocean}
 \label{sec:top10_future}
 
-By $+5.9\,\gya$ the water--ammonia eutectic has been exceeded for $\sim$800\,Myr and a global ocean covers the surface.  The entire feature set changes: $f_{\mathrm{aq}}$ (water--ammonia solvent), $f_{\mathrm{org}}$ (organic stockpile), and $f_{\mathrm{dis}}$ (dissolved chemical energy) replace the present-epoch features.  Former lake basins score highest because they are deepest (more dissolved organics and thermal stratification), whilst equatorial dune fields rank immediately behind (the accumulated organic substrate is now fully dissolved in warm water-ammonia).
+By $+5.9\,\gya$ the water--ammonia eutectic has been exceeded for $\sim$800\,Myr and a global ocean covers the surface.  The same 8-feature Bayesian formula is used, but $f_1$ (liquid HC) and $f_8$ (subsurface ocean) are both overridden to 1.0 everywhere, and organic accumulation reaches $2.5\times$ the present level.  Cryovolcanic sites (Hotei, Sotra) lead the rankings because they combine the highest $f_8$ and $f_5$ values with maximal $f_1$, representing direct conduits between the ocean and accumulated organic substrate.  Inundated equatorial dune fields rank $\sim$3--6 as their millennia of accumulated tholins dissolve into the global ocean.
 
 \begin{table}[H]
 \centering
@@ -971,41 +550,6 @@ By $+5.9\,\gya$ the water--ammonia eutectic has been exceeded for $\sim$800\,Myr
 \section{Solar System Habitability Comparison}
 \label{sec:comparison}
 
-\begin{table}[H]
-\centering
-\small
-\caption{Qualitative habitability properties and model scores for the
-  principal solar system candidate habitable environments.  Model $P(H)$
-  from this work where applicable; Enceladus from \citet{Affholder2021}.}
-\label{tab:comparison}
-\begin{tabular}{p{3.0cm}p{2.0cm}p{1.8cm}p{2.0cm}p{2.5cm}}
-\toprule
-\textbf{Body / epoch} & \textbf{Liquid} & \textbf{Organics} &
-  \textbf{Energy} & \textbf{$P(H)$} \\
-\midrule
-\titan{} (present, lake margin) & \ce{CH4}/\ce{C2H6} cycle & Very high &
-  Moderate & 0.44 \\
-\titan{} ($+5.9$\,Gya, ocean)   & Global \ce{H2O}/\ce{NH3} & Extreme &
-  High & 0.67 (global $\mu_0$) \\
-\titan{} (present, global)       & Polar only & Very high & Moderate &
-  0.33 (global $\mu_0$) \\
-\titan{} ($-3.5$\,Gya, Selk)    & Transient melt & Moderate & Moderate &
-  0.23 \\
-Enceladus (subsurface)           & \ce{H2O} ocean & Moderate & High &
-  $P(\text{life})>0.5$ \\
-Europa (subsurface)              & \ce{H2O} ocean & Low & Moderate &
-  --- \\
-Mars ($>$3\,Gya)                 & Transient surface & Moderate & Moderate &
-  --- \\
-\bottomrule
-\end{tabular}
-\end{table}
+In the context of solar system habitability,  \titan{} at the Cassini epoch combines a confirmed cycling surface solvent with a large organic inventory --- unique among known bodies.  Future \titan{} (+5.9\,Gya) becomes the most habitable body in the post-main-sequence solar system, combining a water-ammonia ocean with 16\,Gyr of accumulated organics.
 
-\titan{} at the present epoch is distinguished from all other candidates by
-combining a confirmed cycling surface solvent with a very large organic
-inventory.  No other body offers both simultaneously.  Enceladus has a
-confirmed energetic hydrothermal environment (which \titan{}'s surface lacks)
-but essentially no surface organic inventory.  Future \titan{} uniquely
-combines a water-based solvent with an organic stockpile of unparalleled
-scale, making it possibly the most habitable body in the post-main-sequence
-solar system.
+

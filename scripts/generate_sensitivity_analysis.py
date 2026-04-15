@@ -71,7 +71,7 @@ SITES = {
             "methane":   0.090, "sai":     0.090, "topo":      0.550,
             "geodiv":    0.090, "ocean":   0.030,
         },
-        "colour": "#FF9800",
+        "colour": "#8B5000",
     },
     "Selk Crater": {
         "features": {
@@ -127,9 +127,9 @@ def make_weights_w1(w1_new: float) -> dict:
 
 
 def make_figure() -> plt.Figure:
-    dark_bg  = "#0d0d1a"
-    grid_col = "#2a2a3a"
-    txt_col  = "#e8e8f0"
+    dark_bg  = "white"
+    grid_col = "#cccccc"
+    txt_col  = "#222222"
 
     n_sites = len(SITES)
 
@@ -218,7 +218,7 @@ def make_figure() -> plt.Figure:
                     fontsize=6.5,
                 )
 
-            ax.axhline(baseline_val, color="#ffffff", lw=0.8, ls="--", alpha=0.4)
+            ax.axhline(baseline_val, color="#444444", lw=0.8, ls="--", alpha=0.4)
 
             ax.set_xticks(range(len(vals)))
             ax.set_xticklabels(lbls, color=txt_col, fontsize=7)
@@ -249,7 +249,7 @@ if __name__ == "__main__":
     fig = make_figure()
     for ext in ("pdf", "png"):
         out = OUT_DIR / f"sensitivity_analysis.{ext}"
-        fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+        fig.savefig(out, dpi=150, bbox_inches="tight", facecolor="white")
         print(f"  Saved -> {out}")
     plt.close(fig)
     print("Done.")

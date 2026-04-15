@@ -32,7 +32,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 FEATURE_DIR = Path("outputs/present/features/tifs")
 
 FEATURES = [
-    ("liquid_hydrocarbon",       "plasma",   0.25, 0.020, "SAR lake class + dark anomaly"),
+    ("liquid_hydrocarbon",       "YlOrBr",   0.25, 0.020, "SAR lake class + dark anomaly"),
     ("organic_abundance",        "YlOrBr",   0.20, 0.700, "Lopes terrain scores (geo_only)"),
     ("acetylene_energy",         "PuBu",     0.20, 0.350, "SAR backscatter + DEM topo"),
     ("methane_cycle",            "GnBu",     0.15, 0.400, "VIMS density + CIRS gradient"),
@@ -57,10 +57,10 @@ def lat_to_row(lat, nrows=1802):
     return int((90.0 - lat) / 180.0 * nrows)
 
 fig, axes = plt.subplots(2, 4, figsize=(18, 8))
-fig.patch.set_facecolor("#0d0d1a")
+fig.patch.set_facecolor("white")
 
 for ax_flat, (fname, cmap, wi, mu, src_desc) in zip(axes.flat, FEATURES):
-    ax_flat.set_facecolor("#0d0d1a")
+    ax_flat.set_facecolor("white")
     tif_path = FEATURE_DIR / f"{fname}.tif"
 
     if HAS_RASTERIO and tif_path.exists():
@@ -85,37 +85,37 @@ for ax_flat, (fname, cmap, wi, mu, src_desc) in zip(axes.flat, FEATURES):
     )
     # NaN → dark background
     cmap_obj = plt.get_cmap(cmap)
-    cmap_obj.set_bad(color="#111122")
+    cmap_obj.set_bad(color="#eeeeee")
 
     # Annotate key locations
     nrows, ncols = arr.shape
     for loc_name, (lon_w, lat) in KEY_LOCS.items():
         col = lon_to_col(lon_w, ncols)
         row = lat_to_row(lat, nrows)
-        ax_flat.plot(col, row, "o", color="#00ffcc", ms=3, markeredgewidth=0.5,
-                     markeredgecolor="#003333")
+        ax_flat.plot(col, row, "o", color="#007755", ms=3, markeredgewidth=0.5,
+                     markeredgecolor="#003322")
 
     ax_flat.set_title(
         f"{fname}\n$w={wi:.2f}$   $\\mu={mu:.3f}$",
-        color="white", fontsize=7.5, fontfamily="monospace", pad=3,
+        color="black", fontsize=7.5, fontfamily="monospace", pad=3,
     )
     ax_flat.text(0.02, 0.02, src_desc, transform=ax_flat.transAxes,
-                 fontsize=5.5, color="#aaaacc", va="bottom", style="italic")
+                 fontsize=5.5, color="#555566", va="bottom", style="italic")
     ax_flat.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
     for spine in ax_flat.spines.values():
-        spine.set_edgecolor("#334455")
+        spine.set_edgecolor("#aaaaaa")
 
     plt.colorbar(im, ax=ax_flat, fraction=0.03, pad=0.02).ax.tick_params(
-        labelsize=6, colors="white"
+        labelsize=6, colors="black"
     )
 
 fig.suptitle(
     "All Eight Habitability-Proxy Feature Maps — Present (Cassini) Epoch",
-    color="white", fontsize=12, y=1.01,
+    color="black", fontsize=12, y=1.01,
 )
 plt.tight_layout()
 for _ext in ("pdf", "png"):
     out = OUT_DIR / f"feature_panel_present.{_ext}"
-    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor="white")
     print(f"  Saved -> {out}")
 plt.close(fig)

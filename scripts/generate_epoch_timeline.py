@@ -93,10 +93,10 @@ FEATURE_LABELS = {
 }
 
 fig, ax = plt.subplots(figsize=(14, 6))
-fig.patch.set_facecolor("#0d0d1a")
-ax.set_facecolor("#0d0d1a")
+fig.patch.set_facecolor("white")
+ax.set_facecolor("white")
 
-cmap = plt.get_cmap("plasma")
+cmap = plt.get_cmap("YlOrRd")
 
 for yi, fname in enumerate(FEATURE_ORDER):
     if fname not in FEATURE_SCALE_FUNCS:
@@ -123,18 +123,18 @@ for yi, fname in enumerate(FEATURE_ORDER):
         ax.add_patch(rect)
 
     ax.text(-4.15, yi, FEATURE_LABELS[fname],
-            ha="right", va="center", fontsize=8, color="white",
+            ha="right", va="center", fontsize=8, color="black",
             fontfamily="monospace")
 
 # Key event verticals
 EVENTS = [
-    (-3.8, "#ff6644", "LHB peak"),
-    (-1.0, "#88aaff", "Lake formation"),
-    ( 0.0, "#66ddff", "Present"),
-    ( 0.25, "#aaffaa", "+250 Myr"),
-    ( 5.1, "#ffaa44", "Eutectic"),
-    ( 5.9, "#ffcc00", "Ocean peak"),
-    ( 6.0, "#ff3333", "End RGB"),
+    (-3.8, "#cc4422", "LHB peak"),
+    (-1.0, "#3355cc", "Lake formation"),
+    ( 0.0, "#0088bb", "Present"),
+    ( 0.25, "#226622", "+250 Myr"),
+    ( 5.1, "#cc7700", "Eutectic"),
+    ( 5.9, "#997700", "Ocean peak"),
+    ( 6.0, "#cc2222", "End RGB"),
 ]
 for xv, col, label in EVENTS:
     ax.axvline(xv, color=col, linewidth=1.2, linestyle="--", alpha=0.8)
@@ -148,11 +148,11 @@ ax.axvspan(5.1, 6.0, alpha=0.10, color="#4488ff", label="Ocean window")
 ax.set_xlim(-4.2, 7.2)
 ax.set_ylim(-0.7, len(FEATURE_ORDER) + 0.3)
 ax.set_yticks([])
-ax.set_xlabel("Time (Gya from present; negative = past)", color="white", fontsize=10)
+ax.set_xlabel("Time (Gya from present; negative = past)", color="black", fontsize=10)
 ax.set_title("Feature Activity and Scale Factor Across Geologic Time",
-             color="white", fontsize=11)
-ax.tick_params(colors="white")
-ax.spines["bottom"].set_color("#555566")
+             color="black", fontsize=11)
+ax.tick_params(colors="black")
+ax.spines["bottom"].set_color("#aaaaaa")
 ax.spines["top"].set_visible(False)
 ax.spines["left"].set_visible(False)
 ax.spines["right"].set_visible(False)
@@ -162,13 +162,13 @@ sm = plt.cm.ScalarMappable(cmap=cmap, norm=mcolors.Normalize(0, 1))
 sm.set_array([])
 cbar = plt.colorbar(sm, ax=ax, fraction=0.015, pad=0.01)
 cbar.set_label("Scale factor $s_i(t)$  (0 = inactive, 1 = present-epoch amplitude)",
-               color="white", fontsize=8)
-cbar.ax.yaxis.set_tick_params(color="white")
-plt.setp(cbar.ax.yaxis.get_ticklabels(), color="white")
+               color="black", fontsize=8)
+cbar.ax.yaxis.set_tick_params(color="black")
+plt.setp(cbar.ax.yaxis.get_ticklabels(), color="black")
 
 plt.tight_layout()
 for _ext in ("pdf", "png"):
     out = OUT_DIR / f"epoch_feature_timeline.{_ext}"
-    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor="white")
     print(f"  Saved -> {out}")
 plt.close(fig)

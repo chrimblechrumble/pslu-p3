@@ -24,8 +24,8 @@ fig, ax = plt.subplots(figsize=(14, 5))
 ax.set_xlim(0, 14)
 ax.set_ylim(0, 5)
 ax.axis("off")
-fig.patch.set_facecolor("#0d0d1a")
-ax.set_facecolor("#0d0d1a")
+fig.patch.set_facecolor("white")
+ax.set_facecolor("white")
 
 STAGES = [
     {
@@ -42,7 +42,7 @@ STAGES = [
         "body": "Canonical grid\n4490 m/px\n1802×3603 px\nWest-positive\nequirectangular",
         "note": "titan/preprocessing.py\nCoverage: ~67-99%",
         "color": "#1a3a1a",
-        "border": "#44cc44",
+        "border": "#1a8c1a",
     },
     {
         "x": 5.9, "w": 2.5,
@@ -66,7 +66,7 @@ STAGES = [
         "body": "GeoTIFF\nNetCDF stack\n72-epoch animation\n(modelled +\nfull_inference)",
         "note": "outputs/\ntemporal_maps/",
         "color": "#2a2a1a",
-        "border": "#ccaa44",
+        "border": "#7a6200",
     },
 ]
 
@@ -81,10 +81,10 @@ for s in STAGES:
             ha="center", va="center", fontsize=9.5, fontweight="bold",
             color="white", fontfamily="monospace")
     ax.text(s["x"] + s["w"] / 2, 2.55, s["body"],
-            ha="center", va="center", fontsize=7.5, color="#ccddff",
+            ha="center", va="center", fontsize=7.5, color="#ddddff",
             fontfamily="monospace", linespacing=1.5)
     ax.text(s["x"] + s["w"] / 2, 0.75, s["note"],
-            ha="center", va="center", fontsize=6.5, color="#aaaaaa",
+            ha="center", va="center", fontsize=6.5, color="#555555",
             fontfamily="monospace", style="italic", linespacing=1.4)
 
 # Arrows
@@ -92,19 +92,19 @@ for i in range(len(STAGES) - 1):
     x_start = STAGES[i]["x"] + STAGES[i]["w"] + 0.02
     x_end   = STAGES[i + 1]["x"] - 0.02
     ax.annotate("", xy=(x_end, 2.5), xytext=(x_start, 2.5),
-                arrowprops=dict(arrowstyle="->", color="#aaaacc", lw=2.0))
+                arrowprops=dict(arrowstyle="->", color="#334466", lw=2.0))
 
 ax.set_title(
     "Titan Habitability Pipeline — Architecture (v5.0)",
-    color="white", fontsize=12, pad=10,
+    color="black", fontsize=12, pad=10,
 )
 ax.text(7, 0.1,
         "run_pipeline.py  ·  generate_temporal_maps.py  ·  analyse_location_habitability.py",
-        ha="center", va="center", fontsize=7, color="#888899", style="italic")
+        ha="center", va="center", fontsize=7, color="#555566", style="italic")
 
 plt.tight_layout()
 for _ext in ("pdf", "png"):
     out = OUT_DIR / f"pipeline_flowchart.{_ext}"
-    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor="white")
     print(f"  Saved -> {out}")
 plt.close(fig)

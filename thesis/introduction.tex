@@ -62,7 +62,7 @@ timescale of $\sim$4.5\,Gyr.
 \section{The Physical Environment of Titan}
 \label{sec:titan_environment}
 
-\titan{}'s dense nitrogen--methane atmosphere ($\sim$94\% \ce{N2}, 5.65\% \ce{CH4}; surface pressure 1.467\,bar, surface temperature 93.65\,K; \citealt{Fulchignoni2005,Niemann2005}) drives a methane cycle analogous to Earth's water cycle, with rain, rivers, and polar hydrocarbon lakes.  Ultraviolet photolysis of the \ce{N2}/\ce{CH4} mixture continuously produces tholins at $\sim5\times10^{-14}$\,g\,cm$^{-2}$\,s$^{-1}$ \citep{Lavvas2011}, building a global organic sediment layer estimated at 1--10\,km depth over solar system history \citep{Lorenz2008}.
+\titan{}'s dense nitrogen--methane atmosphere ($\sim$94\% \ce{N2}, $\sim$5.6\% \ce{CH4}; surface pressure $\sim$1.5\,bar, surface temperature $\sim$94\,K; \citealt{Fulchignoni2005,Niemann2005}) drives a methane cycle analogous to Earth's water cycle, with rain, rivers, and polar hydrocarbon lakes.  Ultraviolet photolysis of the \ce{N2}/\ce{CH4} mixture continuously produces tholins at $\sim5\times10^{-14}$\,g\,cm$^{-2}$\,s$^{-1}$ \citep{Lavvas2011}, building a global organic sediment layer estimated at 1--10\,km depth over solar system history \citep{Lorenz2008}.
 
 The surface is geologically diverse: equatorial organic dune fields ($\sim$17\% of the SAR-imaged area), plains ($\sim$65\%), and a north polar sea system --- Kraken Mare, Ligeia Mare, and Punga Mare --- containing an estimated 70{,}000\,km$^3$ of liquid hydrocarbons \citep{Mastrogiuseppe2019,Malaska2025}.  The Lopes et al.\ \citeyearpar{Lopes2019} global geomorphological map, derived from the full Cassini SAR dataset, provides the terrain classification underpinning the organic abundance feature used in this thesis.
 
@@ -72,11 +72,21 @@ The interior harbours a global water--ammonia subsurface ocean at $\sim$55--80\,
 \label{sec:prior_theory}
 
 Four habitability pathways have been proposed for \titan{}'s surface.
-The \textit{acetylenotrophy hypothesis} \citep{McKaySmith2005} identifies $\ce{C2H2 + 3H2 -> 2CH4}$ ($\Delta G = -334$\,kJ\,mol$^{-1}$) as a viable energy source at the present epoch, with acetylene and \ce{H2} supplied by atmospheric photolysis; the energetics comfortably exceed the metabolic threshold of terrestrial methanogens even under updated thermochemical estimates \citep{Yanez2024}.
-The \textit{azotosome hypothesis} \citep{Stevenson2015} proposes that acrylonitrile (detected by ALMA; \citealt{Palmer2017}) spontaneously forms stable membrane-like vesicles in liquid methane, providing a plausible route to cellular compartmentalisation without aqueous chemistry.
-\textit{Post-impact melt chemistry} offers a water-based pathway: large impacts produce water--ammonia--organic melt ponds persisting for $10^3$--$10^4$\,yr during which Strecker synthesis yields amino acids from surface aldehydes, ammonia, and HCN \citep{Neish2010, Madan2026}; this is the primary astrobiological rationale for the \dragonfly{} landing site at Selk crater.
-Finally, the \textit{far-future habitability window} \citep{Lorenz1997} arises when red-giant solar luminosity raises \titan{}'s surface above the water--ammonia eutectic (176\,K) for an estimated 200--500\,Myr, creating a global ocean over 16\,Gyr of accumulated organics.
-This thesis provides the first quantitative characterisation of all four scenarios within a unified Bayesian framework across geological time.
+
+\begin{enumerate}[itemsep=0em]
+    \item The \textit{acetylenotrophy hypothesis} \citep{McKaySmith2005} identifies $\ce{C2H2 + 3H2 -> 2CH4}$ ($\Delta G = -334$\,kJ\,mol$^{-1}$) as a viable energy source at the present epoch, with acetylene and \ce{H2} supplied by atmospheric photolysis; the energetics comfortably exceed the metabolic threshold of terrestrial methanogens even under updated thermochemical estimates \citep{Yanez2024}.
+
+    \item The \textit{azotosome hypothesis} \citep{Stevenson2015} proposes that acrylonitrile (detected by ALMA; \citealt{Palmer2017}) spontaneously forms stable membrane-like vesicles in liquid methane, providing a plausible route to cellular compartmentalisation without aqueous chemistry.
+
+
+    \item \textit{Post-impact melt chemistry} offers a water-based pathway: large impacts produce water--ammonia--organic melt ponds persisting for $10^3$--$10^4$\,yr during which Strecker synthesis yields amino acids from surface aldehydes, ammonia, and HCN \citep{Neish2010, Madan2026}; this is the primary astrobiological rationale for the \dragonfly{} landing site at Selk crater.
+
+
+    \item Finally, the \textit{far-future habitability window} \citep{Lorenz1997} arises when red-giant solar luminosity raises \titan{}'s surface above the water--ammonia eutectic (176\,K) for an estimated 200--500\,Myr, creating a global ocean over 16\,Gyr of accumulated organics.
+
+\end{enumerate}
+
+This thesis provides a quantitative characterisation of all four scenarios within a unified Bayesian framework across geological time.
 
 \section{The Cassini--Huygens Mission and Dragonfly}
 \label{sec:missions}
@@ -115,23 +125,28 @@ Beta-conjugate approach is preferred as the most tractable framework
 that preserves physical interpretability at every pixel.
 
 Previous habitability assessments of \titan{} have shared four important
-limitations.  They are predominantly qualitative or point-specific, lacking
-global spatial resolution.  They treat the present epoch as the only relevant
+limitations.  
+
+\begin{enumerate}[itemsep=0em]
+    \item They are predominantly qualitative or point-specific, lacking
+global spatial resolution.  
+    \item They treat the present epoch as the only relevant
 state, ignoring both the LHB prebiotic-chemistry window and the far-future
-red-giant window.  They do not integrate the full suite of Cassini data
-modalities into a unified probabilistic framework.  And they lack the
+red-giant window.  
+    \item They do not integrate the full suite of Cassini data
+modalities into a unified probabilistic framework.  
+    \item They lack the
 reproducibility afforded by an openly archived analysis pipeline.
+
+\end{enumerate}
 
 The closest methodological precedent is \citet{Affholder2021}, who applied
 Bayesian statistical inference to Cassini INMS plume data from Enceladus,
 comparing the observed methane and hydrogen escape rates against models of
 abiotic serpentinisation and biotic methanogenesis.  Their finding --- that
-the observed methane escape rate is most parsimoniously explained by
-biological methanogenesis if the prior probability of life is sufficient ---
-represents the most quantitatively rigorous Bayesian biosignature assessment
-yet published for a solar system body.  The present work is directly inspired
-by this approach, extended from a single-point plume observation to a full-globe,
-multi-feature, multi-epoch spatial mapping.
+the observed methane escape rate is (with a minimal number of assumptions) explained by biological methanogenesis if the prior probability of life is sufficient ---
+represents a comparable Bayesian biosignature assessment for a solar system body.  This thesis is directly inspired
+by their approach, extended from a single-point plume observation to a full-globe, multi-feature, multi-epoch spatial mapping.
 
 The specific research questions addressed are:
 \begin{description}

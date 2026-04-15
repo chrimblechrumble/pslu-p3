@@ -37,11 +37,11 @@ BODIES = [
 ]
 
 CATEGORIES = ["Liquid\navailability", "Organic\ninventory", "Energy\nsource"]
-COLORS = ["#4499ff", "#ffaa44", "#44cc44"]
+COLORS = ["#1255aa", "#8B5000", "#2d7a00"]
 
 fig, ax = plt.subplots(figsize=(13, 6))
-fig.patch.set_facecolor("#0d0d1a")
-ax.set_facecolor("#0d0d1a")
+fig.patch.set_facecolor("white")
+ax.set_facecolor("white")
 
 n_bodies = len(BODIES)
 n_cats   = len(CATEGORIES)
@@ -61,51 +61,51 @@ for bi, (name, liquid, organic, energy, p_h, note) in enumerate(BODIES):
         y = y_base + ci * (bar_h + 0.01)
         ax.barh(y, score, height=bar_h, color=color, alpha=0.85, edgecolor="none")
         ax.text(score + 0.05, y, f"{score:.1f}", va="center",
-                fontsize=7.5, color="white")
+                fontsize=7.5, color="black")
 
     # Body label on left
     label = f"{'★ ' if p_h else ''}{name}"
     ax.text(-0.1, y_base + bar_h, label,
-            ha="right", va="center", fontsize=9, color="white", fontweight="bold")
+            ha="right", va="center", fontsize=9, color="black", fontweight="bold")
     # Model P(H) annotation
     if p_h is not None:
         ax.text(5.35, y_base + bar_h,
                 f"Model $P(H)={p_h:.2f}$",
-                ha="left", va="center", fontsize=7.5, color="#ffdd88",
+                ha="left", va="center", fontsize=7.5, color="#8B6200",
                 style="italic")
     # Note
     ax.text(5.35, y_base, note, ha="left", va="center",
-            fontsize=6.5, color="#aaaacc", style="italic")
+            fontsize=6.5, color="#555555", style="italic")
 
 ax.set_xlim(-4.5, 7.5)
 ax.set_ylim(-0.3, n_bodies * (group_h + 0.15) + 0.2)
-ax.set_xlabel("Qualitative score (1 = low, 5 = very high)", color="white", fontsize=10)
+ax.set_xlabel("Qualitative score (1 = low, 5 = very high)", color="black", fontsize=10)
 ax.set_title("Candidate Habitable Environments in the Solar System",
-             color="white", fontsize=11)
-ax.axvline(5.0, color="#555566", linewidth=0.8, linestyle=":")
+             color="black", fontsize=11)
+ax.axvline(5.0, color="#aaaaaa", linewidth=0.8, linestyle=":")
 ax.set_xticks([1, 2, 3, 4, 5])
-ax.tick_params(colors="white", left=False, labelleft=False)
+ax.tick_params(colors="black", left=False, labelleft=False)
 
 # Legend for bar categories
 from matplotlib.patches import Patch
 legend_handles = [Patch(color=c, label=cat.replace("\n", " "))
                   for c, cat in zip(COLORS, CATEGORIES)]
 ax.legend(handles=legend_handles, loc="lower right", fontsize=9,
-          facecolor="#111122", edgecolor="#334455", labelcolor="white",
+          facecolor="white", edgecolor="#aaaaaa", labelcolor="black",
           framealpha=0.7)
 
 ax.text(-4.4, n_bodies * (group_h + 0.15) - 0.1,
         "★ = assessed in this work",
-        fontsize=7, color="#ffdd88", style="italic")
+        fontsize=7, color="#8B6200", style="italic")
 
 for spine in ax.spines.values():
-    spine.set_edgecolor("#334455")
+    spine.set_edgecolor("#aaaaaa")
 ax.spines["left"].set_visible(False)
 ax.spines["top"].set_visible(False)
 
 plt.tight_layout()
 for _ext in ("pdf", "png"):
     out = OUT_DIR / f"solar_system_comparison.{_ext}"
-    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor="white")
     print(f"  Saved -> {out}")
 plt.close(fig)

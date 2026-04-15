@@ -7,7 +7,17 @@
 \section{Overview of the Analytical Approach}
 \label{sec:overview}
 
-The framework proceeds in four stages: (1) extraction of eight habitability-proxy features from the Cassini observational archive; (2) Bayesian conjugate updating to produce a posterior habitability probability map at each epoch; (3) temporal scaling of features across 72 geological epochs from $-3.8\gya$ to $+6.5\gya$; and (4) ranking of named surface sites by posterior probability.  Acronyms, notation, and the full data-source catalogue are defined in Appendix~\ref{app:notation}.
+The framework proceeds in the following stages:
+\begin{enumerate}
+    \item A one-off data-acquisition stage to gather relevant datasets from varied raw and derived sources. 
+    \item A data preprocessing stage: e.g. some map data needs converting into a canonical mapping projection so that different features can be computed/extracted from the same Titan location  
+    \item Extraction of eight habitability-proxy features from the data
+    \item Bayesian conjugate updating to produce a posterior habitability probability map at each of five named geological 'anchor' epochs, (\textit{Past}, \textit{Lake Formation}, \textit{Present}, \textit{Near Future}, \textit{Future})
+    \item Temporal scaling of features between anchor epochs to produce 72 geological epochs from $-3.8\gya$ to $+6.5\gya$ 
+    \item Ranking of named surface sites by posterior probability
+\end{enumerate}
+
+Acronyms, notation, and the full dataset catalogue are defined in Appendix~\ref{app:notation}.
 
 \subsection{The Bayesian Approach: Motivation and Structure}
 \label{sec:bayes_intro}
@@ -86,8 +96,8 @@ CIRS thermal mosaic     & Global ($\sim$10\textdegree{}) & $f_4$ methane cycle; 
 GTDE/GTDR DEM           & $\sim$90\% (interp.) & $f_6$ topographic complexity \\
 Lopes (2019) geomorph.\ map & $\sim$90\% SAR & $f_2$ organic; $f_7$ geodiversity \\
 Miller (2021) channel map   & SAR coverage     & $f_5$ surface--atmosphere \\
-Tidal $k_2$ (global)    & Global scalar      & $f_8$ subsurface ocean \\
 Hedgepeth (2020) craters & SAR coverage      & $f_7$ geodiversity; past epoch \\
+Tidal $k_2$ (global)    & Global scalar      & $f_8$ subsurface ocean \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -206,8 +216,8 @@ exceptional geodiversity).
     (parameters $\kappa = 5$, $\lambda = 6$; present epoch).  The update
     sharpens and shifts each distribution in proportion to how far the
     site's weighted feature sum $\sum_i w_i f_i$ departs from the prior
-    mean.  Polar lake shores (cyan) shift markedly right; the equatorial
-    crater (red) shifts left; the dune sea (amber) remains near the prior.
+    mean.  Polar lake shores (dark cyan/teal) shift markedly right; the equatorial
+    crater (dark orange-red) shifts left; the dune sea (dark amber) remains near the prior.
     95\% HDI values are given in the legend.}
   \label{fig:bayes_update}
 \end{figure}
@@ -398,27 +408,27 @@ each anchor epoch, the eight features are given physically motivated prior
 means and epoch-specific feature configurations that modify which features
 are active and how they should be interpreted.
 
-\subsection{PAST Epoch: Late Heavy Bombardment ($\sim\!\!-3.5$\,Gya)}
+\subsection{\textit{Past} Epoch: Late Heavy Bombardment ($\sim\!\!-3.5$\,Gya)}
 \label{sec:epoch_past}
 
 The LHB ($\sim$$-4.1$ to $-3.8\gya$; \citealt{Gomes2005}) produced water--ammonia--organic melt ponds persisting $10^3$--$10^4$\,yr at confirmed crater sites \citep{OBrien2005}.  No stable polar hydrocarbon seas existed.  Impact-melt proximity and cryovolcanic flux features are active; liquid hydrocarbon is proxied by melt-pond coverage ($\mu_1=0.025$); organic accumulation is at $\sim$40\% of present-day levels ($\mu_2=0.30$); methane cycle is episodic ($\mu_4=0.20$); subsurface ocean proximity is 2.5$\times$ elevated ($s_8=2.5$) reflecting the thinner ice shell.
 
-\subsection{LAKE\_FORMATION Epoch ($\sim\!\!-1.0$\,Gya)}
+\subsection{\textit{Lake Formation} Epoch ($\sim\!\!-1.0$\,Gya)}
 \label{sec:epoch_lf}
 
 Polar lakes are consolidating: $f_1$ ramps from 10\% to 100\% of present between $-1.0$ and $-0.5\gya$.  Organic accumulation reaches $\sim$75\% of the present level; the methane rain cycle is becoming established.
 
-\subsection{PRESENT Epoch: Cassini Era (2004--2017)}
+\subsection{\textit{Present} Epoch: Cassini Era (2004--2017)}
 \label{sec:epoch_present}
 
 All features at present-epoch values.  Feature maps are the Cassini observational layers described in Section~\ref{sec:data}.  This epoch is the sole anchor for which direct observational posteriors are available.
 
-\subsection{NEAR\_FUTURE Epoch ($+0.25$\,Gya)}
+\subsection{\textit{Near Future} Epoch ($+0.25$\,Gya)}
 \label{sec:epoch_nf}
 
-Solar luminosity is $\sim$1.4\% above present \citep{Bahcall2001}; all features unchanged within model resolution.  The ranking is analytically identical to the PRESENT epoch.
+Solar luminosity is $\sim$1.4\% above present \citep{Bahcall2001}; all features unchanged within model resolution.  The ranking is analytically identical to the \textit{Present} epoch.
 
-\subsection{FUTURE Epoch: Red-Giant Ocean Peak ($+5.9$\,Gya)}
+\subsection{\textit{Future} Epoch: Red-Giant Ocean Peak ($+5.9$\,Gya)}
 \label{sec:epoch_future}
 
 At $+5.1\gya$ surface temperature crosses the water--ammonia eutectic (176\,K; \citealt{Grasset2005}).  Liquid hydrocarbon gives way to a global water--ammonia ocean ($f_1 \to 1.0$ everywhere); subsurface ocean merges with the surface ocean ($f_8 \to 1.0$); organic accumulation reaches $2.5\times$ the present-epoch level.  The methane cycle becomes a water cycle; acetylene photochemistry is suppressed under the water-ammonia atmosphere \citep{Lorenz1997}.

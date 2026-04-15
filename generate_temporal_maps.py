@@ -142,55 +142,55 @@ POLAR_SCALE: float = math.tan(math.radians((90.0 - POLAR_CAP_EDGE_DEG) / 2.0))
 # Colours use 8-digit hex (RRGGBBAA) when transparency is required.
 
 #: Background colour for all figure panels and the figure itself.
-COLOUR_BACKGROUND: str = "#0d0d1a"
+COLOUR_BACKGROUND: str = "#ffffff"
 #: Slightly lighter background used for the space/nodata region inside polar caps.
-COLOUR_SPACE:       str = "#1a1a2e"
+COLOUR_SPACE:       str = "#eeeeee"
 #: Colour applied to the boundary circle of each polar panel.
-COLOUR_POLAR_RING:  str = "#888899"
+COLOUR_POLAR_RING:  str = "#555566"
 #: Colour for map-panel spine edges.
-COLOUR_SPINE:       str = "#444455"
+COLOUR_SPINE:       str = "#aaaaaa"
 #: Colour for poster panel spine edges (slightly lighter).
-COLOUR_SPINE_POSTER: str = "#555566"
+COLOUR_SPINE_POSTER: str = "#bbbbbb"
 #: Marker colour for the top-10 location dots -- chosen to stand out on Plasma.
-COLOUR_MARKER:      str = "#00ffcc"
+COLOUR_MARKER:      str = "#007755"
 #: Dark green used as the marker edge so dots have a visible outline.
-COLOUR_MARKER_EDGE: str = "#003333"
+COLOUR_MARKER_EDGE: str = "#003322"
 #: Leader-line colour for location annotations (semi-transparent).
-COLOUR_LEADER:      str = "#00ffcc88"
-#: Semi-transparent black box behind annotation text.
-COLOUR_ANNOT_BOX:   str = "#000000aa"
+COLOUR_LEADER:      str = "#00775588"
+#: Semi-transparent light box behind annotation text.
+COLOUR_ANNOT_BOX:   str = "#ffffffcc"
 #: Slightly more opaque annotation box used on polar panels.
-COLOUR_ANNOT_BOX_POLAR: str = "#000000bb"
-#: White text for annotation labels.
-COLOUR_TEXT:        str = "#ffffff"
-#: Body text inside the narrative box -- slightly off-white.
-COLOUR_NARRATIVE_BODY: str = "#ccccdd"
+COLOUR_ANNOT_BOX_POLAR: str = "#ffffffdd"
+#: Dark text for annotation labels.
+COLOUR_TEXT:        str = "#111111"
+#: Body text inside the narrative box.
+COLOUR_NARRATIVE_BODY: str = "#222233"
 #: Steel-blue border for the narrative body box.
 COLOUR_NARRATIVE_BORDER: str = "#4466aacc"
-#: Near-black fill for the narrative body box.
-COLOUR_NARRATIVE_FILL: str = "#0a0a1eee"
-#: Amber used for narrative title text.
-COLOUR_NARRATIVE_TITLE: str = "#ffcc33"
+#: Near-white fill for the narrative body box.
+COLOUR_NARRATIVE_FILL: str = "#f8f8ffee"
+#: Dark amber used for narrative title text.
+COLOUR_NARRATIVE_TITLE: str = "#885500"
 #: Amber border for the narrative title pill (semi-transparent).
-COLOUR_TITLE_BORDER: str = "#ffcc3366"
-#: Dark amber fill for the narrative title pill.
-COLOUR_TITLE_FILL:   str = "#1a1200dd"
+COLOUR_TITLE_BORDER: str = "#88550066"
+#: Light amber fill for the narrative title pill.
+COLOUR_TITLE_FILL:   str = "#fff8dddd"
 #: Fully transparent placeholder -- keeps figure layout stable.
 COLOUR_TRANSPARENT:  str = "#00000000"
 #: Progress bar fill colour.
-COLOUR_PROGRESS_BAR: str = "#44aaff"
+COLOUR_PROGRESS_BAR: str = "#2266cc"
 #: Phase label colour for the red-giant water-ocean phase.
-COLOUR_PHASE_OCEAN:  str = "#ff9933"
+COLOUR_PHASE_OCEAN:  str = "#cc6600"
 #: Phase label colour for the Late Heavy Bombardment phase.
-COLOUR_PHASE_LHB:    str = "#ff6644"
+COLOUR_PHASE_LHB:    str = "#cc3311"
 #: Phase label colour for the present Cassini epoch.
-COLOUR_PHASE_PRESENT: str = "#66ddff"
+COLOUR_PHASE_PRESENT: str = "#0088aa"
 #: Phase label colour for all other epochs.
-COLOUR_PHASE_DEFAULT: str = "#aabbff"
+COLOUR_PHASE_DEFAULT: str = "#334499"
 #: Axis label colour on poster panels.
-COLOUR_AXIS_LABEL:   str = "#aaaacc"
+COLOUR_AXIS_LABEL:   str = "#444455"
 #: Poster info-line colour for normal epochs.
-COLOUR_POSTER_INFO:  str = "#aabbff"
+COLOUR_POSTER_INFO:  str = "#334499"
 
 # --- Figure geometry ---------------------------------------------------------
 
@@ -1276,7 +1276,7 @@ def render_frame(
     # rather than transparency guarantees the Agg backend produces the exact
     # same colour as the figure background without compositing artefacts.
     cmap = matplotlib.colormaps["plasma"]
-    cmap.set_bad(color=COLOUR_BACKGROUND)   # matplotlib keyword stays American English
+    cmap.set_bad(color="#eeeeee")   # matplotlib keyword stays American English
     cmap_polar = cmap.copy()               # identical -- both use background colour
     norm = mcolors.Normalize(vmin=VMIN, vmax=VMAX)   # matplotlib API
 
@@ -1357,7 +1357,7 @@ def render_frame(
     # Longitude graticule at 30 deg intervals, latitude at 15 deg intervals
     ax1.set_xticks(range(0, 361, 30))
     ax1.set_yticks(range(-90, 91, 15))
-    ax1.tick_params(colors="white", labelsize=7.5, length=3, width=0.7)
+    ax1.tick_params(colors="black", labelsize=7.5, length=3, width=0.7)
     ax1.set_xlim(0, 360)
     ax1.set_ylim(-90, 90)
 
@@ -1382,8 +1382,8 @@ def render_frame(
                       fc=COLOUR_ANNOT_BOX, ec="none"),
         )
 
-    ax1.set_xlabel("Longitude °W", color="white", fontsize=9)
-    ax1.set_ylabel("Latitude °N", color="white", fontsize=9, labelpad=2)
+    ax1.set_xlabel("Longitude °W", color="black", fontsize=9)
+    ax1.set_ylabel("Latitude °N", color="black", fontsize=9, labelpad=2)
 
     # Always-present markers (Huygens + Dragonfly) not in this epoch's top-10
     for lon_W, lat, label, rank, _pole in ALWAYS_EXTRA:
@@ -1403,7 +1403,7 @@ def render_frame(
             zorder=11,
             bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX, ec="none"),
         )
-    ax1.set_title("Global map  (equirectangular)", color="white",
+    ax1.set_title("Global map  (equirectangular)", color="black",
                   fontsize=10, pad=5)
     for spine in ax1.spines.values():
         spine.set_edgecolor(COLOUR_SPINE)
@@ -1532,7 +1532,7 @@ def render_frame(
     ax2.set_ylim(-_DISC_LIM, _DISC_LIM)
     ax2.axis("off")
     ax2.set_title(f"North polar cap  ({POLAR_CAP_EDGE_DEG:.0f}°–90°N)",
-                  color="white", fontsize=10, pad=5)
+                  color="black", fontsize=10, pad=5)
     _draw_polar_graticule(ax2)
 
     # Overlay north-polar location markers
@@ -1595,7 +1595,7 @@ def render_frame(
     ax3.set_ylim(-_DISC_LIM, _DISC_LIM)
     ax3.axis("off")
     ax3.set_title(f"South polar cap  ({POLAR_CAP_EDGE_DEG:.0f}°–90°S)",
-                  color="white", fontsize=10, pad=5)
+                  color="black", fontsize=10, pad=5)
     _draw_polar_graticule(ax3)
 
     # Overlay south-polar location markers
@@ -1654,10 +1654,10 @@ def render_frame(
     sm  = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     cb  = fig.colorbar(sm, cax=cax, orientation="horizontal")
     cb.set_label("")                # suppress automatic label below bar
-    cb.ax.xaxis.set_tick_params(color="white", labelcolor="white", labelsize=9)
+    cb.ax.xaxis.set_tick_params(color="black", labelcolor="black", labelsize=9)
     # Manual label centred above the bar
     fig.text(0.50, 0.164, "P(habitable | features)",
-             color="white", fontsize=10, ha="center", va="bottom",
+             color="black", fontsize=10, ha="center", va="bottom",
              transform=fig.transFigure)
 
     # -- Site-type marker legend ------------------------------------------
@@ -1687,7 +1687,7 @@ def render_frame(
                       zorder=5, transform=_icon_ax.transData)
         fig.text(_lx + 0.013, _leg_y,
                  _ltxt,
-                 color="white", fontsize=_leg_tsize,
+                 color=COLOUR_TEXT, fontsize=_leg_tsize,
                  ha="left", va="center",
                  transform=fig.transFigure)
 
@@ -1733,7 +1733,7 @@ def render_frame(
     else:
         phase_col = COLOUR_PHASE_DEFAULT
 
-    fig.text(0.5, 0.978, "TITAN SURFACE HABITABILITY", color="white",
+    fig.text(0.5, 0.978, "TITAN SURFACE HABITABILITY", color="black",
              fontsize=15, ha="center", va="bottom", fontweight="bold",
              fontfamily="monospace")
     fig.text(0.5, 0.963, f"Epoch:  {_epoch_label(t).replace(chr(10),' ')}   |   "
@@ -2023,9 +2023,9 @@ def render_frame(
 
     fig.text(
         0.080, 0.448, "\n".join(_feat_lines),
-        color="#d0d8f0", fontsize=7.8, fontfamily="monospace",
+        color="#1a2a6a", fontsize=7.8, fontfamily="monospace",
         va="top", ha="left", linespacing=1.45, zorder=20,
-        bbox=dict(boxstyle="round,pad=0.4", fc="#0a0a1a", ec="#2a3a6a", lw=1.2),
+        bbox=dict(boxstyle="round,pad=0.4", fc="#eef0f8", ec="#2a3a6a", lw=1.2),
         transform=fig.transFigure,
     )
 
@@ -2047,9 +2047,9 @@ def render_frame(
 
     fig.text(
         0.535, 0.448, "\n".join(_colour_lines),
-        color="#f0d8a0", fontsize=7.8, fontfamily="monospace",
+        color="#5a3500", fontsize=7.8, fontfamily="monospace",
         va="top", ha="center", linespacing=1.45, zorder=20,
-        bbox=dict(boxstyle="round,pad=0.4", fc="#0a0a0a", ec="#6a4a00", lw=1.2),
+        bbox=dict(boxstyle="round,pad=0.4", fc="#fdf5e0", ec="#6a4a00", lw=1.2),
         transform=fig.transFigure,
     )
 
@@ -2074,9 +2074,9 @@ def render_frame(
 
     fig.text(
         0.990, 0.448, "\n".join(_assump_lines),
-        color="#c0f0c0", fontsize=7.8, fontfamily="monospace",
+        color="#0a3a0a", fontsize=7.8, fontfamily="monospace",
         va="top", ha="right", linespacing=1.45, zorder=20,
-        bbox=dict(boxstyle="round,pad=0.4", fc="#000a00", ec="#1a5a1a", lw=1.2),
+        bbox=dict(boxstyle="round,pad=0.4", fc="#eef8ee", ec="#1a5a1a", lw=1.2),
         transform=fig.transFigure,
     )
 
@@ -2113,7 +2113,7 @@ def render_poster(
     fig, axes = plt.subplots(2, 3, figsize=(21, 12), facecolor=COLOUR_BACKGROUND)
     fig.suptitle(
         "TITAN SURFACE HABITABILITY — KEY GEOLOGICAL EPOCHS",
-        color="white", fontsize=16, fontweight="bold",
+        color="black", fontsize=16, fontweight="bold",
         fontfamily="monospace", y=0.98,
     )
     # Use subplots_adjust instead of tight_layout to avoid the UserWarning
@@ -2135,8 +2135,8 @@ def render_poster(
                   origin="upper", aspect="auto",
                   extent=[0, 360, -90, 90],
                   interpolation="lanczos")
-        ax.set_title(title, color="white", fontsize=11, fontweight="bold", pad=6)
-        ax.tick_params(colors="white", labelsize=7)
+        ax.set_title(title, color="black", fontsize=11, fontweight="bold", pad=6)
+        ax.tick_params(colors="black", labelsize=7)
         for s in ax.spines.values():
             s.set_edgecolor(COLOUR_SPINE_POSTER)
         ax.set_xlabel("°W", color=COLOUR_AXIS_LABEL, fontsize=8)
@@ -2154,8 +2154,8 @@ def render_poster(
     cax = fig.add_axes([0.15, 0.03, 0.70, 0.018])
     sm  = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     cb  = fig.colorbar(sm, cax=cax, orientation="horizontal")
-    cb.set_label("P(habitable | features)", color="white", fontsize=11)
-    cb.ax.xaxis.set_tick_params(color="white", labelcolor="white", labelsize=9)
+    cb.set_label("P(habitable | features)", color="black", fontsize=11)
+    cb.ax.xaxis.set_tick_params(color="black", labelcolor="black", labelsize=9)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight",
@@ -2848,10 +2848,17 @@ def main(args: argparse.Namespace) -> None:
     for d in [out_dir, tif_dir, anim_dir, poster_dir]:
         d.mkdir(parents=True, exist_ok=True)
 
-    # Optional per-epoch posterior .npy directory
+    # Optional per-epoch posterior .npy directory.
+    # Use animation_full_inference/posteriors/ when in full_inference mode so
+    # that generate_temporal_trend.py (which looks there) finds the files.
+    # Fall back to animation/posteriors/ for the modelled mode.
     npy_dir: Optional[Path] = None
     if getattr(args, "save_posterior_npy", False):
-        npy_dir = anim_dir / "posteriors"
+        _inference_mode_early: str = getattr(args, "inference_mode", "modelled")
+        if _inference_mode_early == "full_inference":
+            npy_dir = anim_dir.parent / "animation_full_inference" / "posteriors"
+        else:
+            npy_dir = anim_dir / "posteriors"
         npy_dir.mkdir(parents=True, exist_ok=True)
         print(f"  Saving per-epoch posteriors to: {npy_dir}")
 

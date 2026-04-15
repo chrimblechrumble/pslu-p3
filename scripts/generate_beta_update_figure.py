@@ -54,7 +54,7 @@ FEATURE_LABELS = {
 
 SITES = {
     "Kraken S Shore": {
-        "colour": "#2196F3",
+        "colour": "#1565C0",
         "features": {
             "liquid_hc": 1.000, "organic":   0.050, "acetylene": 0.200,
             "methane":   0.700, "sai":       0.650, "topo":      0.600,
@@ -62,7 +62,7 @@ SITES = {
         },
     },
     "Belet Dunes": {
-        "colour": "#FF9800",
+        "colour": "#8B5000",
         "features": {
             "liquid_hc": 0.020, "organic":   0.820, "acetylene": 0.450,
             "methane":   0.090, "sai":       0.090, "topo":      0.550,
@@ -100,9 +100,9 @@ def make_figure() -> plt.Figure:
     n_updates = 9
     x = np.linspace(0.001, 0.999, 800)
 
-    dark_bg  = "#0d0d1a"
-    grid_col = "#2a2a3a"
-    txt_col  = "#e8e8f0"
+    dark_bg  = "white"
+    grid_col = "#cccccc"
+    txt_col  = "#222222"
 
     fig = plt.figure(figsize=(16, 10))
     fig.patch.set_facecolor(dark_bg)
@@ -177,7 +177,7 @@ def make_figure() -> plt.Figure:
         p_mean = posterior_mean(a_f, b_f)
         ax.axvline(p_mean, color=site["colour"], lw=2.0, ls="-",
                    label=f"P(H) = {p_mean:.3f}")
-        ax.axvline(0.331, color="#aaaaaa", lw=1.0, ls=":", alpha=0.7,
+        ax.axvline(0.331, color="#888888", lw=1.0, ls=":", alpha=0.7,
                    label="Prior mean")
 
         # Legend: prior + final P(H) + prior mean line + last 3 features
@@ -200,20 +200,20 @@ def make_figure() -> plt.Figure:
     ax_bot.spines[:].set_color(grid_col)
 
     all_sites = {
-        "Kraken S":   {"f": SITES["Kraken S Shore"]["features"], "c": "#2196F3"},
+        "Kraken S":   {"f": SITES["Kraken S Shore"]["features"], "c": "#1565C0"},
         "Ligeia E":   {"f": {"liquid_hc":1.0,"organic":0.05,"acetylene":0.20,
                              "methane":0.70,"sai":0.62,"topo":0.55,
-                             "geodiv":0.76,"ocean":0.04}, "c": "#42A5F5"},
+                             "geodiv":0.76,"ocean":0.04}, "c": "#1976D2"},
         "Punga":      {"f": {"liquid_hc":0.90,"organic":0.06,"acetylene":0.18,
                              "methane":0.65,"sai":0.55,"topo":0.45,
-                             "geodiv":0.65,"ocean":0.04}, "c": "#64B5F6"},
+                             "geodiv":0.65,"ocean":0.04}, "c": "#1E88E5"},
         "Ontario":    {"f": {"liquid_hc":0.85,"organic":0.08,"acetylene":0.22,
                              "methane":0.45,"sai":0.48,"topo":0.42,
-                             "geodiv":0.60,"ocean":0.04}, "c": "#90CAF9"},
-        "Belet":      {"f": SITES["Belet Dunes"]["features"], "c": "#FF9800"},
+                             "geodiv":0.60,"ocean":0.04}, "c": "#42A5F5"},
+        "Belet":      {"f": SITES["Belet Dunes"]["features"], "c": "#8B5000"},
         "Huygens":    {"f": {"liquid_hc":0.02,"organic":0.54,"acetylene":0.38,
                              "methane":0.09,"sai":0.08,"topo":0.14,
-                             "geodiv":0.20,"ocean":0.03}, "c": "#FFC107"},
+                             "geodiv":0.20,"ocean":0.03}, "c": "#966000"},
         "Selk":       {"f": SITES["Selk Crater"]["features"], "c": "#E91E63"},
         "Xanadu":     {"f": {"liquid_hc":0.00,"organic":0.25,"acetylene":0.20,
                              "methane":0.25,"sai":0.15,"topo":0.40,
@@ -245,7 +245,7 @@ def make_figure() -> plt.Figure:
     ax_bot.set_xlabel("P(H | features) with 95% HDI", color=txt_col, fontsize=9)
     ax_bot.set_title("95% Highest Density Intervals at Key Present-Epoch Sites",
                      color=txt_col, fontsize=10, pad=4)
-    ax_bot.axvline(0.331, color="#aaaaaa", lw=1.2, ls=":", alpha=0.7,
+    ax_bot.axvline(0.331, color="#888888", lw=1.2, ls=":", alpha=0.7,
                    label="Prior mean (0.331)")
     ax_bot.set_xlim(0.05, 0.82)
     ax_bot.grid(True, color=grid_col, alpha=0.4, lw=0.5, axis="x")
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     fig = make_figure()
     for ext in ("pdf", "png"):
         out = OUT_DIR / f"beta_update_figure.{ext}"
-        fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+        fig.savefig(out, dpi=150, bbox_inches="tight", facecolor="white")
         print(f"  Saved -> {out}")
     plt.close(fig)
     print("Done.")

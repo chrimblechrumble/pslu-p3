@@ -93,7 +93,7 @@ if npy_dir.exists() and len(list(npy_dir.glob("*.npy"))) > 0:
     print(f"Loading {len(files)} per-frame posterior arrays ...")
     epochs, region_medians = [], {k: [] for k in REGIONS}
     for fp in files:
-        t = float(fp.stem.replace("posterior_", "").replace("_", "."))
+        t = float(fp.stem.replace("posterior_", "").replace("m", "-").replace("_", "."))
         arr = np.load(fp).ravel().astype(np.float32)
         epochs.append(t)
         for rname, mask in REGIONS.items():
@@ -187,25 +187,25 @@ else:
 # Plot
 # ------------------------------------------------------------------
 COLORS = {
-    "Global":                   "#ffffff",
-    "N. Polar (>60°N)":         "#4499ff",
-    "Equatorial (|lat|<30°)":   "#ff8844",
-    "Crater sites":             "#ff4444",
+    "Global":                   "#000000",
+    "N. Polar (>60°N)":         "#2266dd",
+    "Equatorial (|lat|<30°)":   "#cc5500",
+    "Crater sites":             "#cc2222",
 }
 LINESTYLES = {"Global": "-", "N. Polar (>60°N)": "--",
               "Equatorial (|lat|<30°)": "-.", "Crater sites": ":"}
 
 fig, ax = plt.subplots(figsize=(14, 6))
-fig.patch.set_facecolor("#0d0d1a")
-ax.set_facecolor("#0d0d1a")
+fig.patch.set_facecolor("white")
+ax.set_facecolor("white")
 
 for rname, vals in region_medians.items():
-    ax.plot(epochs, vals, color=COLORS.get(rname, "white"),
+    ax.plot(epochs, vals, color=COLORS.get(rname, "black"),
             linestyle=LINESTYLES.get(rname, "-"), linewidth=1.8, label=rname)
 
 # Ocean window shading
 ax.axvspan(5.1, 6.0, alpha=0.12, color="#4488ff", zorder=0)
-ax.text(5.5, 0.76, "Ocean\nwindow", ha="center", fontsize=8, color="#88bbff", style="italic")
+ax.text(5.5, 0.76, "Ocean\nwindow", ha="center", fontsize=8, color="#2255aa", style="italic")
 
 # Key event verticals – labels placed BELOW the x-axis using the
 # mixed-transform (data-x, axes-fraction-y).  clip_on=False lets
@@ -214,14 +214,14 @@ ax.text(5.5, 0.76, "Ocean\nwindow", ha="center", fontsize=8, color="#88bbff", st
 # staggered to two depth levels (-0.06 and -0.14 axis fraction)
 # so they do not overlap each other or the x-tick labels.
 EVENTS = [
-    (-3.8, "#ff6644", "LHB peak −3.8",       -0.06),
-    (-1.0, "#88aaff", "Lake formation −1.0",  -0.06),
-    ( 0.0, "#66ddff", "Present 0.0",          -0.06),
-    ( 0.25,"#aaffaa", "+0.25 Gya",            -0.14),   # stagger: near 0.0
-    ( 4.0, "#ffdd44", "Solar warm +4.0",      -0.06),
-    ( 5.1, "#ffaa44", "Eutectic +5.1",        -0.06),
-    ( 5.9, "#ffcc00", "Ocean peak +5.9",      -0.14),   # stagger: near 5.1/6.0
-    ( 6.0, "#ff3333", "RGB ends +6.0",        -0.06),
+    (-3.8, "#cc3311", "LHB peak −3.8",       -0.06),
+    (-1.0, "#3355cc", "Lake formation −1.0",  -0.06),
+    ( 0.0, "#0088aa", "Present 0.0",          -0.06),
+    ( 0.25,"#226622", "+0.25 Gya",            -0.14),
+    ( 4.0, "#996600", "Solar warm +4.0",      -0.06),
+    ( 5.1, "#cc7700", "Eutectic +5.1",        -0.06),
+    ( 5.9, "#887700", "Ocean peak +5.9",      -0.14),
+    ( 6.0, "#cc2222", "RGB ends +6.0",        -0.06),
 ]
 xfm = ax.get_xaxis_transform()   # x in data coords, y in axes-fraction
 for xv, col, label, yoff in EVENTS:
@@ -233,26 +233,26 @@ for xv, col, label, yoff in EVENTS:
 
 ax.set_xlim(-4.2, 6.7)
 ax.set_ylim(0.10, 0.92)   # raised top so N-polar curve never clips against title
-ax.set_xlabel("Time (Gya from present)", color="white", fontsize=11)
-ax.set_ylabel("Median $P(H \\mid \\mathbf{f})$", color="white", fontsize=11)
+ax.set_xlabel("Time (Gya from present)", color="black", fontsize=11)
+ax.set_ylabel("Median $P(H \\mid \\mathbf{f})$", color="black", fontsize=11)
 # Fixed title: removed rogue backslash before underscore
 ax.set_title("Regional Median Habitability Through Geologic Time",
-             color="white", fontsize=11)
-ax.tick_params(colors="white")
+             color="black", fontsize=11)
+ax.tick_params(colors="black")
 # Legend moved to lower right — clear of the rising N-polar and
 # equatorial curves which are highest at present and near-future.
 ax.legend(loc="upper left",
           bbox_to_anchor=(0.08, 0.7),
           framealpha=0.5, fontsize=9,
-          facecolor="#111122", edgecolor="#334455",
-          labelcolor="white")
+          facecolor="white", edgecolor="#aaaaaa",
+          labelcolor="black")
 for spine in ax.spines.values():
-    spine.set_edgecolor("#334455")
+    spine.set_edgecolor("#aaaaaa")
 
 # Extra bottom margin so the below-axis event labels have room
 plt.subplots_adjust(bottom=0.22)
 for _ext in ("pdf", "png"):
     out = OUT_DIR / f"temporal_habitability_trend.{_ext}"
-    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+    fig.savefig(out, dpi=150, bbox_inches="tight", facecolor="white")
     print(f"  Saved -> {out}")
 plt.close(fig)

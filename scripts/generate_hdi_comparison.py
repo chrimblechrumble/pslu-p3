@@ -76,7 +76,7 @@ SITES = [
         "methane":0.08,"sai":0.12,"topo":0.70,"geodiv":0.22,"ocean":0.030}),
 ]
 
-TYPE_COLOURS = {"lake": "#29B6F6", "land": "#FFA726", "lander": "#EC407A"}
+TYPE_COLOURS = {"lake": "#0075a3", "land": "#8B5000", "lander": "#EC407A"}
 TYPE_LABELS  = {"lake": "Lake/sea shore", "land": "Land site",
                 "lander": "Mission lander"}
 
@@ -94,9 +94,9 @@ def ph_hdi(features: dict, ci: float = 0.95) -> tuple[float, float, float]:
 
 
 def make_figure() -> plt.Figure:
-    dark_bg  = "#0d0d1a"
-    grid_col = "#2a2a3a"
-    txt_col  = "#e8e8f0"
+    dark_bg  = "white"
+    grid_col = "#cccccc"
+    txt_col  = "#222222"
 
     fig, ax = plt.subplots(figsize=(10, 7))
     fig.patch.set_facecolor(dark_bg)
@@ -129,20 +129,20 @@ def make_figure() -> plt.Figure:
         ax.plot([lo, lo], [y - 0.20, y + 0.20], color=col, lw=1.5, zorder=3)
         ax.plot([hi, hi], [y - 0.20, y + 0.20], color=col, lw=1.5, zorder=3)
         ax.scatter([mean], [y], color=col, s=65, zorder=5,
-                   edgecolors="white", linewidths=0.7)
+                   edgecolors="black", linewidths=0.7)
         ax.text(hi + 0.012, y, f"{mean:.3f}", va="center", ha="left",
                 color=col, fontsize=8.5, fontweight="bold")
 
-    ax.axvline(mu0, color="#B0BEC5", lw=1.4, ls="--", alpha=0.8,
+    ax.axvline(mu0, color="#666666", lw=1.4, ls="--", alpha=0.8,
                label=f"Prior mean ({mu0:.3f})")
-    ax.axvline(p_max, color="#B0BEC5", lw=0.7, ls=":", alpha=0.4)
+    ax.axvline(p_max, color="#666666", lw=0.7, ls=":", alpha=0.4)
 
     # Annotations for P_min and P_max at TOP of plot (not clashing with data)
     ax.text(p_min, len(results) - 0.2,
             f"P_min={p_min:.3f}", color="#FF5252",
             fontsize=7.5, va="bottom", ha="center")
     ax.text(p_max, len(results) - 0.2,
-            f"P_max={p_max:.3f}", color="#B0BEC5",
+            f"P_max={p_max:.3f}", color="#666666",
             fontsize=7.5, va="bottom", ha="center")
 
     ax.set_yticks(y_pos)
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     fig = make_figure()
     for ext in ("pdf", "png"):
         out = OUT_DIR / f"fig_hdi_comparison.{ext}"
-        fig.savefig(out, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+        fig.savefig(out, dpi=150, bbox_inches="tight", facecolor="white")
         print(f"  Saved -> {out}")
     plt.close(fig)
     print("Done.")

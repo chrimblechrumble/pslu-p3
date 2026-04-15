@@ -7,7 +7,7 @@
 
 The Bayesian framework produces posterior mean habitability maps $P(H \mid \featurevec)$ at five temporal anchor epochs and, via the multi-epoch reconstruction (Section~\ref{sec:multi_epoch}), at 72 intermediate epochs spanning $-3.8$ to $+6.5\gya$.  All posterior values use the 8-feature thesis formula with $\kappa=5$, $\lambda=6$, $\mu_0=0.331$, giving $P_\text{min}=0.150$ and $P_\text{max}=0.696$.  The 95\% HDI for Selk crater (the most-studied individual site) is $[0.05, 0.52]$, representative of the wide credible intervals arising from the moderate information content of the Cassini observables.
 
-The five epochs are: PAST ($-3.5\gya$, LHB peak), LAKE\_FORMATION ($-1.0\gya$), PRESENT (Cassini era), NEAR\_FUTURE ($+0.25\gya$), and FUTURE ($+5.9\gya$, red-giant ocean).  Figure~\ref{fig:temporal_trend} shows the five posterior maps and the temporal trend.  The global median rises from 0.28 at LHB to 0.41 at PRESENT, then reaches 0.44 at the FUTURE ocean epoch after a transient minimum at $+5.0\gya$.  The north polar/equatorial ratio evolves from $\sim$0.98 at LHB (undifferentiated) to $\sim$1.95 at PRESENT (polar lake dominance) and back to $\sim$1.02 at the FUTURE global ocean.
+The five epochs are: \textit{Past} ($-3.5\gya$, LHB peak), \textit{Lake Formation} ($-1.0\gya$), \textit{Present} (Cassini era), \textit{Near Future} ($+0.25\gya$), and \textit{Future} ($+5.9\gya$, red-giant ocean).  Figure~\ref{fig:temporal_trend} shows the five posterior maps and the temporal trend.  The global median rises from 0.28 at LHB to 0.41 at \textit{Present}, then reaches 0.44 at the \textit{Future} ocean epoch after a transient minimum at $+5.0\gya$.  The north polar/equatorial ratio evolves from $\sim$0.98 at LHB (undifferentiated) to $\sim$1.95 at \textit{Present} (polar lake dominance) and back to $\sim$1.02 at the \textit{Future} global ocean.
 
 \section{Present-Epoch Habitability}
 \label{sec:results_present}
@@ -108,8 +108,8 @@ together reduce the posterior below the global mean.
   \caption{Present-epoch posterior means $P(H \mid \featurevec)$ with
     95\% highest-density intervals (HDI) for twelve representative
     \titan{} surface environments, computed from the Bayesian formula
-    (Eq.~\ref{eq:posterior_mean}).  Cyan bars = lake/sea shore sites;
-    amber bars = land sites.  The dashed vertical line marks the prior
+    (Eq.~\ref{eq:posterior_mean}).  Dark blue bars = lake/sea shore sites;
+    dark amber bars = land sites.  The dashed vertical line marks the prior
     mean $\mu_0 = 0.331$.  The shaded red band marks the prior floor
     $P_\text{min} = 0.150$.  Note that the HDI widths are similar for
     all sites ($\sim$0.4--0.6 units wide), reflecting the weak
@@ -161,13 +161,43 @@ geographic discrimination than terrain-class organic scores which assign
 near-uniform values to the broad plains and dune belt.  This is a known
 consequence of the seamless organic mode (Section~\ref{sec:feat_organic}).
 
+\subsection{\textit{Present} Epoch (Cassini Era): Lake-Margin Dominance}
+\label{sec:top10_present}
+
+At the Cassini epoch the polar lake and lacus margins dominate unambiguously, driven by coincident maximum $f_1{=}1.0$, active methane cycle, and high shore-zone geodiversity.  For the first time, \textit{all ten} top-10 sites are lake or lacus margins --- the three main mares (Kraken, Ligeia, Punga) occupy ranks 1--4, followed by the named north polar lacus (Jingpo, Freeman, Mackay, Cardiel, Koitere) and Ontario Lacus (southern analogue).  Equatorial dune fields do not enter the top-10 at the present epoch, reflecting the dominance of the liquid-hydrocarbon feature ($w_1{=}0.25$) over the organic-abundance and acetylene features.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Top-10 habitable locations at the \textit{Present} Epoch (Cassini era) epoch.  $\triangle$ = lake/sea shore; $\blacksquare$ = land; $\bigstar$ = lander site.  $P(H)$ from Eq.~\ref{eq:posterior_mean}.}
+
+\label{tab:top10_present}
+\begin{tabular}{clrrrp{4.5cm}}
+\toprule
+\textbf{Rank} & \textbf{Location} & \textbf{Lon\,(\textdegree{}W)} & \textbf{Lat\,(\textdegree{}N)} & \textbf{$P(H)$} & \textbf{Dominant features} \\
+\midrule
+1 & $\triangle$\,Kraken Mare S Shore & 310.0 & +72.0 & 0.436 & $f_1{=}1.0$, $f_4{=}0.70$, $f_7{=}0.76$ \\
+2 & $\triangle$\,Ligeia Mare E Shore & 82.0 & +79.0 & 0.433 & $f_1{=}1.0$, $f_4{=}0.70$, $f_7{=}0.76$ \\
+3 & $\triangle$\,Kraken Mare N Shore & 348.0 & +80.0 & 0.427 & $f_1{=}1.0$, $f_4{=}0.68$, $f_7{=}0.72$ \\
+4 & $\triangle$\,Punga Mare Shore & 339.0 & +85.0 & 0.406 & $f_1{=}0.90$, $f_4{=}0.65$, $f_7{=}0.65$ \\
+5 & $\triangle$\,Jingpo Lacus & 336.3 & +73.0 & 0.396 & $f_1{=}0.88$, $f_4{=}0.62$, $f_7{=}0.60$ \\
+6 & $\triangle$\,Freeman Lacus & 210.0 & +83.0 & 0.385 & $f_1{=}0.80$, $f_4{=}0.62$; N of Ligeia \\
+7 & $\triangle$\,Ontario Lacus & 179.0 & -72.0 & 0.384 & $f_1{=}0.85$, $f_4{=}0.45$, southern analogue \\
+8 & $\triangle$\,Mackay Lacus & 262.8 & +77.5 & 0.383 & $f_1{=}0.80$, $f_4{=}0.60$, W of Kraken \\
+9 & $\triangle$\,Cardiel Lacus & 128.0 & +78.0 & 0.379 & $f_1{=}0.78$, $f_4{=}0.60$; E of Ligeia \\
+10 & $\triangle$\,Koitere Lacus & 154.0 & +73.0 & 0.368 & $f_1{=}0.72$, $f_4{=}0.58$, IAU named \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
 \section{Past-Epoch Habitability: Impact-Melt Chemistry}
 \label{sec:results_past}
 
 \subsection{Geographic Pattern}
 \label{sec:past_spatial}
 
-The PAST epoch map is qualitatively distinct from the PRESENT.  The north
+The \textit{Past} epoch map is qualitatively distinct from the \textit{Present}.  The north
 polar enhancement disappears entirely ($s_1 = 0.10$; no polar seas).  In
 its place, a spatially clustered pattern emerges centred on confirmed impact
 structures: the impact-melt proximity feature creates localised enhancements
@@ -205,20 +235,49 @@ decomposition, and HCN from the nitrogen-rich atmosphere.
 \subsection{Impact Structure Habitability Scores}
 \label{sec:craters}
 
-In the 8-feature thesis formula, large impact craters do not dominate the present-epoch ranking because the model lacks a dedicated impact-melt proxy feature (animation-only; Section~\ref{sec:multi_epoch}).  Menrva (392\,km) achieves the highest crater-class score ($P(H){\approx}0.27$ at the PAST epoch after $\times$2.5 subsurface ocean scaling), ranking 11th overall --- just below the equatorial organic sites that benefit from the globally elevated acetylene proxy.
+In the 8-feature thesis formula, large impact craters do not dominate the present-epoch ranking because the model lacks a dedicated impact-melt proxy feature (animation-only; Section~\ref{sec:multi_epoch}).  Menrva (392\,km) achieves the highest crater-class score ($P(H){\approx}0.27$ at the \textit{Past} epoch after $\times$2.5 subsurface ocean scaling), ranking 11th overall --- just below the equatorial organic sites that benefit from the globally elevated acetylene proxy.
 
-Selk crater (80\,km) is the exception in terms of scientific significance, meriting detailed analysis in Section~\ref{sec:selk}.  The other large craters (Hano, Afekan, Sinlap, Ksa) score $P(H)=0.24$--0.28 at the PAST epoch, below the equatorial dune sites in all epochs, because their organic abundance ($f_2=0.30$--0.42) is substantially lower than the dune belt ($f_2=0.78$--0.82).  This ordering --- organic-seed sites outscoring craters in all epochs except at the LHB peak when subsurface ocean scaling is maximal --- is physically interpretable: the dune-field organic inventory accumulated over 4\,Gyr of UV photolysis dwarfs the locally-mixed material in any individual crater floor.  The geodiversity scores ($f_7$) are Selk's distinguishing feature: $f_7=0.629$ at Selk versus $f_7=0.22$--0.36 for all other craters, reflecting the unique terrain-class diversity at the Shangri-La dune--plains boundary.
+Selk crater (80\,km) is the exception in terms of scientific significance, meriting detailed analysis in Section~\ref{sec:selk}.  The other large craters (Hano, Afekan, Sinlap, Ksa) score $P(H)=0.24$--0.28 at the \textit{Past} epoch, below the equatorial dune sites in all epochs, because their organic abundance ($f_2=0.30$--0.42) is substantially lower than the dune belt ($f_2=0.78$--0.82).  This ordering --- organic-seed sites outscoring craters in all epochs except at the LHB peak when subsurface ocean scaling is maximal --- is physically interpretable: the dune-field organic inventory accumulated over 4\,Gyr of UV photolysis dwarfs the locally-mixed material in any individual crater floor.  The geodiversity scores ($f_7$) are Selk's distinguishing feature: $f_7=0.629$ at Selk versus $f_7=0.22$--0.36 for all other craters, reflecting the unique terrain-class diversity at the Shangri-La dune--plains boundary.
+
+\subsection{\textit{Past} Epoch ($-3.5$\,Gya): Cryovolcanic and Acetylene-Baseline Chemistry}
+\label{sec:top10_past}
+
+At $-3.5\,\gya$, the polar lake system does not yet exist ($s_1{=}0.10$) and organic inventory has accumulated for only $\sim$0.5\,Gyr ($s_2{=}0.125$). However, the young Sun's UV output drives an acetylene-energy proxy $\sim$2$\times$ the present value ($s_3{\approx}2.1$), and subsurface ocean proximity is 2.5$\times$ elevated globally ($s_8{=}2.5$) due to reduced ice-shell thickness.  Under this parameter configuration the model ranks cryovolcanic conduit sites (Hotei, Sotra) first, followed by proto-polar-lake basins (Kraken, Ligeia) and equatorial organic seeds (Belet, Shangri-La) whose acetylene energy partly offsets low liquid and organic contributions.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Top-10 habitable locations at the \textit{Past} Epoch ($-3.5$\,Gya) epoch.  $\triangle$ = lake/sea shore; $\blacksquare$ = land; $\bigstar$ = lander site.  $P(H)$ from Eq.~\ref{eq:posterior_mean}.}
+\label{tab:top10_past}
+\begin{tabular}{clrrrp{4.5cm}}
+\toprule
+\textbf{Rank} & \textbf{Location} & \textbf{Lon\,(\textdegree{}W)} & \textbf{Lat\,(\textdegree{}N)} & \textbf{$P(H)$} & \textbf{Dominant features} \\
+\midrule
+1 & $\blacksquare$\,Kraken (proto-basin) & 310.0 & +68.0 & 0.295 & $s_8{=}2.5$; elevated subsurface, no lake yet \\
+2 & $\blacksquare$\,Hotei Regio & 75.0 & -26.0 & 0.295 & Cryovol.\ conduit, $f_8(t){=}0.35$, $f_5(t){=}0.28$ \\
+3 & $\blacksquare$\,Belet (proto-dunes) & 250.0 & +7.0 & 0.295 & $f_3(t){=}0.93$ (high UV); organic seed \\
+4 & $\blacksquare$\,Shangri-La & 155.0 & -5.0 & 0.294 & $f_3(t){=}0.93$; equatorial organic baseline \\
+5 & $\blacksquare$\,Ligeia (proto-basin) & 78.0 & +79.0 & 0.293 & $s_8{=}2.5$; deep polar basin \\
+6 & $\blacksquare$\,Fensal & 20.0 & +15.0 & 0.290 & $f_3(t){=}0.91$; equatorial organic \\
+7 & $\blacksquare$\,Sotra Facula & 144.5 & +9.8 & 0.289 & Cryovol.\ conduit, $f_8(t){=}0.30$ \\
+8 & $\blacksquare$\,Aztlan & 100.0 & +10.0 & 0.289 & $f_3(t){=}0.92$; equatorial organic \\
+9 & $\blacksquare$\,Kraken N (proto-basin) & 348.0 & +80.0 & 0.285 & $s_8{=}2.5$; north polar basin \\
+10 & $\blacksquare$\,Punga (proto-basin) & 339.0 & +85.5 & 0.277 & $s_8{=}2.5$; polar basin \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \section{Lake-Formation Transition: $-1.0$ to $-0.5$\,Gya}
 \label{sec:results_lf}
 
-The LAKE\_FORMATION anchor at $-1.0\gya$ captures \titan{} as the polar
-lake system begins to consolidate.  The prior mean $\mu_0 = 0.331$ is identical to PRESENT, reflecting
+The \textit{Lake Formation} anchor at $-1.0\gya$ captures \titan{} as the polar
+lake system begins to consolidate.  The prior mean $\mu_0 = 0.331$ is identical to \textit{Present}, reflecting
 the same eight features and prior specification.  The spatial distribution
-differs from PRESENT because the liquid hydrocarbon scale is only 10\%
+differs from \textit{Present} because the liquid hydrocarbon scale is only 10\%
 of present, and the impact-melt proximity feature still contributes
 a residual crater-site signal.  Comparing this
-map to PRESENT reveals three changes: (1) the north polar lake margin signal
+map to \textit{Present} reveals three changes: (1) the north polar lake margin signal
 begins to emerge above background; (2) the impact-melt crater signal has
 largely faded to background; (3) the cryovolcanic flux feature, still
 moderately elevated relative to the present, provides residual local
@@ -231,25 +290,62 @@ into the increasing trend that reaches the present-epoch plateau.  In the
 multi-epoch reconstruction, this interval shows the highest pixel-wise
 posterior change rate anywhere in the $-3.8$ to $+4.0\gya$ range.
 
-\section{Near-Future Epoch: The Stable Plateau}
+\subsection{\textit{Lake Formation} Epoch ($-1.0$\,Gya): Polar Lakes Establishing}
+\label{sec:top10_lakeform}
+
+At $-1.0\,\gya$ the polar lake system is just beginning to form:
+$s_1{=}0.10$ still gives proto-lake-shore sites only a small liquid bonus.
+Consequently, the top-6 at this epoch are all \textit{land} sites ---
+equatorial organic-rich dune fields and cryovolcanic candidates --- driven
+by high acetylene-energy ($f_3(t){\approx}1.9{\times}$) and accumulating
+organic inventory ($s_2{=}0.47$).  The proto-lake-shore sites (Kraken,
+Ligeia, Kraken N, Punga) occupy ranks 7--10 as the rising liquid signal
+begins to differentiate them from the equatorial background.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Top-10 habitable locations at the \textit{Lake Formation} Epoch ($-1.0$\,Gya) epoch.  $\triangle$ = lake/sea shore; $\blacksquare$ = land; $\bigstar$ = lander site.  $P(H)$ from Eq.~\ref{eq:posterior_mean}.}
+
+\label{tab:top10_lakeform}
+\begin{tabular}{clrrrp{4.5cm}}
+\toprule
+\textbf{Rank} & \textbf{Location} & \textbf{Lon\,(\textdegree{}W)} & \textbf{Lat\,(\textdegree{}N)} & \textbf{$P(H)$} & \textbf{Dominant features} \\
+\midrule
+1 & $\blacksquare$\,Belet Dunes & 250.0 & +7.0 & 0.301 & $f_2$ building, $f_3(t){=}1.9{\times}$; no lake \\
+2 & $\blacksquare$\,Shangri-La & 155.0 & -5.0 & 0.300 & $f_2$ building, $f_3(t){=}1.9{\times}$ \\
+3 & $\blacksquare$\,Hotei Regio & 75.0 & -26.0 & 0.298 & Cryovol.\ conduit, $f_8(t){=}0.18$ \\
+4 & $\blacksquare$\,Fensal & 20.0 & +15.0 & 0.297 & Equatorial organic; high acetylene \\
+5 & $\blacksquare$\,Aztlan & 100.0 & +10.0 & 0.294 & Equatorial organic; high acetylene \\
+6 & $\blacksquare$\,Sotra Facula & 144.5 & +9.8 & 0.291 & Cryovol.\ conduit, $f_8(t){=}0.16$ \\
+7 & $\triangle$\,Kraken S Shore & 310.0 & +72.0 & 0.288 & $f_1{=}0.10$; liquid just appearing \\
+8 & $\triangle$\,Ligeia E Shore & 78.0 & +79.0 & 0.286 & $f_1{=}0.10$; polar basin forming \\
+9 & $\triangle$\,Kraken N Shore & 348.0 & +80.0 & 0.280 & $f_1{=}0.10$; polar basin forming \\
+10 & $\triangle$\,Punga Shore & 339.0 & +85.5 & 0.273 & $f_1{=}0.10$; polar basin forming \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{\textit{Near Future} Epoch: The Stable Plateau}
 \label{sec:results_nf}
 
-The NEAR\_FUTURE epoch at $+0.25\gya$ confirms the expected near-identity
-with the PRESENT.  The $\sim$2.5\% luminosity increase corresponds to a
+The \textit{Near Future} epoch at $+0.25\gya$ confirms the expected near-identity
+with the \textit{Present}.  The $\sim$2.5\% luminosity increase corresponds to a
 surface temperature rise of $\sim$1--2\,K, entirely absorbed by the prior
 and producing no spatially structured change in any feature.  \titan{}'s
 lake--organic habitability system is robust to the small luminosity
 perturbations of the main-sequence solar evolution: the polar seas persist,
 the methane cycle continues, and the organic inventory grows at the same
-rate.  The NEAR\_FUTURE and PRESENT maps are functionally equivalent
+rate.  The \textit{Near Future} and \textit{Present} maps are functionally equivalent
 habitability states.  Figure~\ref{fig:near_future_global} confirms this
-visually: the spatial correlation between the NEAR\_FUTURE and PRESENT
+visually: the spatial correlation between the \textit{Near Future} and \textit{Present}
 posteriors exceeds $r = 0.999$.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{images/frame_034.png}
-  \caption{Near-future epoch ($+0.25\gya$) posterior mean habitability map.
+  \caption{\textit{Near Future} epoch ($+0.25\gya$) posterior mean habitability map.
     The spatial pattern is indistinguishable from the present epoch
     (Figure~\ref{fig:present_global}): the same north polar lake-margin
     enhancement and equatorial dune-belt signature are present, reflecting
@@ -260,13 +356,46 @@ posteriors exceeds $r = 0.999$.
   \label{fig:near_future_global}
 \end{figure}
 
-\section{Future-Epoch Habitability: The Red-Giant Ocean}
+\subsection{\textit{Near Future} Epoch ($+0.25$\,Gya): Stable Plateau}
+\label{sec:top10_nearfuture}
+
+\begin{table}[H]
+\centering
+\small
+\caption{\textit{Near Future} epoch ($+0.25\,\gya$) top-10 habitable locations.
+  Analytically identical to \textit{Present}: the $+1.4\%$ solar luminosity increase
+  has negligible effect on any feature (spatial correlation $r{>}0.999$).}
+\label{tab:top10_nearfuture}
+\begin{tabular}{clrrrp{4.5cm}}
+\toprule
+\textbf{Rank} & \textbf{Location} & \textbf{Lon\,(\textdegree{}W)} &
+  \textbf{Lat\,(\textdegree{}N)} & \textbf{$P(H)$} & \textbf{Notes} \\
+\midrule
+1  & $\triangle$\,Kraken Mare S Shore  & 310.0 & +72.0 & 0.436 & Unchanged from \textit{Present} \\
+2  & $\triangle$\,Ligeia Mare E Shore  &  82.0 & +79.0 & 0.433 & Unchanged from \textit{Present} \\
+3  & $\triangle$\,Kraken Mare N Shore  & 348.0 & +80.0 & 0.427 & Unchanged from \textit{Present} \\
+4  & $\triangle$\,Punga Mare Shore     & 339.0 & +85.5 & 0.406 & Unchanged from \textit{Present} \\
+5  & $\triangle$\,Jingpo Lacus         & 336.3 & +73.0 & 0.396 & Unchanged from \textit{Present} \\
+6  & $\triangle$\,Freeman Lacus        & 210.0 & +83.0 & 0.385 & Unchanged from \textit{Present} \\
+7  & $\triangle$\,Ontario Lacus        & 179.0 & -72.0 & 0.384 & Unchanged from \textit{Present} \\
+8  & $\triangle$\,Mackay Lacus         & 262.8 & +77.5 & 0.383 & Unchanged from \textit{Present} \\
+9  & $\triangle$\,Cardiel Lacus        & 128.0 & +78.0 & 0.379 & Unchanged from \textit{Present} \\
+10 & $\triangle$\,Koitere Lacus        & 154.0 & +73.0 & 0.368 & Unchanged from \textit{Present} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \textit{Near Future} epoch ($+0.25\,\gya$) is analytically identical to \textit{Present}: the $+1.4\%$ solar luminosity increase has negligible effect on any feature (spatial correlation $r{>}0.999$).  All rankings and scores are unchanged; see Section~\ref{sec:top10_present}.
+
+
+
+\section{\textit{Future} Epoch Habitability: The Red-Giant Ocean}
 \label{sec:results_future}
 
 \subsection{The Thermal Transition and Future Ocean}
 \label{sec:future_thermal}
 
-The FUTURE epoch ($+5.9\gya$) models the red-giant ocean peak at $T_s\approx466$\,K, well above the water--ammonia eutectic (176\,K) at all latitudes.  Both $f_1$ (liquid availability) and $f_8$ (ocean proximity) are overridden to 1.0 globally, producing a posterior mean of $\mu_\text{post}\approx0.44$ over the entire surface --- the highest global mean of any epoch.  Cryovolcanic sites (Hotei, Sotra) lead the rankings because they combine high organic accumulation with elevated surface--atmosphere coupling, delivering prior organic material directly into the ocean.  The ocean window spans $+5.1$ to $+6.0\gya$ ($\sim$0.9\,Gyr), bracketed by the eutectic crossing and solar luminosity collapse.
+The \textit{Future} epoch ($+5.9\gya$) models the red-giant ocean peak at $T_s\approx466$\,K, well above the water--ammonia eutectic (176\,K) at all latitudes.  Both $f_1$ (liquid availability) and $f_8$ (ocean proximity) are overridden to 1.0 globally, producing a posterior mean of $\mu_\text{post}\approx0.44$ over the entire surface --- the highest global mean of any epoch.  Cryovolcanic sites (Hotei, Sotra) lead the rankings because they combine high organic accumulation with elevated surface--atmosphere coupling, delivering prior organic material directly into the ocean.  The ocean window spans $+5.1$ to $+6.0\gya$ ($\sim$0.9\,Gyr), bracketed by the eutectic crossing and solar luminosity collapse.
 
 \begin{figure}[H]
   \centering
@@ -281,6 +410,37 @@ The FUTURE epoch ($+5.9\gya$) models the red-giant ocean peak at $T_s\approx466$
     indicates the red-giant habitable ocean window ($+5.1$--$6.0\gya$).}
   \label{fig:temporal_trend}
 \end{figure}
+
+\subsection{\textit{Future} Epoch ($+5.9$\,Gya): Global Ocean}
+\label{sec:top10_future}
+
+By $+5.9\,\gya$ the water--ammonia eutectic has been exceeded for $\sim$800\,Myr and a global ocean covers the surface.  The same 8-feature Bayesian formula is used, but $f_1$ (liquid HC) and $f_8$ (subsurface ocean) are both overridden to 1.0 everywhere, and organic accumulation reaches $2.5\times$ the present level.  Cryovolcanic sites (Hotei, Sotra) lead the rankings because they combine the highest $f_8$ and $f_5$ values with maximal $f_1$, representing direct conduits between the ocean and accumulated organic substrate.  Inundated equatorial dune fields rank $\sim$3--6 as their millennia of accumulated tholins dissolve into the global ocean.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Top-10 habitable locations at the \textit{Future} Epoch ($+5.9$\,Gya) epoch.  $\triangle$ = lake/sea shore; $\blacksquare$ = land; $\bigstar$ = lander site.  $P(H)$ from Eq.~\ref{eq:posterior_mean}.}
+
+\label{tab:top10_future}
+\begin{tabular}{clrrrp{4.5cm}}
+\toprule
+\textbf{Rank} & \textbf{Location} & \textbf{Lon\,(\textdegree{}W)} & \textbf{Lat\,(\textdegree{}N)} & \textbf{$P(H)$} & \textbf{Dominant features} \\
+\midrule
+1 & $\blacksquare$\,Hotei Regio & 75.0 & -26.0 & 0.464 & $f_1{=}1.0$ (global ocean), $f_8{=}1.0$, $f_2$ high \\
+2 & $\blacksquare$\,Sotra Facula & 144.5 & +9.8 & 0.462 & $f_1{=}1.0$, $f_8{=}1.0$, cryovol.\ substrate \\
+3 & $\blacksquare$\,Belet (inundated) & 250.0 & +7.0 & 0.450 & $f_1{=}1.0$, $f_2$ peak, dissolved organics \\
+4 & $\blacksquare$\,Shangri-La (inund.) & 155.0 & -5.0 & 0.449 & $f_1{=}1.0$, $f_2$ peak, inundated dune field \\
+5 & $\blacksquare$\,Fensal (inundated) & 20.0 & +15.0 & 0.448 & $f_1{=}1.0$, $f_2{=}0.96{\times}2.5$; dissolved \\
+6 & $\blacksquare$\,Aztlan (inundated) & 100.0 & +10.0 & 0.447 & $f_1{=}1.0$, organic stockpile dissolved \\
+7 & $\blacksquare$\,Hano Crater & 349.0 & -38.6 & 0.441 & $f_1{=}1.0$, $f_8{=}1.0$; ocean floor \\
+8 & $\bigstar$\,Huygens Site & 192.3 & -10.6 & 0.436 & $f_1{=}1.0$; organic plains now submerged \\
+9 & $\blacksquare$\,Afekan (inundated) & 200.5 & -1.4 & 0.426 & $f_1{=}1.0$, former equatorial floor \\
+10 & $\triangle$\,Kraken (ocean floor) & 310.0 & +68.0 & 0.425 & $f_1{=}1.0$, former polar basin \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
 
 \section{Selk Crater: Detailed Analysis}
 \label{sec:selk}
@@ -339,7 +499,7 @@ distinctive in geomorphological diversity but unremarkable in methane
 cycle and surface--atmosphere interaction features.
 
 The past-epoch Bayesian posterior of $P(H) = 0.23$ (28th
-percentile of the PAST distribution) reflects the declining impact-melt
+percentile of the \textit{Past} distribution) reflects the declining impact-melt
 contribution as the LHB fades.  Selk's distinctiveness at both epochs
 lies in its terrain diversity, not in a globally elevated posterior.
 
@@ -351,7 +511,7 @@ lies in its terrain diversity, not in a globally elevated posterior.
     \textit{Left panel:} heatmap of all eight normalised feature values
     $[0,1]$ for each site (pale yellow $= 0$; dark red $= 1.0$).  The nine
     columns correspond to the eight standard features plus the impact-melt
-    proxy (active only at the PAST epoch; zero here).
+    proxy (active only at the \textit{Past} epoch; zero here).
     \textit{Right panel:} posterior mean $P(H \mid \featurevec)$ for each
     site; the dashed vertical line marks the prior mean posterior $\mu_0 = 0.331$
     (the Bayesian expected value when all features equal their prior means).
@@ -387,166 +547,6 @@ motivated the mission's site selection.
 \label{sec:lake_sites}
 
 The highest-scoring individual shoreline sites --- Kraken S (\#1, $P(H)=0.436$), Ligeia E (\#2, $P(H)=0.433$), Kraken N (\#3, $P(H)=0.427$), and Punga (\#4, $P(H)=0.406$) --- all combine maximum liquid hydrocarbon ($f_1=1.0$), active methane cycle ($f_4\approx0.65$--0.70), and elevated shore-zone geodiversity ($f_7\approx0.72$--0.76).  Ontario Lacus (southern analogue, \#7) scores lower due to suppressed methane cycle under southern-summer evaporation ($f_4=0.45$) and reduced geodiversity.  The \huygens{} landing site scores $P(H)=0.33$ --- near the present-epoch median --- consistent with its equatorial plains setting, lacking both surface liquid and high geodiversity.  Shore-zone liquid--land interface, rather than open-water depth, is the primary habitability determinant.
-
-\section{Top-10 Habitable Locations by Epoch}
-\label{sec:top10}
-
-The following subsections rank the ten highest-scoring surface locations for each temporal epoch, computed from the Bayesian posterior mean (Eq.~\ref{eq:posterior_mean}) using site-specific feature values estimated from Cassini observations.  Symbols: $\triangle$ lake/sea shore; $\blacksquare$ land site.  Lander sites (Huygens, Dragonfly) are indicated where they rank in the top 10.
-
-\subsection{PAST Epoch ($-3.5$\,Gya): Cryovolcanic and Acetylene-Baseline Chemistry}
-\label{sec:top10_past}
-
-At $-3.5\,\gya$, the polar lake system does not yet exist ($s_1{=}0.10$) and organic inventory has accumulated for only $\sim$0.5\,Gyr ($s_2{=}0.125$). However, the young Sun's UV output drives an acetylene-energy proxy $\sim$2$\times$ the present value ($s_3{\approx}2.1$), and subsurface ocean proximity is 2.5$\times$ elevated globally ($s_8{=}2.5$) due to reduced ice-shell thickness.  Under this parameter configuration the model ranks cryovolcanic conduit sites (Hotei, Sotra) first, followed by proto-polar-lake basins (Kraken, Ligeia) and equatorial organic seeds (Belet, Shangri-La) whose acetylene energy partly offsets low liquid and organic contributions.
-
-\begin{table}[H]
-\centering
-\small
-\caption{Top-10 habitable locations at the PAST Epoch ($-3.5$\,Gya) epoch.  $\triangle$ = lake/sea shore; $\blacksquare$ = land; $\bigstar$ = lander site.  $P(H)$ from Eq.~\ref{eq:posterior_mean}.}
-\label{tab:top10_past}
-\begin{tabular}{clrrrp{4.5cm}}
-\toprule
-\textbf{Rank} & \textbf{Location} & \textbf{Lon\,(\textdegree{}W)} & \textbf{Lat\,(\textdegree{}N)} & \textbf{$P(H)$} & \textbf{Dominant features} \\
-\midrule
-1 & $\blacksquare$\,Kraken (proto-basin) & 310.0 & +68.0 & 0.295 & $s_8{=}2.5$; elevated subsurface, no lake yet \\
-2 & $\blacksquare$\,Hotei Regio & 75.0 & -26.0 & 0.295 & Cryovol.\ conduit, $f_8(t){=}0.35$, $f_5(t){=}0.28$ \\
-3 & $\blacksquare$\,Belet (proto-dunes) & 250.0 & +7.0 & 0.295 & $f_3(t){=}0.93$ (high UV); organic seed \\
-4 & $\blacksquare$\,Shangri-La & 155.0 & -5.0 & 0.294 & $f_3(t){=}0.93$; equatorial organic baseline \\
-5 & $\blacksquare$\,Ligeia (proto-basin) & 78.0 & +79.0 & 0.293 & $s_8{=}2.5$; deep polar basin \\
-6 & $\blacksquare$\,Fensal & 20.0 & +15.0 & 0.290 & $f_3(t){=}0.91$; equatorial organic \\
-7 & $\blacksquare$\,Sotra Facula & 144.5 & +9.8 & 0.289 & Cryovol.\ conduit, $f_8(t){=}0.30$ \\
-8 & $\blacksquare$\,Aztlan & 100.0 & +10.0 & 0.289 & $f_3(t){=}0.92$; equatorial organic \\
-9 & $\blacksquare$\,Kraken N (proto-basin) & 348.0 & +80.0 & 0.285 & $s_8{=}2.5$; north polar basin \\
-10 & $\blacksquare$\,Punga (proto-basin) & 339.0 & +85.5 & 0.277 & $s_8{=}2.5$; polar basin \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{LAKE\_FORMATION Epoch ($-1.0$\,Gya): Polar Lakes Establishing}
-\label{sec:top10_lakeform}
-
-At $-1.0\,\gya$ the polar lake system is just beginning to form:
-$s_1{=}0.10$ still gives proto-lake-shore sites only a small liquid bonus.
-Consequently, the top-6 at this epoch are all \textit{land} sites ---
-equatorial organic-rich dune fields and cryovolcanic candidates --- driven
-by high acetylene-energy ($f_3(t){\approx}1.9{\times}$) and accumulating
-organic inventory ($s_2{=}0.47$).  The proto-lake-shore sites (Kraken,
-Ligeia, Kraken N, Punga) occupy ranks 7--10 as the rising liquid signal
-begins to differentiate them from the equatorial background.
-
-\begin{table}[H]
-\centering
-\small
-\caption{Top-10 habitable locations at the LAKE\_FORMATION Epoch ($-1.0$\,Gya) epoch.  $\triangle$ = lake/sea shore; $\blacksquare$ = land; $\bigstar$ = lander site.  $P(H)$ from Eq.~\ref{eq:posterior_mean}.}
-
-\label{tab:top10_lakeform}
-\begin{tabular}{clrrrp{4.5cm}}
-\toprule
-\textbf{Rank} & \textbf{Location} & \textbf{Lon\,(\textdegree{}W)} & \textbf{Lat\,(\textdegree{}N)} & \textbf{$P(H)$} & \textbf{Dominant features} \\
-\midrule
-1 & $\blacksquare$\,Belet Dunes & 250.0 & +7.0 & 0.301 & $f_2$ building, $f_3(t){=}1.9{\times}$; no lake \\
-2 & $\blacksquare$\,Shangri-La & 155.0 & -5.0 & 0.300 & $f_2$ building, $f_3(t){=}1.9{\times}$ \\
-3 & $\blacksquare$\,Hotei Regio & 75.0 & -26.0 & 0.298 & Cryovol.\ conduit, $f_8(t){=}0.18$ \\
-4 & $\blacksquare$\,Fensal & 20.0 & +15.0 & 0.297 & Equatorial organic; high acetylene \\
-5 & $\blacksquare$\,Aztlan & 100.0 & +10.0 & 0.294 & Equatorial organic; high acetylene \\
-6 & $\blacksquare$\,Sotra Facula & 144.5 & +9.8 & 0.291 & Cryovol.\ conduit, $f_8(t){=}0.16$ \\
-7 & $\triangle$\,Kraken S Shore & 310.0 & +72.0 & 0.288 & $f_1{=}0.10$; liquid just appearing \\
-8 & $\triangle$\,Ligeia E Shore & 78.0 & +79.0 & 0.286 & $f_1{=}0.10$; polar basin forming \\
-9 & $\triangle$\,Kraken N Shore & 348.0 & +80.0 & 0.280 & $f_1{=}0.10$; polar basin forming \\
-10 & $\triangle$\,Punga Shore & 339.0 & +85.5 & 0.273 & $f_1{=}0.10$; polar basin forming \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{PRESENT Epoch (Cassini Era): Lake-Margin Dominance}
-\label{sec:top10_present}
-
-At the Cassini epoch the polar lake and lacus margins dominate unambiguously, driven by coincident maximum $f_1{=}1.0$, active methane cycle, and high shore-zone geodiversity.  For the first time, \textit{all ten} top-10 sites are lake or lacus margins --- the three main mares (Kraken, Ligeia, Punga) occupy ranks 1--4, followed by the named north polar lacus (Jingpo, Freeman, Mackay, Cardiel, Koitere) and Ontario Lacus (southern analogue).  Equatorial dune fields do not enter the top-10 at the present epoch, reflecting the dominance of the liquid-hydrocarbon feature ($w_1{=}0.25$) over the organic-abundance and acetylene features.
-
-\begin{table}[H]
-\centering
-\small
-\caption{Top-10 habitable locations at the PRESENT Epoch (Cassini era) epoch.  $\triangle$ = lake/sea shore; $\blacksquare$ = land; $\bigstar$ = lander site.  $P(H)$ from Eq.~\ref{eq:posterior_mean}.}
-
-\label{tab:top10_present}
-\begin{tabular}{clrrrp{4.5cm}}
-\toprule
-\textbf{Rank} & \textbf{Location} & \textbf{Lon\,(\textdegree{}W)} & \textbf{Lat\,(\textdegree{}N)} & \textbf{$P(H)$} & \textbf{Dominant features} \\
-\midrule
-1 & $\triangle$\,Kraken Mare S Shore & 310.0 & +72.0 & 0.436 & $f_1{=}1.0$, $f_4{=}0.70$, $f_7{=}0.76$ \\
-2 & $\triangle$\,Ligeia Mare E Shore & 82.0 & +79.0 & 0.433 & $f_1{=}1.0$, $f_4{=}0.70$, $f_7{=}0.76$ \\
-3 & $\triangle$\,Kraken Mare N Shore & 348.0 & +80.0 & 0.427 & $f_1{=}1.0$, $f_4{=}0.68$, $f_7{=}0.72$ \\
-4 & $\triangle$\,Punga Mare Shore & 339.0 & +85.0 & 0.406 & $f_1{=}0.90$, $f_4{=}0.65$, $f_7{=}0.65$ \\
-5 & $\triangle$\,Jingpo Lacus & 336.3 & +73.0 & 0.396 & $f_1{=}0.88$, $f_4{=}0.62$, $f_7{=}0.60$ \\
-6 & $\triangle$\,Freeman Lacus & 210.0 & +83.0 & 0.385 & $f_1{=}0.80$, $f_4{=}0.62$; N of Ligeia \\
-7 & $\triangle$\,Ontario Lacus & 179.0 & -72.0 & 0.384 & $f_1{=}0.85$, $f_4{=}0.45$, southern analogue \\
-8 & $\triangle$\,Mackay Lacus & 262.8 & +77.5 & 0.383 & $f_1{=}0.80$, $f_4{=}0.60$, W of Kraken \\
-9 & $\triangle$\,Cardiel Lacus & 128.0 & +78.0 & 0.379 & $f_1{=}0.78$, $f_4{=}0.60$; E of Ligeia \\
-10 & $\triangle$\,Koitere Lacus & 154.0 & +73.0 & 0.368 & $f_1{=}0.72$, $f_4{=}0.58$, IAU named \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{NEAR\_FUTURE Epoch ($+0.25$\,Gya): Stable Plateau}
-\label{sec:top10_nearfuture}
-
-\begin{table}[H]
-\centering
-\small
-\caption{NEAR\_FUTURE epoch ($+0.25\,\gya$) top-10 habitable locations.
-  Analytically identical to PRESENT: the $+1.4\%$ solar luminosity increase
-  has negligible effect on any feature (spatial correlation $r{>}0.999$).}
-\label{tab:top10_nearfuture}
-\begin{tabular}{clrrrp{4.5cm}}
-\toprule
-\textbf{Rank} & \textbf{Location} & \textbf{Lon\,(\textdegree{}W)} &
-  \textbf{Lat\,(\textdegree{}N)} & \textbf{$P(H)$} & \textbf{Notes} \\
-\midrule
-1  & $\triangle$\,Kraken Mare S Shore  & 310.0 & +72.0 & 0.436 & Unchanged from PRESENT \\
-2  & $\triangle$\,Ligeia Mare E Shore  &  82.0 & +79.0 & 0.433 & Unchanged from PRESENT \\
-3  & $\triangle$\,Kraken Mare N Shore  & 348.0 & +80.0 & 0.427 & Unchanged from PRESENT \\
-4  & $\triangle$\,Punga Mare Shore     & 339.0 & +85.5 & 0.406 & Unchanged from PRESENT \\
-5  & $\triangle$\,Jingpo Lacus         & 336.3 & +73.0 & 0.396 & Unchanged from PRESENT \\
-6  & $\triangle$\,Freeman Lacus        & 210.0 & +83.0 & 0.385 & Unchanged from PRESENT \\
-7  & $\triangle$\,Ontario Lacus        & 179.0 & -72.0 & 0.384 & Unchanged from PRESENT \\
-8  & $\triangle$\,Mackay Lacus         & 262.8 & +77.5 & 0.383 & Unchanged from PRESENT \\
-9  & $\triangle$\,Cardiel Lacus        & 128.0 & +78.0 & 0.379 & Unchanged from PRESENT \\
-10 & $\triangle$\,Koitere Lacus        & 154.0 & +73.0 & 0.368 & Unchanged from PRESENT \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The NEAR\_FUTURE epoch ($+0.25\,\gya$) is analytically identical to PRESENT: the $+1.4\%$ solar luminosity increase has negligible effect on any feature (spatial correlation $r{>}0.999$).  All rankings and scores are unchanged; see Section~\ref{sec:top10_present}.
-
-
-\subsection{FUTURE Epoch ($+5.9$\,Gya): Global Ocean}
-\label{sec:top10_future}
-
-By $+5.9\,\gya$ the water--ammonia eutectic has been exceeded for $\sim$800\,Myr and a global ocean covers the surface.  The same 8-feature Bayesian formula is used, but $f_1$ (liquid HC) and $f_8$ (subsurface ocean) are both overridden to 1.0 everywhere, and organic accumulation reaches $2.5\times$ the present level.  Cryovolcanic sites (Hotei, Sotra) lead the rankings because they combine the highest $f_8$ and $f_5$ values with maximal $f_1$, representing direct conduits between the ocean and accumulated organic substrate.  Inundated equatorial dune fields rank $\sim$3--6 as their millennia of accumulated tholins dissolve into the global ocean.
-
-\begin{table}[H]
-\centering
-\small
-\caption{Top-10 habitable locations at the FUTURE Epoch ($+5.9$\,Gya) epoch.  $\triangle$ = lake/sea shore; $\blacksquare$ = land; $\bigstar$ = lander site.  $P(H)$ from Eq.~\ref{eq:posterior_mean}.}
-
-\label{tab:top10_future}
-\begin{tabular}{clrrrp{4.5cm}}
-\toprule
-\textbf{Rank} & \textbf{Location} & \textbf{Lon\,(\textdegree{}W)} & \textbf{Lat\,(\textdegree{}N)} & \textbf{$P(H)$} & \textbf{Dominant features} \\
-\midrule
-1 & $\blacksquare$\,Hotei Regio & 75.0 & -26.0 & 0.464 & $f_1{=}1.0$ (global ocean), $f_8{=}1.0$, $f_{\mathrm{org}}$ high \\
-2 & $\blacksquare$\,Sotra Facula & 144.5 & +9.8 & 0.462 & $f_1{=}1.0$, $f_8{=}1.0$, cryovol.\ substrate \\
-3 & $\blacksquare$\,Belet (inundated) & 250.0 & +7.0 & 0.450 & $f_1{=}1.0$, $f_2$ peak, dissolved organics \\
-4 & $\blacksquare$\,Shangri-La (inund.) & 155.0 & -5.0 & 0.449 & $f_1{=}1.0$, $f_2$ peak, inundated dune field \\
-5 & $\blacksquare$\,Fensal (inundated) & 20.0 & +15.0 & 0.448 & $f_1{=}1.0$, $f_2{=}0.96{\times}2.5$; dissolved \\
-6 & $\blacksquare$\,Aztlan (inundated) & 100.0 & +10.0 & 0.447 & $f_1{=}1.0$, organic stockpile dissolved \\
-7 & $\blacksquare$\,Hano Crater & 349.0 & -38.6 & 0.441 & $f_1{=}1.0$, $f_8{=}1.0$; ocean floor \\
-8 & $\bigstar$\,Huygens Site & 192.3 & -10.6 & 0.436 & $f_1{=}1.0$; organic plains now submerged \\
-9 & $\blacksquare$\,Afekan (inundated) & 200.5 & -1.4 & 0.426 & $f_1{=}1.0$, former equatorial floor \\
-10 & $\triangle$\,Kraken (ocean floor) & 310.0 & +68.0 & 0.425 & $f_1{=}1.0$, former polar basin \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 
 \section{Solar System Habitability Comparison}
 \label{sec:comparison}

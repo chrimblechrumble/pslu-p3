@@ -41,21 +41,21 @@ SITES = [
     {
         "name":    "Kraken Mare\nshoreline",
         "w_sum":   0.5242,
-        "colour":  "#4ecdc4",   # cyan (lake)
+        "colour":  "#007a73",   # cyan (lake)
         "marker":  "▲",
         "type":    "lake",
     },
     {
         "name":    "Ligeia Mare\nshoreline",
         "w_sum":   0.5188,
-        "colour":  "#44b89e",
+        "colour":  "#006b5a",
         "marker":  "▲",
         "type":    "lake",
     },
     {
         "name":    "Belet\ndune sea",
         "w_sum":   0.3177,
-        "colour":  "#f7b731",   # amber (land)
+        "colour":  "#8B6200",   # amber (land)
         "marker":  "■",
         "type":    "land",
     },
@@ -79,38 +79,38 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 5), gridspec_kw={"width_ratios": [1, 1]})
-    fig.patch.set_facecolor("#0d0d1a")
+    fig.patch.set_facecolor("white")
     for ax in axes:
-        ax.set_facecolor("#131330")
-        ax.tick_params(colors="white", labelsize=10)
+        ax.set_facecolor("white")
+        ax.tick_params(colors="black", labelsize=10)
         for spine in ax.spines.values():
-            spine.set_edgecolor("#444466")
+            spine.set_edgecolor("#aaaaaa")
 
     x = np.linspace(0.0, 1.0, 1000)
 
     # ── Left panel: prior distribution ─────────────────────────────────────────
     ax = axes[0]
     prior_pdf = beta_dist.pdf(x, ALPHA0, BETA0)
-    ax.plot(x, prior_pdf, color="#aabbee", lw=2.5, label=rf"Prior  $\mathrm{{Beta}}({ALPHA0:.3f},\,{BETA0:.3f})$")
-    ax.fill_between(x, prior_pdf, alpha=0.20, color="#aabbee")
-    ax.axvline(MU0, color="#aabbee", ls="--", lw=1.2, alpha=0.7)
+    ax.plot(x, prior_pdf, color="#2255aa", lw=2.5, label=rf"Prior  $\mathrm{{Beta}}({ALPHA0:.3f},\,{BETA0:.3f})$")
+    ax.fill_between(x, prior_pdf, alpha=0.20, color="#2255aa")
+    ax.axvline(MU0, color="#2255aa", ls="--", lw=1.2, alpha=0.7)
     ax.text(MU0 + 0.01, max(prior_pdf) * 0.7,
-            rf"$\mu_0 = {MU0}$", color="#aabbee", fontsize=9)
+            rf"$\mu_0 = {MU0}$", color="#2255aa", fontsize=9)
     # Mark P_min and P_max
     p_min = ALPHA0 / (KAPPA + LAMBDA)
     p_max = (ALPHA0 + LAMBDA) / (KAPPA + LAMBDA)
     ax.axvspan(0, p_min, alpha=0.08, color="#ff6b6b", label=rf"$P_\mathrm{{min}}={p_min:.3f}$")
     ax.axvspan(p_max, 1, alpha=0.08, color="#51cf66", label=rf"$P_\mathrm{{max}}={p_max:.3f}$")
-    ax.set_xlabel("Posterior mean  $P(H \\mid \\mathbf{f})$", color="white", fontsize=11)
-    ax.set_ylabel("Probability density", color="white", fontsize=11)
-    ax.set_title("Prior distribution\n(before observing features)", color="white", fontsize=11, pad=8)
-    ax.legend(fontsize=9, facecolor="#1a1a3e", labelcolor="white", framealpha=0.8)
+    ax.set_xlabel("Posterior mean  $P(H \\mid \\mathbf{f})$", color="black", fontsize=11)
+    ax.set_ylabel("Probability density", color="black", fontsize=11)
+    ax.set_title("Prior distribution\n(before observing features)", color="black", fontsize=11, pad=8)
+    ax.legend(fontsize=9, facecolor="white", labelcolor="black", framealpha=0.8)
     ax.set_xlim(0, 1); ax.set_ylim(0, None)
 
     # ── Right panel: posteriors for all sites ────────────────────────────────────
     ax = axes[1]
     # Draw prior faintly for comparison
-    ax.plot(x, prior_pdf, color="#aabbee", lw=1.0, alpha=0.35, ls="--",
+    ax.plot(x, prior_pdf, color="#2255aa", lw=1.0, alpha=0.35, ls="--",
             label="Prior (reference)")
 
     legend_handles = []
@@ -135,10 +135,10 @@ def main() -> None:
                               f"   95% HDI: [{lo:.2f}, {hi:.2f}]")
         legend_handles.append(handle)
 
-    ax.set_xlabel("Posterior mean  $P(H \\mid \\mathbf{f})$", color="white", fontsize=11)
-    ax.set_title("Posterior distributions\n(after observing Cassini features)", color="white", fontsize=11, pad=8)
-    ax.legend(handles=legend_handles, fontsize=8.5, facecolor="#1a1a3e",
-              labelcolor="white", framealpha=0.8, loc="upper left")
+    ax.set_xlabel("Posterior mean  $P(H \\mid \\mathbf{f})$", color="black", fontsize=11)
+    ax.set_title("Posterior distributions\n(after observing Cassini features)", color="black", fontsize=11, pad=8)
+    ax.legend(handles=legend_handles, fontsize=8.5, facecolor="white",
+              labelcolor="black", framealpha=0.8, loc="upper left")
     ax.set_xlim(0, 1); ax.set_ylim(0, None)
 
     # ── Shared annotation ──────────────────────────────────────────────────────
@@ -147,14 +147,14 @@ def main() -> None:
         r"$H \sim \mathrm{Beta}(\alpha_0,\beta_0)$  "
         r"$\longrightarrow$  "
         r"$H \mid \mathbf{f} \sim \mathrm{Beta}(\alpha_\mathrm{post},\,\beta_\mathrm{post})$",
-        color="white", fontsize=12, y=1.01,
+        color="black", fontsize=12, y=1.01,
     )
 
     fig.tight_layout(rect=[0, 0, 1, 1.0])
 
     for ext in ("pdf", "png"):
         p = out_dir / f"fig_bayesian_update.{ext}"
-        fig.savefig(p, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor())
+        fig.savefig(p, dpi=150, bbox_inches="tight", facecolor="white")
         print(f"Saved: {p}")
 
     plt.close(fig)

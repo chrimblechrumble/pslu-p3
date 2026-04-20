@@ -31,7 +31,7 @@ STAGES = [
     {
         "x": 0.4, "w": 2.2,
         "title": "Stage 1\nAcquisition",
-        "body": "SAR mosaic\nVIMS+ISS\nGTDE DEM\nLopes geomorphology\nMiller channels",
+        "body": "SAR mosaic\n\nVIMS+ISS\n\nGTDE DEM\n\nLopes geomorphology\n\nMiller channels",
         "note": "PDS / USGS Astropedia\nCaltechDATA",
         "color": "#1a3a5c",
         "border": "#4488cc",
@@ -39,7 +39,7 @@ STAGES = [
     {
         "x": 3.1, "w": 2.4,
         "title": "Stage 2\nPreprocessing",
-        "body": "Canonical grid\n4490 m/px\n1802×3603 px\nWest-positive\nequirectangular",
+        "body": "Canonical grid\n\n4490m/px\n\n1802×3603 px\n\nWest-positive\nequirectangular",
         "note": "titan/preprocessing.py\nCoverage: ~67-99%",
         "color": "#1a3a1a",
         "border": "#1a8c1a",
@@ -47,7 +47,7 @@ STAGES = [
     {
         "x": 5.9, "w": 2.5,
         "title": "Stage 3\nFeature Extraction",
-        "body": "8 features\n[0,1] normalised\ngeo_only organic\nBackfill cascade\nper feature",
+        "body": "8 features\n\n[0,1] normalised\n\nBackfill cascade\nper feature",
         "note": "titan/features.py\ntemporal_features.py",
         "color": "#3a1a3a",
         "border": "#cc44cc",
@@ -55,7 +55,7 @@ STAGES = [
     {
         "x": 8.8, "w": 2.5,
         "title": "Stage 4\nBayesian Inference",
-        "body": "Beta conjugate\nprior κ=5, λ=6\nμ₀=0.331\nMedian-split labels\nsklearn RF backend",
+        "body": "Beta conjugate\nprior\n\nPrior concentration\nκ=5\n\nLikelihood sharpness\nλ=6\n\nGlobal prior mean\nμ₀=0.331",
         "color": "#3a1a1a",
         "border": "#cc4444",
         "note": "titan/bayesian/\ninference.py",
@@ -63,7 +63,7 @@ STAGES = [
     {
         "x": 11.7, "w": 2.1,
         "title": "Stage 5\nOutputs",
-        "body": "GeoTIFF\nNetCDF stack\n72-epoch animation\n(modelled +\nfull_inference)",
+        "body": "GeoTIFF\n\nNetCDF stack\n\n5 epoch\nHabitability maps\n\nOther diagrams\n\nLocation Rankings",
         "note": "outputs/\ntemporal_maps/",
         "color": "#2a2a1a",
         "border": "#7a6200",
@@ -78,14 +78,14 @@ for s in STAGES:
     )
     ax.add_patch(box)
     ax.text(s["x"] + s["w"] / 2, 4.05, s["title"],
-            ha="center", va="center", fontsize=9.5, fontweight="bold",
+            ha="center", va="center", fontsize=12, fontweight="bold",
             color="white", fontfamily="monospace")
-    ax.text(s["x"] + s["w"] / 2, 2.55, s["body"],
-            ha="center", va="center", fontsize=7.5, color="#ddddff",
+    ax.text(s["x"] + s["w"] / 2, 3.5, s["body"],
+            ha="center", va="top", fontsize=12, color="#ddddff",
             fontfamily="monospace", linespacing=1.5)
-    ax.text(s["x"] + s["w"] / 2, 0.75, s["note"],
-            ha="center", va="center", fontsize=6.5, color="#555555",
-            fontfamily="monospace", style="italic", linespacing=1.4)
+    # ax.text(s["x"] + s["w"] / 2, 0.75, s["note"],
+    #         ha="center", va="center", fontsize=11, color="#555555",
+    #         fontfamily="monospace", style="italic", linespacing=1.4)
 
 # Arrows
 for i in range(len(STAGES) - 1):
@@ -95,12 +95,12 @@ for i in range(len(STAGES) - 1):
                 arrowprops=dict(arrowstyle="->", color="#334466", lw=2.0))
 
 ax.set_title(
-    "Titan Habitability Pipeline — Architecture (v5.0)",
-    color="black", fontsize=12, pad=10,
+    "Titan Habitability Pipeline — Architecture",
+    color="black", fontsize=13, pad=10,
 )
-ax.text(7, 0.1,
-        "run_pipeline.py  ·  generate_temporal_maps.py  ·  analyse_location_habitability.py",
-        ha="center", va="center", fontsize=7, color="#555566", style="italic")
+# ax.text(7, 0.1,
+#         "run_pipeline.py  ·  generate_temporal_maps.py  ·  analyse_location_habitability.py",
+#         ha="center", va="center", fontsize=11, color="#555566", style="italic")
 
 plt.tight_layout()
 for _ext in ("pdf", "png"):

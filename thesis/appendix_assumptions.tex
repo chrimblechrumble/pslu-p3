@@ -1,0 +1,55 @@
+%% appendix_assumptions.tex — Declared Assumptions and Known Limitations
+%% Extracted from main.tex
+\chapter{Declared Assumptions and Known Limitations}
+\label{app:assumptions}
+
+\begin{enumerate}[leftmargin=*,label=\textbf{A\arabic*.}]
+
+\item \textbf{Conditional feature independence.}  The eight features are
+treated as conditionally independent given habitability $H$.  In
+practice, organic abundance and chemical energy are positively
+correlated, as are liquid hydrocarbon and surface--atmosphere
+interaction.  The independence assumption is conservative: correlated
+positive features slightly overstate the posterior, but the framework
+remains physically motivated and the data-derived importances are
+consistent with the prior weights (Section~\ref{sec:importances}).
+
+\item \textbf{Static geomorphological template.}  The Lopes et al.\
+(2019) map is used for all five temporal configurations.  The
+Late Heavy Bombardment surface had different dune distributions and
+crater density, and the future surface will be submerged.  The present
+template is used as the best available proxy, with amplitude
+modifications applied through epoch-specific prior means and scale
+functions.
+
+\item \textbf{Seamless organic abundance mode.}  The organic abundance
+feature uses terrain-class scores globally rather than VIMS spectral
+band ratios, because the VIMS mosaic covers only $\sim$50\% of
+the globe and direct blending produced a visible seam at the coverage
+boundary at 180\textdegree{}W.
+
+\item \textbf{Past-epoch Cassini feature contamination.}  The past-epoch
+posterior was computed using present-era Cassini SAR maps, which
+encode the present polar lake morphology even at $t = -3.5\gya$.
+The north polar Bayesian score in the past anchor is inflated above the
+physically expected prior value.  This is mitigated in the multi-epoch
+reconstruction by using the analytical Bayesian formula directly for
+pre-lake-formation frames (Section~\ref{sec:multi_epoch}) and is
+documented in Section~\ref{sec:past_contamination}.
+
+\item \textbf{Multi-epoch temporal scaling accuracy.}  The multi-epoch
+reconstruction applies scalar scale functions $s_i(t)$ to the present-epoch
+feature maps and re-evaluates the Bayesian posterior formula at each epoch
+(Section~\ref{sec:epoch_scaling}).  This is physically motivated but
+is not equivalent to independent epoch-specific feature extraction.
+The scale functions are calibrated to reproduce known physical transitions
+(lake formation, solar warming, eutectic crossing) but have no observational
+constraint at intermediate epochs.  Estimated uncertainty:
+$\Delta P(H) \lesssim \pm0.05$ at non-anchor epochs.
+
+\item \textbf{SAR coverage gap.}  Approximately 33\% of \titan{}'s
+surface lacks SAR coverage.  Features 1, 3, and 8 are degraded in
+these regions, where geomorphological and topographic proxies
+substitute.
+
+\end{enumerate}

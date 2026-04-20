@@ -4,176 +4,93 @@
 \chapter{Introduction}
 \label{ch:introduction}
 
-\section{The Search for Habitable Environments Beyond Earth}
+\section{Titan as an Astrobiological Target}
 \label{sec:search_context}
 
-The question of whether life exists elsewhere in the universe has undergone a
-profound transformation over the past three decades, shifting from the domain
-of philosophical speculation to empirical scientific investigation.  This
-change has been driven by two largely independent but mutually reinforcing
-developments: the systematic discovery that life on Earth thrives in conditions
-previously considered detrimental to biology, and the growing recognition through
-robotic spacecraft exploration that chemically and thermodynamically suitable
-environments for life are far more widely distributed throughout the solar
-system than twentieth-century intuitions suggested.
+The search for habitable environments beyond Earth has increasingly focused on icy ocean worlds in the outer solar system.  Among these, Saturn's moon \titan{} occupies a singular position.
+It is the only moon with a dense atmosphere --- dominated by molecular nitrogen
+at 1.467\,bar surface pressure and 93.65\,K \citep{Fulchignoni2005} --- and the
+only known extraterrestrial world to host stable surface liquids
+\citep{Stofan2007}, completing a full precipitation--evaporation--lake cycle
+structurally analogous to Earth's hydrological cycle.  Its atmosphere
+continuously produces complex organic tholins at
+$\sim5\times10^{-14}$\,g\,cm$^{-2}$\,s$^{-1}$ \citep{Lavvas2011}, building
+a global organic sediment layer over $\sim$4\,Gyr \citep{Lorenz2008}.
+At depth, a global water--ammonia ocean at $\sim$55--80\,km is confirmed by the
+tidal Love number $k_2 = 0.589\pm0.150$ \citep{Iess2012}.  This convergence of
+cycling solvent, vast organic inventory, and subsurface water makes \titan{} a
+natural laboratory for prebiotic chemistry operating at planetary scale
+across geological time.
 
-The progressive characterisation of terrestrial extremophile communities has
- expanded the limits of conditions considered compatible with
-life.  Microorganisms have been cultured from deep-sea hydrothermal vents at
-temperatures exceeding 121\textdegree{}C, from hypersaline brines with water
-activities as low as $a_w = 0.60$, from the anoxic pore spaces of deep
-crustal rocks where electrons liberated by water--rock reactions provide
-metabolic energy in the total absence of sunlight, and from sub-glacial
-Antarctic lakes that have been isolated from the atmosphere for millions of
-years \citep{Rothschild2001, Cavicchioli2002}.  Each such discovery has
-moved the habitable niche boundaries outwards, making it progressively more
-difficult to argue that any particular planetary environment is categorically
-uninhabitable without specific evidence that the relevant physical and
-chemical conditions lie entirely outside the known boundaries of life.
-
-In parallel, the outer solar system has revealed a far richer array of
-liquid environments than the classical habitable zone framework would predict.
-The Europa detection from the Galileo mission \citep{Pappalardo1999} and the
-subsequent discovery of active cryovolcanism and ocean chemistry at Enceladus
-\citep{Waite2017} established that tidal heating can maintain liquid water
-oceans beneath ice shells at distances far beyond any reasonable
-definition of the water-based habitable zone \citep{Kasting1993}. These discoveries shifted the
-conceptual framework of solar system habitability from a two-dimensional
-picture (Earth-like planets in a narrow orbital band) to a three-dimensional
-one encompassing subsurface environments throughout the outer solar system.
-
-Within this broader astrobiological context, Saturn's moon \titan{} occupies
-a distinctive and arguably singular position.  It is the only moon in the
-solar system possessing a substantial atmosphere --- one that is denser at the
-surface than Earth's and dominated by molecular nitrogen, with a structurally
-complex photochemistry driven by the ultraviolet flux of the distant Sun.
-It is the only known extraterrestrial body to host stable surface liquids
-\citep{Stofan2007}, completing a full precipitation-evaporation-lake cycle
-that is the structural analogue of the terrestrial hydrological cycle.
-It may have accumulated the most complex organic chemical inventory in the
-solar system outside Earth itself \citep{Lorenz2008}.  And at depth, it
-contains a water--ammonia ocean whose thermodynamic conditions are
-increasingly well-constrained by tidal measurements and geophysical
-modelling.  The combination of these properties makes \titan{} not
-merely a potentially habitable world but a natural laboratory for
-prebiotic chemistry operating at planetary scale and across a geological
-timescale of $\sim$4.5\,Gyr.
-
-\section{The Physical Environment of Titan}
+\section{The Physical Environment}
 \label{sec:titan_environment}
 
-\titan{}'s dense nitrogen--methane atmosphere ($\sim$94\% \ce{N2}, $\sim$5.6\% \ce{CH4}; surface pressure $\sim$1.5\,bar, surface temperature $\sim$94\,K; \citealt{Fulchignoni2005,Niemann2005}) drives a methane cycle analogous to Earth's water cycle, with rain, rivers, and polar hydrocarbon lakes.  Ultraviolet photolysis of the \ce{N2}/\ce{CH4} mixture continuously produces tholins at $\sim5\times10^{-14}$\,g\,cm$^{-2}$\,s$^{-1}$ \citep{Lavvas2011}, building a global organic sediment layer estimated at 1--10\,km depth over solar system history \citep{Lorenz2008}.
-
-The surface is geologically diverse: equatorial organic dune fields ($\sim$17\% of the SAR-imaged area), plains ($\sim$65\%), and a north polar sea system --- Kraken Mare, Ligeia Mare, and Punga Mare --- containing an estimated 70{,}000\,km$^3$ of liquid hydrocarbons \citep{Mastrogiuseppe2019,Malaska2025}.  The Lopes et al.\ \citeyearpar{Lopes2019} global geomorphological map, derived from the full Cassini SAR dataset, provides the terrain classification underpinning the organic abundance feature used in this thesis.
-
-The interior harbours a global water--ammonia subsurface ocean at $\sim$55--80\,km depth, inferred from the tidal Love number $k_2 = 0.589\pm0.150$ \citep{Iess2012}.  This ocean provides a potential habitat in its own right and, at past epochs, a source of liquid water during impact-melt events where ocean-derived chemistry contacts the surface organic inventory \citep{Tobie2005}.
+The atmosphere ($\sim$94\% \ce{N2}, 5.65\% \ce{CH4}; \citealt{Niemann2005})
+sustains a methane cycle with observed equatorial rainfall \citep{Turtle2011},
+fluvial channel networks \citep{Miller2021channels}, and polar hydrocarbon
+seas (Kraken, Ligeia, and Punga Mare) containing $\sim$70{,}000\,km$^3$ of
+liquid methane--ethane \citep{Mastrogiuseppe2019,Malaska2025}.  The Lopes et al.\ \citeyearpar{Lopes2019} geomorphological map, derived from the full Cassini SAR dataset, classifies the surface into seven terrain units.  The surface is geologically diverse: equatorial dune fields ($\sim$17\% by SAR area), plains
+($\sim$65\%), labyrinth terrain, impact craters, and mountains, as classified
+by the Lopes et al.\ \citeyearpar{Lopes2019} global geomorphological map that
+provides the terrain classification underpinning this thesis.
 
 \section{Chemical Habitability Scenarios}
 \label{sec:prior_theory}
 
 Four habitability pathways have been proposed for \titan{}'s surface.
-
-\begin{enumerate}[itemsep=0em]
-    \item The \textit{acetylenotrophy hypothesis} \citep{McKaySmith2005} identifies 
-\begin{equation}    
-\ce{C2H2 + 3H2 -> 2CH4}
-\qquad
-(\Delta G = -334\,kJ\,mol^{-1}) 
-\label{eq:acetylenotrophy}
-\end{equation}
-as a viable energy source at the present epoch, with acetylene and \ce{H2} supplied by atmospheric photolysis; the energetics comfortably exceed the metabolic threshold of terrestrial methanogens even under updated thermochemical estimates \citep{Yanez2024}.
-
-    \item The \textit{azotosome hypothesis} \citep{Stevenson2015} proposes that acrylonitrile (detected by ALMA; \citealt{Palmer2017}) spontaneously forms stable membrane-like vesicles in liquid methane, providing a plausible route to cellular compartmentalisation without aqueous chemistry.
-
-
-    \item \textit{Post-impact melt chemistry} offers a water-based pathway: large impacts produce water--ammonia--organic melt ponds persisting for $10^3$--$10^4$\,yr during which Strecker synthesis yields amino acids from surface aldehydes, ammonia, and HCN \citep{wiki:Strecker, Neish2010, Madan2026}; this is the primary astrobiological rationale for the \dragonfly{} landing site at Selk crater.
-
-
-    \item Finally, the \textit{far-future habitability window} \citep{Lorenz1997} arises when red-giant solar luminosity raises \titan{}'s surface above the water--ammonia eutectic (176\,K) for an estimated 200--500\,Myr, creating a global ocean over 16\,Gyr of accumulated organics.
-
-\end{enumerate}
-
-This thesis provides a quantitative characterisation of all four scenarios within a unified Bayesian framework across geological time.
+\textit{Acetylenotrophy} \citep{McKaySmith2005}: the reaction
+$\ce{C2H2 + 3H2 -> 2CH4}$ ($\Delta G = -334$\,kJ\,mol$^{-1}$) provides
+energy well above the minimum for terrestrial methanogens, even under updated
+thermochemical estimates \citep{Yanez2024}.  Acetylene is supplied by UV
+photolysis and detected at the surface by GCMS \citep{Niemann2005}.
+\textit{Azotosome membranes} \citep{Stevenson2015}: acrylonitrile (detected by
+ALMA; \citealt{Palmer2017}) spontaneously forms stable vesicle structures in
+liquid methane, providing a route to cellular compartmentalisation without
+aqueous chemistry.
+\textit{Impact-melt prebiotic chemistry}: large impacts produce transient
+water--ammonia--organic melt ponds persisting for $10^3$--$10^4$\,yr, during
+which Strecker synthesis yields amino acids from surface aldehydes, ammonia,
+and HCN \citep{Neish2010,Madan2026}.
+\textit{Red-giant ocean}: when solar luminosity raises \titan{}'s surface
+above the water--ammonia eutectic (176\,K; \citealt{Grasset2005}), a global
+ocean will form over billions of years of accumulated organics for an
+estimated 200--500\,Myr \citep{Lorenz1997}.  This thesis provides the first
+unified quantitative characterisation of all four scenarios across
+geological time.
 
 \section{Scope and Research Questions}
 \label{sec:scope}
 
-Several preceding studies have attempted to place planetary habitability on
-a quantitative footing.  The \textit{Earth Similarity Index}
-\citep{Schulze-Makuch2011} scores planetary bodies against Earth on
-temperature, density, escape velocity, and surface chemistry, but
-produces a single scalar per body and cannot represent spatial or temporal
-variation.  \citet{Hendrix2019} reviewed the habitability potential of
-icy ocean worlds using qualitative multi-criteria matrices, providing rich
-scientific context but no spatial resolution or probabilistic framework.
-Logistic regression and machine-learning habitability classifiers
-(e.g.\ \citealt{Spiegel2012}) have been applied to exoplanet populations
-but require labelled training data that does not exist for Titan.
-The Bayesian approach adopted here differs from all of these: it encodes
-scientific prior knowledge as probability distributions, updates them
-with observational data via conjugate updating, and returns credible
-intervals rather than point estimates --- making uncertainty explicit
-rather than implicit.  The choice of a Beta-conjugate (Beta-Binomial)
-model is motivated by the bounded $[0,1]$ domain of habitability
-probability and by the analytical tractability that permits simultaneous
-evaluation at all 6.49 million grid pixels without numerical integration
-or MCMC.  A Gaussian process or multivariate logistic regression could
-in principle capture feature correlations more richly, but would require
-either strong covariance priors or prohibitively dense labelled sampling
-to estimate the correlation structure from Cassini data alone.  The
-Beta-conjugate approach is preferred as the most tractable framework
-that preserves physical interpretability at every pixel.
+Previous habitability assessments of \titan{} have been predominantly qualitative
+or point-specific: the Earth Similarity Index \citep{Schulze-Makuch2011}
+produces a single scalar per body with no spatial resolution;
+\citet{Hendrix2019} reviewed icy ocean world habitability using qualitative
+criteria matrices; \citet{Affholder2021} applied rigorous Bayesian inference
+to Enceladus plume data but at a single spatial point and epoch.  None
+integrates the full suite of Cassini data modalities into a spatially-resolved,
+multi-epoch probabilistic framework.  A detailed methodological comparison is
+given in Appendix~\ref{app:lit_review}.
 
-Previous habitability assessments of \titan{} have shared four important
-limitations.  
+This thesis develops a Bayesian Beta-conjugate posterior framework combining
+eight observational proxy features from the complete Cassini dataset into a
+habitability probability map at \SI{4490}{\metre\per\text{px}} resolution,
+applied across five temporal epochs from the Late Heavy Bombardment ($-3.5\gya$)
+to the red-giant future ($+5.9\gya$).  The Beta-conjugate approach is preferred
+for its analytical tractability at 6.49 million grid pixels, its naturally
+bounded $[0,1]$ output domain, and the explicit uncertainty quantification
+provided by 95\% highest-density interval credible intervals at every pixel.
 
-\begin{enumerate}[itemsep=0em]
-    \item They are predominantly qualitative or point-specific, lacking
-global spatial resolution.  
-    \item They treat the present epoch as the only relevant
-state, ignoring both the LHB prebiotic-chemistry window and the far-future
-red-giant window.  
-    \item They do not integrate the full suite of Cassini data
-modalities into a unified probabilistic framework.  
-    \item They lack the
-reproducibility afforded by an openly archived analysis pipeline.
-
-\end{enumerate}
-
-The closest methodological precedent is \citet{Affholder2021}, who applied
-Bayesian statistical inference to Cassini INMS plume data from Enceladus,
-comparing the observed methane and hydrogen escape rates against models of
-abiotic serpentinisation and biotic methanogenesis.  Their finding --- that
-the observed methane escape rate is (with a minimal number of assumptions) explained by biological methanogenesis if the prior probability of life is sufficient ---
-represents a comparable Bayesian biosignature assessment for a solar system body.  This thesis is directly inspired
-by their approach, extended from a single-point plume observation to a full-globe, multi-feature, multi-epoch spatial mapping.
-
-The specific research questions addressed are:
+The specific research questions are:
 \begin{description}
-  \item[RQ1] \textit{What is the spatial distribution of surface habitability
-    on present-day \titan{}, and which terrain types, geological features,
-    and atmospheric zones produce the highest scores?  Are the data-derived
-    feature importances consistent with the physically motivated prior weights?}
+  \item[RQ1] \textit{What is the spatial distribution of present-day surface
+    habitability, and which environments produce the highest scores?}
 
   \item[RQ2] \textit{How did habitability differ during the Late Heavy
-    Bombardment, when impact-melt ponds provided transient liquid water?
-    Which impact structures were the most astrobiologically significant,
-    and what are the implications for prebiotic chemistry?}
+    Bombardment, when impact-melt ponds provided transient liquid water?}
 
-  \item[RQ3] \textit{How does the surface habitability evolve over geologic time
-    from the LHB to the red-giant future?  Is \titan{} potentially the most
-    habitable body in the solar system during the red-giant ocean window?}
+  \item[RQ3] \textit{How does habitability evolve across the temporal sequence
+    from the LHB ($-3.5\gya$) to the red-giant ocean ($+5.9\gya$)?}
 
   \item[RQ4] \textit{Does the derived habitability map independently validate
-    the \dragonfly{} landing site at Selk crater, and which instruments
-    are best positioned to test the model's predictions? See Appendix~\ref{app:missions} for more information on the \cassini{}--\huygens{} and \dragonfly{} missions.}
+    the \dragonfly{} landing site at Selk crater?}
 \end{description}
-
-Chapter~\ref{ch:methods} presents the data sources, feature extraction,
-Bayesian inference model, and temporal methodology.
-Chapter~\ref{ch:results} presents and interprets the habitability maps at
-each epoch, the feature importances, the temporal evolution, and the
-detailed Selk crater analysis.
-Chapter~\ref{ch:discussion} discusses the \dragonfly{} mission implications,
-biosignature framework, limitations, and future work.
-

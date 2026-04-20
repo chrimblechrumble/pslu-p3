@@ -1,0 +1,77 @@
+%% appendix_bayes_pedagogy.tex — Bayesian Inference Background
+%% Explanatory material moved from Methods chapter.
+
+\chapter{Bayesian Inference: Background and Derivation}
+\label{app:bayes_pedagogy}
+
+This appendix provides the conceptual background for the Beta-conjugate
+Bayesian framework used in Chapter~\ref{ch:methods}.  Readers familiar
+with conjugate Bayesian updating may skip directly to the model summary
+in Section~\ref{sec:bayes}.
+
+\section{The Latent Variable}
+\label{sec:latent_variable}
+
+In this framework, habitability $H$ is treated as a \textit{latent variable}
+--- a quantity that cannot be directly observed by any Cassini instrument but
+whose value is inferred from the combination of observational proxies
+$\featurevec = (f_1, \ldots, f_8)$.  A latent variable (from the Latin
+\textit{latere}: to be hidden) influences observable outcomes but is not
+itself directly measurable.  Here, $H$ is not a binary yes-or-no property
+but a continuous probability in $[0, 1]$: the value $H = p$ at a given pixel
+means that pixel has probability $p$ of satisfying the relevant habitability
+conditions given all available evidence.  Each feature $f_i$ provides partial,
+indirect evidence about the value of $H$.
+
+\section{Why a Beta Distribution?}
+\label{sec:why_beta}
+
+The Beta distribution $\mathrm{Beta}(\alpha, \beta)$ is defined on $[0, 1]$
+and characterised by two positive shape parameters $\alpha$ and $\beta$.
+It is unimodal when both $\alpha > 1$ and $\beta > 1$, with mean
+$\alpha/(\alpha + \beta)$ and variance that decreases as $\alpha + \beta$
+grows.  Because it is bounded on $[0,1]$ and can represent any unimodal
+belief over a probability, it is the natural prior for the latent
+habitability probability $H$.
+
+\section{Conjugacy}
+\label{sec:conjugacy_explained}
+
+A prior distribution is \textit{conjugate} to a likelihood function if the
+posterior (prior updated by data) has the same mathematical form as the
+prior, differing only in its parameter values.  The Beta distribution is
+conjugate to the Binomial likelihood: if the prior on a success probability
+$p$ is $\mathrm{Beta}(\alpha_0, \beta_0)$ and we observe $k$ successes
+in $n$ Bernoulli trials, the posterior is
+$\mathrm{Beta}(\alpha_0 + k,\; \beta_0 + (n - k))$.
+This analytical tractability makes the update feasible at 6.49 million
+pixels simultaneously with no numerical integration required.
+
+\section{The Beta-Binomial Model Applied to Habitability}
+\label{sec:beta_binom_detail}
+
+Each feature $f_i \in [0, 1]$ is treated as the fractional outcome of
+$\lambda w_i$ virtual Bernoulli trials: fraction $f_i$ of those trials are
+``successes'' (evidence for habitability) and $(1 - f_i)$ are ``failures''
+(evidence against).  High feature values contribute more positive
+pseudo-observations and shift the posterior towards higher habitability;
+low values do the opposite.  The prior contributes $\kappa$ virtual
+observations and the data from all eight features contribute a further
+$\lambda \sum_i w_i = \lambda$ observations.
+
+Figure~\ref{fig:beta_update} visualises the updating process for three
+representative sites (Kraken southern shore, Belet dune field, Selk crater),
+showing how each successive feature narrows and displaces the Beta
+distribution from the prior to the final posterior.  The figure also
+shows the 95\%~HDI for eight key present-epoch sites.
+
+Figure~\ref{fig:bayes_update} illustrates this update graphically for four
+representative sites.  The left panel shows the prior
+$\mathrm{Beta}(\alpha_0, \beta_0)$, which is weakly informative
+($\sigma \approx 0.18$) and centred at $\mu_0 = 0.331$.  The right panel
+shows the posteriors after incorporating the respective Cassini feature
+values: the Kraken Mare shoreline and Ligeia shoreline shift rightward
+(high liquid, methane-cycle, and geodiversity scores), while the Belet dune
+sea shifts only modestly (high organic but no liquid) and Selk crater shifts
+leftward (below-average methane cycle and surface--atmosphere scores despite
+exceptional geodiversity).

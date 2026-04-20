@@ -1,0 +1,29 @@
+%% appendix_priors.tex — Bayesian Prior Specification
+%% Extracted from main.tex
+\chapter{Bayesian Prior Specification}
+\label{app:priors}
+
+\begin{table}[H]
+\centering
+\caption{Prior means $\mu_i$ and weights $w_i$ for all eight habitability
+features at the present (Cassini) epoch.  Global prior mean
+$\mu_0 = \sum_i w_i\mu_i = 0.331$.  Concentration parameter $\kappa = 5$
+is applied uniformly.}
+\label{tab:priors}
+\begin{tabular}{llrrl}
+\toprule
+\textbf{Feature} & \textbf{Symbol} & \textbf{$w_i$} & \textbf{$\mu_i$} & \textbf{Key ref.} \\
+\midrule
+Liquid hydrocarbon         & $f_1$ & 0.25 & 0.020 & \citet{Hayes2008} \\
+Organic abundance          & $f_2$ & 0.20 & 0.700 & \citet{Malaska2025} \\
+Chemical energy            & $f_3$ & 0.20 & 0.350 & \citet{Strobel2010} \\
+Methane cycle              & $f_4$ & 0.15 & 0.400 & \citet{MitchellLora2016} \\
+Surface--atm.\ interaction & $f_5$ & 0.08 & 0.350 & \citet{Miller2021channels} \\
+Topographic complexity     & $f_6$ & 0.06 & 0.250 & \citet{Corlies2017Titan} \\
+Geomorphological diversity & $f_7$ & 0.04 & 0.300 & \citet{Lopes2019} \\
+Subsurface ocean proximity & $f_8$ & 0.02 & 0.030 & \citet{Iess2012} \\
+\midrule
+\multicolumn{3}{l}{\textit{Global prior mean} $\mu_0$} & 0.331 & \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,185 @@
+%% appendix_notation.tex — Acronyms, Notation, and Data Source Details
+%% Extracted from main.tex
+\chapter{Acronyms, Notation, and Data Source Details}
+\label{app:notation}
+
+
+\section{Acronyms and Nomenclature}
+\label{sec:acronyms}
+
+The following acronyms are used throughout this chapter and the remainder of
+the thesis.  They are defined here for convenience and also at the point of
+first use.
+
+\begin{description}[labelwidth=3.0cm,leftmargin=3.5cm]
+  \item[SAR]  Synthetic Aperture Radar.  An active microwave imaging technique
+    in which the motion of the spacecraft is used to synthesise a very long
+    antenna aperture, yielding fine-resolution imagery of surface texture and
+    composition.
+  \item[VIMS] Visible and Infrared Mapping Spectrometer.  The \cassini{}
+    instrument that imaged \titan{}'s surface through six near-infrared
+    atmospheric transparency windows, providing surface composition data.
+  \item[CIRS] Composite Infrared Spectrometer.  The \cassini{} thermal
+    emission instrument used here to constrain the surface temperature field.
+  \item[GTDR] Global Titan Digital elevation model, Radar --- the raw
+    Cassini RADAR altimetry dataset archived in the Planetary Data System.
+  \item[GTDE] Global Titan Digital Elevation model --- the globally
+    interpolated topographic product of \citet{Corlies2017Titan} derived from
+    the GTDR and supplementary data sources.
+  \item[DEM]  Digital Elevation Model.  A gridded representation of surface
+    topography.
+  \item[PDS]  Planetary Data System.  The NASA archive for planetary mission
+    data.
+  \item[HDI]  Highest Density Interval.  A Bayesian credible interval
+    containing the specified probability mass within the narrowest possible
+    range.
+\end{description}
+
+\section{Notation}
+\label{sec:notation}
+
+Two quantities appear throughout this chapter and are defined here to avoid
+repetition.  Each habitability-proxy feature $f_i$ ($i = 1,\ldots,8$) is
+assigned:
+
+\begin{itemize}
+  \item A \textbf{weight} $w_i \in [0,1]$, where $\sum_i w_i = 1$.  The weight
+    encodes the relative astrobiological importance of feature $i$ as a
+    habitability indicator.  A feature with a higher weight exerts a larger
+    influence on the posterior probability of habitability, all else being
+    equal.  Weights are assigned from physical reasoning and validated against
+    data-derived importances (Section~\ref{sec:importances}).
+
+  \item A \textbf{prior mean} $\mu_i \in [0,1]$.  This is the expected
+    spatially-averaged value of feature $i$ before any observational data
+    are considered --- a statement of our prior knowledge about how common or
+    widespread the habitability-relevant condition is on \titan{}.  For
+    example, liquid hydrocarbon covers $\sim$2\% of \titan{}'s surface
+    \citep{Hayes2008}, so its prior mean is $\mu_1 = 0.02$.  The weighted
+    sum of all prior means defines the global prior mean habitability:
+    $\mu_0 = \sum_i w_i \mu_i = 0.331$.  Note that the value $\mu_0 = 0.331$ does not appear in the prior literature as a global habitability estimate for \titan{}; it emerges from the component prior means in Table~\ref{tab:priors} and should be interpreted as encoding the observation that \titan{}'s surface is globally organic-rich whilst simultaneously recognising that liquid solvent is present at only $\sim$2\% of the surface. The resulting moderate prior is intentionally revisionable: the weak concentration parameter $\kappa = 5$ ensures that the data, not the prior, determine the posterior at any pixel where observational coverage is good. Full values are tabulated in
+    Appendix~\ref{app:priors}.
+\end{itemize}
+
+This notation first appears in a practical context in Section~\ref{sec:features},
+where the eight features are described individually.  Their role in the
+Bayesian update is explained in Section~\ref{sec:bayes}.
+
+
+\section{Observational Data Source Details}
+\label{app:data_sources}
+\label{sec:data_sources}
+
+\subsection{Cassini RADAR Synthetic Aperture Radar Mosaic}
+\label{sec:sar_data}
+
+The Cassini RADAR instrument operated in SAR mode during \titan{} flybys,
+imaging the surface at $\sim$350\,m per pixel over the 127 targeted flybys
+from 2004 to 2017 \citep{Janssen2016}.  SAR measures the normalised radar
+cross-section $\sigma^0$ (typically expressed in dB), which is sensitive to
+surface roughness, dielectric properties, and the presence of smooth or
+conducting materials.  Low backscatter ($\sigma^0 < -20$\,dB) is
+diagnostic of smooth surfaces (consistent with liquid hydrocarbon lakes) or
+dielectrically absorbing material (consistent with tholin-rich dune sand).
+High backscatter correlates with rough, water-ice-rich material such as
+mountain terrain, crater ejecta, and some cryovolcanic surfaces.  The SAR
+mosaic covers $\sim$67\% of \titan{}'s surface and constitutes the primary
+data source for the liquid hydrocarbon, chemical energy, and subsurface ocean
+features.
+
+\subsection{VIMS Near-Infrared Spectral Mosaic}
+\label{sec:vims_data}
+
+The Cassini Visible and Infrared Mapping Spectrometer (VIMS) observed \titan{}'s
+surface through atmospheric transparency windows at 0.94, 1.08, 1.27, 1.59,
+2.03, and 2.79\,\textmu{}m.  The band ratio 1.59/1.27\,\textmu{}m is an
+established proxy for tholin (complex organic) abundance at the surface: the
+1.59\,\textmu{}m window probes deeper into the tholin-bearing surface whilst
+the 1.27\,\textmu{}m window provides atmospheric normalisation \citep{Barnes2007}.
+The Seignovert et al.\ (2019) combined VIMS+ISS mosaic \citep{Seignovert2019CaltechDATA}
+provides this band ratio map at 2--4\,km per pixel coverage, but only
+for the 0--180\textdegree{}W hemisphere ($\sim$50\% of the globe).  The
+significance of this coverage gap for the organic abundance feature is
+discussed in Section~\ref{sec:feat_organic}.
+
+\subsection{CIRS Thermal Emission Observations}
+\label{sec:cirs_data}
+
+The Composite Infrared Spectrometer (CIRS) measured \titan{}'s surface
+brightness temperature at far-infrared wavelengths throughout the Cassini
+mission.  \citet{Jennings2019} derived an analytical model of the
+latitude-dependent surface temperature from 13 years of CIRS observations,
+producing the formula:
+\begin{equation}
+  T(\phi, Y) = (93.53 - 0.095\,Y)\cos\!\Bigl[
+    (\phi + 0.85 - 3.2\,Y)(0.0029 - 0.00006\,Y)
+  \Bigr]
+  \label{eq:jennings}
+\end{equation}
+where $\phi$ is latitude in degrees and $Y = t_\text{CE} - 2009.61$ is years
+from the northern spring equinox (22 May 2009).  This formula reproduces the
+observed zonal surface temperatures to within $\pm0.4$\,K (rms) across the
+full Cassini epoch and provides 100\% global coverage, grounded in CIRS
+focal-plane-1 limb and nadir observations across the full 2004--2017 mission.
+The model captures only latitudinal and seasonal variation; no longitudinal
+inhomogeneity is represented (consistent with the absence of significant
+longitudinal temperature gradients in the Cassini dataset).  For temporal
+epochs other than the present, the mean annual temperature field is held
+stationary: this approximation is justified because the dominant habitability
+driver at non-present epochs is the liquid-hydrocarbon scale function
+$s_1(t)$ rather than the temperature gradient, and the methane-cycle
+feature contributes only $w_4 = 0.15$ to the posterior.  It is used to
+synthesise the global temperature field and its meridional gradient, which
+enters the methane cycle feature (Section~\ref{sec:feat_methane}).
+
+\subsection{GTDE/GTDR Topographic Models}
+\label{sec:topography_data}
+
+The Global Titan Digital Elevation model (GTDE), produced by
+\citet{Corlies2017Titan}, integrates Cassini RADAR altimetry, SARtopo
+stereophotogrammetry, and radial basis function interpolation to produce
+a globally-interpolated topographic model at $\sim$22\,km per pixel (2 pixels
+per degree).  Coverage is approximately 90\% of the globe, with the south
+polar region and some high-latitude northern areas relying most heavily on
+interpolation.  The topographic model contributes to the chemical energy
+feature (identifying topographic lows as preferential organic accumulation
+sites), the topographic complexity feature (through local roughness estimation),
+and the surface--atmosphere interaction feature (through slope calculation).
+
+\subsection{Lopes (2019) Global Geomorphological Map}
+\label{sec:geo_data}
+
+The global geomorphological map of \citet{Lopes2019} classifies the Cassini
+SAR-imaged surface into seven terrain units (plains, dunes, mountains, basins,
+labyrinth terrain, craters, and lakes) using SAR texture, backscatter,
+morphology, and VIMS spectral correlation.  This map provides the terrain
+classification that enters the organic abundance feature (as a globally
+seamless gap-fill) and the geomorphological diversity feature.  The shapefiles
+are provided in east-positive geographic coordinates and require conversion to
+the west-positive convention of the analysis grid.
+
+\subsection{Miller (2021) Global Fluvial Channel Map}
+\label{sec:channel_data}
+
+\citet{Miller2021channels} identified and mapped \titan{}'s global fluvial
+channel network from Cassini SAR data, producing a vector dataset of channel
+locations and widths.  This network constitutes the primary mechanism for
+organic material transport from equatorial source regions to the polar basins,
+and channel density is used as one component of the surface--atmosphere
+interaction feature.
+
+\subsection{Tidal Love Number and Gravity Data}
+\label{sec:gravity_data}
+
+The degree-2 tidal Love number $k_2 = 0.589 \pm 0.150$ from \citet{Iess2012}
+provides a global constraint on interior structure, confirming the presence
+of a subsurface liquid layer.  This scalar quantity enters as a global floor
+value in the subsurface ocean proximity feature.
+
+\subsection{Hedgepeth (2020) Global Crater Catalogue}
+\label{sec:crater_data}
+
+The global catalogue of confirmed and probable impact structures on \titan{}
+by \citet{Hedgepeth2020} records crater diameters and positions for all
+resolved impact features in the Cassini SAR dataset.  This catalogue is used
+exclusively in the \textit{Past} epoch to generate the impact-melt proximity feature.

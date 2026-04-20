@@ -12,13 +12,13 @@ profound transformation over the past three decades, shifting from the domain
 of philosophical speculation to empirical scientific investigation.  This
 change has been driven by two largely independent but mutually reinforcing
 developments: the systematic discovery that life on Earth thrives in conditions
-previously considered inimical to biology, and the growing recognition through
+previously considered detrimental to biology, and the growing recognition through
 robotic spacecraft exploration that chemically and thermodynamically suitable
 environments for life are far more widely distributed throughout the solar
 system than twentieth-century intuitions suggested.
 
 The progressive characterisation of terrestrial extremophile communities has
-fundamentally expanded the envelope of conditions considered compatible with
+ expanded the limits of conditions considered compatible with
 life.  Microorganisms have been cultured from deep-sea hydrothermal vents at
 temperatures exceeding 121\textdegree{}C, from hypersaline brines with water
 activities as low as $a_w = 0.60$, from the anoxic pore spaces of deep
@@ -29,17 +29,17 @@ years \citep{Rothschild2001, Cavicchioli2002}.  Each such discovery has
 moved the habitable niche boundaries outwards, making it progressively more
 difficult to argue that any particular planetary environment is categorically
 uninhabitable without specific evidence that the relevant physical and
-chemical conditions lie entirely outside the known envelope of life.
+chemical conditions lie entirely outside the known boundaries of life.
 
 In parallel, the outer solar system has revealed a far richer array of
 liquid environments than the classical habitable zone framework would predict.
 The Europa detection from the Galileo mission \citep{Pappalardo1999} and the
 subsequent discovery of active cryovolcanism and ocean chemistry at Enceladus
 \citep{Waite2017} established that tidal heating can maintain liquid water
-oceans beneath ice shells at heliocentric distances far beyond any reasonable
-definition of the water-based habitable zone.  These discoveries shifted the
+oceans beneath ice shells at distances far beyond any reasonable
+definition of the water-based habitable zone \citep{Kasting1993}. These discoveries shifted the
 conceptual framework of solar system habitability from a two-dimensional
-picture (terrestrial planets in a narrow orbital band) to a three-dimensional
+picture (Earth-like planets in a narrow orbital band) to a three-dimensional
 one encompassing subsurface environments throughout the outer solar system.
 
 Within this broader astrobiological context, Saturn's moon \titan{} occupies
@@ -74,12 +74,19 @@ The interior harbours a global water--ammonia subsurface ocean at $\sim$55--80\,
 Four habitability pathways have been proposed for \titan{}'s surface.
 
 \begin{enumerate}[itemsep=0em]
-    \item The \textit{acetylenotrophy hypothesis} \citep{McKaySmith2005} identifies $\ce{C2H2 + 3H2 -> 2CH4}$ ($\Delta G = -334$\,kJ\,mol$^{-1}$) as a viable energy source at the present epoch, with acetylene and \ce{H2} supplied by atmospheric photolysis; the energetics comfortably exceed the metabolic threshold of terrestrial methanogens even under updated thermochemical estimates \citep{Yanez2024}.
+    \item The \textit{acetylenotrophy hypothesis} \citep{McKaySmith2005} identifies 
+\begin{equation}    
+\ce{C2H2 + 3H2 -> 2CH4}
+\qquad
+(\Delta G = -334\,kJ\,mol^{-1}) 
+\label{eq:acetylenotrophy}
+\end{equation}
+as a viable energy source at the present epoch, with acetylene and \ce{H2} supplied by atmospheric photolysis; the energetics comfortably exceed the metabolic threshold of terrestrial methanogens even under updated thermochemical estimates \citep{Yanez2024}.
 
     \item The \textit{azotosome hypothesis} \citep{Stevenson2015} proposes that acrylonitrile (detected by ALMA; \citealt{Palmer2017}) spontaneously forms stable membrane-like vesicles in liquid methane, providing a plausible route to cellular compartmentalisation without aqueous chemistry.
 
 
-    \item \textit{Post-impact melt chemistry} offers a water-based pathway: large impacts produce water--ammonia--organic melt ponds persisting for $10^3$--$10^4$\,yr during which Strecker synthesis yields amino acids from surface aldehydes, ammonia, and HCN \citep{Neish2010, Madan2026}; this is the primary astrobiological rationale for the \dragonfly{} landing site at Selk crater.
+    \item \textit{Post-impact melt chemistry} offers a water-based pathway: large impacts produce water--ammonia--organic melt ponds persisting for $10^3$--$10^4$\,yr during which Strecker synthesis yields amino acids from surface aldehydes, ammonia, and HCN \citep{wiki:Strecker, Neish2010, Madan2026}; this is the primary astrobiological rationale for the \dragonfly{} landing site at Selk crater.
 
 
     \item Finally, the \textit{far-future habitability window} \citep{Lorenz1997} arises when red-giant solar luminosity raises \titan{}'s surface above the water--ammonia eutectic (176\,K) for an estimated 200--500\,Myr, creating a global ocean over 16\,Gyr of accumulated organics.
@@ -87,13 +94,6 @@ Four habitability pathways have been proposed for \titan{}'s surface.
 \end{enumerate}
 
 This thesis provides a quantitative characterisation of all four scenarios within a unified Bayesian framework across geological time.
-
-\section{The Cassini--Huygens Mission and Dragonfly}
-\label{sec:missions}
-
-The \cassini{}--\huygens{} mission (2004--2017) provided the observational foundation of this thesis through 127 targeted \titan{} flybys, the \huygens{} atmospheric probe descent and landing, and a systematic multi-instrument survey of \titan{}'s surface, atmosphere, and interior.  SAR mapping covered $\sim$67\% of the surface; VIMS near-infrared spectroscopy $\sim$50\%; CIRS thermal mapping the full globe at $\sim$10\textdegree{} resolution.  The mission's key unresolved gap is the absence of a quantitative, spatially-resolved, multi-epoch habitability analysis integrating all data modalities --- which this thesis provides.
-
-NASA's \dragonfly{} rotorcraft \citep{Lorenz2018Dragonfly}, due to arrive in 2034, will traverse $\sim$175\,km from the Belet dune field to Selk crater over a 2.7-year mission.  Chapter~\ref{ch:results} provides a quantitative evaluation of that site selection relative to globally optimal alternatives.
 
 \section{Scope and Research Questions}
 \label{sec:scope}
@@ -160,13 +160,13 @@ The specific research questions addressed are:
     Which impact structures were the most astrobiologically significant,
     and what are the implications for prebiotic chemistry?}
 
-  \item[RQ3] \textit{How does habitability evolve through the temporal sequence
+  \item[RQ3] \textit{How does the surface habitability evolve over geologic time
     from the LHB to the red-giant future?  Is \titan{} potentially the most
     habitable body in the solar system during the red-giant ocean window?}
 
   \item[RQ4] \textit{Does the derived habitability map independently validate
     the \dragonfly{} landing site at Selk crater, and which instruments
-    are best positioned to test the model's predictions?}
+    are best positioned to test the model's predictions? See Appendix~\ref{app:missions} for more information on the \cassini{}--\huygens{} and \dragonfly{} missions.}
 \end{description}
 
 Chapter~\ref{ch:methods} presents the data sources, feature extraction,

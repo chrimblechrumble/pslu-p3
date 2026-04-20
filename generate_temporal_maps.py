@@ -144,7 +144,7 @@ POLAR_SCALE: float = math.tan(math.radians((90.0 - POLAR_CAP_EDGE_DEG) / 2.0))
 #: Background colour for all figure panels and the figure itself.
 COLOUR_BACKGROUND: str = "#ffffff"
 #: Slightly lighter background used for the space/nodata region inside polar caps.
-COLOUR_SPACE:       str = "#eeeeee"
+COLOUR_SPACE:       str = "#ffffff"
 #: Colour applied to the boundary circle of each polar panel.
 COLOUR_POLAR_RING:  str = "#555566"
 #: Colour for map-panel spine edges.
@@ -191,6 +191,126 @@ COLOUR_PHASE_DEFAULT: str = "#334499"
 COLOUR_AXIS_LABEL:   str = "#444455"
 #: Poster info-line colour for normal epochs.
 COLOUR_POSTER_INFO:  str = "#334499"
+#: Text colour for the left (features) info panel.
+COLOUR_INFO_L_TEXT:  str = "#1a2a6a"
+#: Fill colour for the left (features) info panel.
+COLOUR_INFO_L_FILL:  str = "#eef0f8"
+#: Border colour for the left (features) info panel.
+COLOUR_INFO_L_EDGE:  str = "#2a3a6a"
+#: Text colour for the centre (colour trends) info panel.
+COLOUR_INFO_C_TEXT:  str = "#5a3500"
+#: Fill colour for the centre (colour trends) info panel.
+COLOUR_INFO_C_FILL:  str = "#fdf5e0"
+#: Border colour for the centre (colour trends) info panel.
+COLOUR_INFO_C_EDGE:  str = "#6a4a00"
+#: Text colour for the right (assumptions) info panel.
+COLOUR_INFO_R_TEXT:  str = "#0a3a0a"
+#: Fill colour for the right (assumptions) info panel.
+COLOUR_INFO_R_FILL:  str = "#eef8ee"
+#: Border colour for the right (assumptions) info panel.
+COLOUR_INFO_R_EDGE:  str = "#1a5a1a"
+
+# --- Font sizes --------------------------------------------------------------
+#: "TITAN SURFACE HABITABILITY" frame title.
+FSIZE_FRAME_TITLE:          float = 15.0
+#: Epoch / phase / solar subtitle line.
+FSIZE_FRAME_SUBTITLE:       float = 10.0
+#: Title above each of the three map panels (equirectangular, N polar, S polar).
+FSIZE_MAP_TITLE:            float = 10.0
+#: Axis labels ("Longitude °W", "Latitude °N") on the equirectangular panel.
+FSIZE_MAP_AXIS_LABEL:       float = 9.0
+#: Tick-label size on the equirectangular map graticule.
+FSIZE_MAP_TICK:             float = 7.5
+#: Longitude labels on the polar-disc graticule (outside the disc boundary).
+FSIZE_POLAR_GRATICULE:      float = 6.0
+#: Site-name annotation text on the equirectangular panel.
+FSIZE_LOCATION_LABEL:       float = 7.5
+#: Site-name annotation text on the polar panels (slightly smaller).
+FSIZE_LOCATION_LABEL_POLAR: float = 7.0
+#: Text inside all three bottom info panels (features / colour / assumptions).
+FSIZE_INFO_PANEL:           float = 7.8
+#: Marker icon size in the lake / land / lander legend.
+FSIZE_LEGEND_ICON:          float = 10.0
+#: Label text size in the lake / land / lander legend.
+FSIZE_LEGEND_LABEL:         float = 9.5
+#: "P(habitable | features)" title above the habitability colour bar.
+FSIZE_CBAR_TITLE:           float = 10.0
+#: Tick-label size on the habitability colour bar.
+FSIZE_CBAR_TICK:            float = 9.0
+#: Body text in the narrative / summary box at the bottom of each frame.
+FSIZE_NARRATIVE_BODY:       float = 10.5
+#: Title line in the narrative / summary box.
+FSIZE_NARRATIVE_TITLE:      float = 12.0
+#: Suptitle of the six-panel key-epochs poster.
+FSIZE_POSTER_TITLE:         float = 16.0
+#: Individual panel titles and colour-bar label on the poster.
+FSIZE_POSTER_PANEL_TITLE:   float = 11.0
+#: Axis labels ("°W", "°N") on each poster panel.
+FSIZE_POSTER_AXIS_LABEL:    float = 8.0
+#: Tick labels and epoch-info text on each poster panel.
+FSIZE_POSTER_TICK:          float = 7.0
+#: Colour-bar tick labels on the poster.
+FSIZE_POSTER_CBAR_TICK:     float = 9.0
+
+# --- Thesis-frame font sizes -------------------------------------------------
+# Independent copies of the animation FSIZE_* values so the thesis figure
+# can be tuned separately without touching the animation layout.
+#: "TITAN SURFACE HABITABILITY" title on thesis frames.
+FSIZE_THESIS_FRAME_TITLE:          float = 15.0
+#: Epoch / phase / solar subtitle on thesis frames.
+FSIZE_THESIS_FRAME_SUBTITLE:       float = 12.0
+#: Map panel titles (equirectangular, N polar, S polar) on thesis frames.
+FSIZE_THESIS_MAP_TITLE:            float = 12.0
+#: Axis labels ("Longitude °W", "Latitude °N") on thesis equirectangular panel.
+FSIZE_THESIS_MAP_AXIS_LABEL:       float = 12.0
+#: Tick-label size on the thesis equirectangular graticule.
+FSIZE_THESIS_MAP_TICK:             float = 12
+#: Longitude labels on the polar-disc graticule in thesis frames.
+FSIZE_THESIS_POLAR_GRATICULE:      float = 12.0
+#: Site-name annotation text on the thesis equirectangular panel.
+FSIZE_THESIS_LOCATION_LABEL:       float = 12
+#: Site-name annotation text on the thesis polar panels.
+FSIZE_THESIS_LOCATION_LABEL_POLAR: float = 12
+#: Marker icon size in the legend on thesis frames.
+FSIZE_THESIS_LEGEND_ICON:          float = 12.0
+#: Label text in the legend on thesis frames.
+FSIZE_THESIS_LEGEND_LABEL:         float = 12
+#: "P(habitable | features)" title above the colour bar on thesis frames.
+FSIZE_THESIS_CBAR_TITLE:           float = 12.0
+#: Tick-label size on the colour bar on thesis frames.
+FSIZE_THESIS_CBAR_TICK:            float = 12.0
+#: Narrative / summary body text on thesis frames.
+FSIZE_THESIS_NARRATIVE_BODY:       float = 12
+#: Narrative / summary title on thesis frames.
+FSIZE_THESIS_NARRATIVE_TITLE:      float = 12.0
+
+# --- Thesis-frame geometry ---------------------------------------------------
+#: Figure height for thesis frames (width stays FIG_WIDTH_IN).
+FIG_HEIGHT_THESIS_IN:  float = 16.0
+#: Equirectangular panel – full horizontal span.
+TH_GS_EQ_LEFT:         float = 0.04
+TH_GS_EQ_RIGHT:        float = 0.95
+TH_GS_EQ_TOP:          float = 0.930
+TH_GS_EQ_BOTTOM:       float = 0.630
+#: Polar cap panels – placed with fig.add_axes() for exact equal spacing.
+#: Panels are square: TH_POL_WIDTH = TH_POL_HEIGHT * FIG_HEIGHT_THESIS_IN / FIG_WIDTH_IN
+#: Three equal horizontal gaps:  gap | N panel | gap | S panel | gap
+#: With TH_POL_HEIGHT=0.40: panels are 6.40" × 6.40"; each gap is 2.63".
+TH_POL_HEIGHT:         float = 0.500   # 6.40" at 16" figure height
+TH_POL_WIDTH:          float = 0.3092  # 6.40" at 20.7" figure width  (= 0.40 * 16/20.7)
+TH_POL_BOTTOM:         float = 0.115   # bottom edge of both polar panels
+TH_POL_LEFT_N:         float = 0.1272  # left edge of N panel  (= (1 - 2*0.3092) / 3)
+TH_POL_LEFT_S:         float = 0.5636  # left edge of S panel  (= gap + width + gap)
+#: Bottom-strip element y-positions (figure fractions, scaled for 16" figure).
+TH_CBAR_LEFT:          float = 0.10
+TH_CBAR_BOTTOM:        float = 0.100
+TH_CBAR_HEIGHT:        float = 0.010
+TH_CBAR_LABEL_Y:       float = 0.118
+TH_LEGEND_Y:           float = 0.168
+TH_NARR_Y:             float = 0.022
+TH_NARR_TITLE_Y:       float = 0.052
+TH_PROGRESS_Y:         float = 0.948
+TH_PROGRESS_H:         float = 0.005
 
 # --- Figure geometry ---------------------------------------------------------
 
@@ -1276,7 +1396,7 @@ def render_frame(
     # rather than transparency guarantees the Agg backend produces the exact
     # same colour as the figure background without compositing artefacts.
     cmap = matplotlib.colormaps["plasma"]
-    cmap.set_bad(color="#eeeeee")   # matplotlib keyword stays American English
+    cmap.set_bad(color=COLOUR_SPACE)   # matplotlib keyword stays American English
     cmap_polar = cmap.copy()               # identical -- both use background colour
     norm = mcolors.Normalize(vmin=VMIN, vmax=VMAX)   # matplotlib API
 
@@ -1313,7 +1433,7 @@ def render_frame(
     ]
 
     MARKER_SIZE: int  = 6
-    TEXT_SIZE:   float = 7.5
+    TEXT_SIZE:   float = FSIZE_LOCATION_LABEL       # alias for module constant
 
     def _label_offset(lon_W: float, lat: float) -> Tuple[float, float]:
         """Return (dx, dy) offset in data units to push label clear of the dot."""
@@ -1357,7 +1477,7 @@ def render_frame(
     # Longitude graticule at 30 deg intervals, latitude at 15 deg intervals
     ax1.set_xticks(range(0, 361, 30))
     ax1.set_yticks(range(-90, 91, 15))
-    ax1.tick_params(colors="black", labelsize=7.5, length=3, width=0.7)
+    ax1.tick_params(colors="black", labelsize=FSIZE_MAP_TICK, length=3, width=0.7)
     ax1.set_xlim(0, 360)
     ax1.set_ylim(-90, 90)
 
@@ -1382,8 +1502,8 @@ def render_frame(
                       fc=COLOUR_ANNOT_BOX, ec="none"),
         )
 
-    ax1.set_xlabel("Longitude °W", color="black", fontsize=9)
-    ax1.set_ylabel("Latitude °N", color="black", fontsize=9, labelpad=2)
+    ax1.set_xlabel("Longitude °W", color="black", fontsize=FSIZE_MAP_AXIS_LABEL)
+    ax1.set_ylabel("Latitude °N", color="black", fontsize=FSIZE_MAP_AXIS_LABEL, labelpad=2)
 
     # Always-present markers (Huygens + Dragonfly) not in this epoch's top-10
     for lon_W, lat, label, rank, _pole in ALWAYS_EXTRA:
@@ -1404,7 +1524,7 @@ def render_frame(
             bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX, ec="none"),
         )
     ax1.set_title("Global map  (equirectangular)", color="black",
-                  fontsize=10, pad=5)
+                  fontsize=FSIZE_MAP_TITLE, pad=5)
     for spine in ax1.spines.values():
         spine.set_edgecolor(COLOUR_SPINE)
 
@@ -1515,7 +1635,7 @@ def render_frame(
             # Label text at r=1.17, outside the disc
             lbl: str = f"{lon_W_tick}°" if lon_W_tick == 0 else f"{lon_W_tick}°W"
             ax.text(1.17 * sin_l, -1.17 * cos_l, lbl,
-                    color=COLOUR_POLAR_RING, fontsize=6.0,
+                    color=COLOUR_POLAR_RING, fontsize=FSIZE_POLAR_GRATICULE,
                     ha="center", va="center", zorder=6)
 
     # -- Centre: North polar cap (POLAR_CAP_EDGE_DEG deg - 90 degN) -----------------
@@ -1532,7 +1652,7 @@ def render_frame(
     ax2.set_ylim(-_DISC_LIM, _DISC_LIM)
     ax2.axis("off")
     ax2.set_title(f"North polar cap  ({POLAR_CAP_EDGE_DEG:.0f}°–90°N)",
-                  color="black", fontsize=10, pad=5)
+                  color="black", fontsize=FSIZE_MAP_TITLE, pad=5)
     _draw_polar_graticule(ax2)
 
     # Overlay north-polar location markers
@@ -1552,7 +1672,7 @@ def render_frame(
         ax2.annotate(
             (f"#{rank} {label}" if rank > 0 else label),
             xy=(xs, ys), xytext=(tx, ty),
-            color=COLOUR_TEXT, fontsize=TEXT_SIZE - 0.5,
+            color=COLOUR_TEXT, fontsize=FSIZE_LOCATION_LABEL_POLAR,
             ha="center", va="center",
             arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
             zorder=11,
@@ -1577,7 +1697,7 @@ def render_frame(
         ax2.annotate(
             label,
             xy=(xs, ys), xytext=(tx, ty),
-            color=COLOUR_TEXT, fontsize=TEXT_SIZE - 0.5,
+            color=COLOUR_TEXT, fontsize=FSIZE_LOCATION_LABEL_POLAR,
             ha="center", va="center",
             arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
             zorder=11,
@@ -1595,7 +1715,7 @@ def render_frame(
     ax3.set_ylim(-_DISC_LIM, _DISC_LIM)
     ax3.axis("off")
     ax3.set_title(f"South polar cap  ({POLAR_CAP_EDGE_DEG:.0f}°–90°S)",
-                  color="black", fontsize=10, pad=5)
+                  color="black", fontsize=FSIZE_MAP_TITLE, pad=5)
     _draw_polar_graticule(ax3)
 
     # Overlay south-polar location markers
@@ -1615,7 +1735,7 @@ def render_frame(
         ax3.annotate(
             (f"#{rank} {label}" if rank > 0 else label),
             xy=(xs, ys), xytext=(tx, ty),
-            color=COLOUR_TEXT, fontsize=TEXT_SIZE - 0.5,
+            color=COLOUR_TEXT, fontsize=FSIZE_LOCATION_LABEL_POLAR,
             ha="center", va="center",
             arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
             zorder=11,
@@ -1639,7 +1759,7 @@ def render_frame(
         ax3.annotate(
             label,
             xy=(xs, ys), xytext=(tx, ty),
-            color=COLOUR_TEXT, fontsize=TEXT_SIZE - 0.5,
+            color=COLOUR_TEXT, fontsize=FSIZE_LOCATION_LABEL_POLAR,
             ha="center", va="center",
             arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
             zorder=11,
@@ -1654,10 +1774,10 @@ def render_frame(
     sm  = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     cb  = fig.colorbar(sm, cax=cax, orientation="horizontal")
     cb.set_label("")                # suppress automatic label below bar
-    cb.ax.xaxis.set_tick_params(color="black", labelcolor="black", labelsize=9)
+    cb.ax.xaxis.set_tick_params(color="black", labelcolor="black", labelsize=FSIZE_CBAR_TICK)
     # Manual label centred above the bar
     fig.text(0.50, 0.164, "P(habitable | features)",
-             color="black", fontsize=10, ha="center", va="bottom",
+             color="black", fontsize=FSIZE_CBAR_TITLE, ha="center", va="bottom",
              transform=fig.transFigure)
 
     # -- Site-type marker legend ------------------------------------------
@@ -1671,8 +1791,8 @@ def render_frame(
         (0.50, "s",  "Land site"),
         (0.61, "*",  "Mission lander"),
     ]
-    _leg_fsize  = 10.0     # icon size in points
-    _leg_tsize  = 9.5      # label text size in points
+    _leg_fsize  = FSIZE_LEGEND_ICON     # icon size in points (alias for module constant)
+    _leg_tsize  = FSIZE_LEGEND_LABEL    # label text size in points (alias for module constant)
     for _lx, _lmark, _ltxt in _leg_items:
         # Draw marker icon using fig.text with a marker-like Unicode substitute
         # (actual marker drawn via a tiny single-point axes)
@@ -1706,20 +1826,20 @@ def render_frame(
         body_text:  str       = "\n".join(body_lines) if body_lines else "-" * 60
 
         fig.text(0.50, 0.030, body_text,
-                 color=COLOUR_NARRATIVE_BODY, fontsize=10.5, fontweight="normal",
+                 color=COLOUR_NARRATIVE_BODY, fontsize=FSIZE_NARRATIVE_BODY, fontweight="normal",
                  ha="center", va="center", fontfamily="monospace",
                  linespacing=1.55, zorder=20,
                  bbox=dict(boxstyle="round,pad=0.55",
                            fc=COLOUR_NARRATIVE_FILL, ec=COLOUR_NARRATIVE_BORDER, lw=1.8))
         fig.text(0.50, 0.072, title_line,
-                 color=COLOUR_NARRATIVE_TITLE, fontsize=12.0, fontweight="bold",
+                 color=COLOUR_NARRATIVE_TITLE, fontsize=FSIZE_NARRATIVE_TITLE, fontweight="bold",
                  ha="center", va="center", fontfamily="monospace", zorder=21,
                  bbox=dict(boxstyle="round,pad=0.30",
                            fc=COLOUR_TITLE_FILL, ec=COLOUR_TITLE_BORDER, lw=1.5))
     else:
-        fig.text(0.50, 0.030, " ", color=COLOUR_TRANSPARENT, fontsize=10.5,
+        fig.text(0.50, 0.030, " ", color=COLOUR_TRANSPARENT, fontsize=FSIZE_NARRATIVE_BODY,
                  fontfamily="monospace", ha="center", va="center", zorder=1)
-        fig.text(0.50, 0.072, " ", color=COLOUR_TRANSPARENT, fontsize=12.0,
+        fig.text(0.50, 0.072, " ", color=COLOUR_TRANSPARENT, fontsize=FSIZE_NARRATIVE_TITLE,
                  fontfamily="monospace", ha="center", va="center", zorder=1)
 
     # ── Title ─────────────────────────────────────────────────────────────────
@@ -1734,19 +1854,19 @@ def render_frame(
         phase_col = COLOUR_PHASE_DEFAULT
 
     fig.text(0.5, 0.978, "TITAN SURFACE HABITABILITY", color="black",
-             fontsize=15, ha="center", va="bottom", fontweight="bold",
+             fontsize=FSIZE_FRAME_TITLE, ha="center", va="bottom", fontweight="bold",
              fontfamily="monospace")
     fig.text(0.5, 0.963, f"Epoch:  {_epoch_label(t).replace(chr(10),' ')}   |   "
              f"Phase:  {_phase_label(t).replace(chr(10),' ')}   |   {solar_str}",
-             color=phase_col, fontsize=10, ha="center", va="bottom")
+             color=phase_col, fontsize=FSIZE_FRAME_SUBTITLE, ha="center", va="bottom")
 
     # -- Progress bar ----------------------------------------------------------
-    bar_ax = fig.add_axes([0.10, 0.948, 0.80, 0.006])
-    bar_ax.set_facecolor(COLOUR_BACKGROUND)
-    bar_ax.set_xlim(0, n_epochs)
-    bar_ax.set_ylim(0, 1)
-    bar_ax.barh(0.5, epoch_idx + 1, height=1.0, color=COLOUR_PROGRESS_BAR, alpha=0.7)
-    bar_ax.axis("off")
+    # bar_ax = fig.add_axes([0.10, 0.948, 0.80, 0.006])
+    # bar_ax.set_facecolor(COLOUR_BACKGROUND)
+    # bar_ax.set_xlim(0, n_epochs)
+    # bar_ax.set_ylim(0, 1)
+    # bar_ax.barh(0.5, epoch_idx + 1, height=1.0, color=COLOUR_PROGRESS_BAR, alpha=0.7)
+    # bar_ax.axis("off")
 
     # -- Epoch-aware feature / assumption panel ----------------------------------
     # Three-column panel in the expanded lower figure area:
@@ -2023,9 +2143,9 @@ def render_frame(
 
     fig.text(
         0.080, 0.448, "\n".join(_feat_lines),
-        color="#1a2a6a", fontsize=7.8, fontfamily="monospace",
+        color=COLOUR_INFO_L_TEXT, fontsize=FSIZE_INFO_PANEL, fontfamily="monospace",
         va="top", ha="left", linespacing=1.45, zorder=20,
-        bbox=dict(boxstyle="round,pad=0.4", fc="#eef0f8", ec="#2a3a6a", lw=1.2),
+        bbox=dict(boxstyle="round,pad=0.4", fc=COLOUR_INFO_L_FILL, ec=COLOUR_INFO_L_EDGE, lw=1.2),
         transform=fig.transFigure,
     )
 
@@ -2047,9 +2167,9 @@ def render_frame(
 
     fig.text(
         0.535, 0.448, "\n".join(_colour_lines),
-        color="#5a3500", fontsize=7.8, fontfamily="monospace",
+        color=COLOUR_INFO_C_TEXT, fontsize=FSIZE_INFO_PANEL, fontfamily="monospace",
         va="top", ha="center", linespacing=1.45, zorder=20,
-        bbox=dict(boxstyle="round,pad=0.4", fc="#fdf5e0", ec="#6a4a00", lw=1.2),
+        bbox=dict(boxstyle="round,pad=0.4", fc=COLOUR_INFO_C_FILL, ec=COLOUR_INFO_C_EDGE, lw=1.2),
         transform=fig.transFigure,
     )
 
@@ -2074,11 +2194,357 @@ def render_frame(
 
     fig.text(
         0.990, 0.448, "\n".join(_assump_lines),
-        color="#0a3a0a", fontsize=7.8, fontfamily="monospace",
+        color=COLOUR_INFO_R_TEXT, fontsize=FSIZE_INFO_PANEL, fontfamily="monospace",
         va="top", ha="right", linespacing=1.45, zorder=20,
-        bbox=dict(boxstyle="round,pad=0.4", fc="#eef8ee", ec="#1a5a1a", lw=1.2),
+        bbox=dict(boxstyle="round,pad=0.4", fc=COLOUR_INFO_R_FILL, ec=COLOUR_INFO_R_EDGE, lw=1.2),
         transform=fig.transFigure,
     )
+
+    return fig
+
+
+# --- Thesis frame -------------------------------------------------------------
+
+def render_thesis_frame(
+    posterior:  "np.ndarray",
+    t:          float,
+    epoch_idx:  int,
+    n_epochs:   int,
+    dpi:        int = 120,
+    narrative:  "Optional[str]" = None,
+    source:     str = "BAYESIAN",
+) -> "matplotlib.figure.Figure":
+    """
+    Render a single thesis-quality frame for epoch *t*.
+
+    Differs from render_frame() in three ways:
+      1. The three info panels (features / colour trends / assumptions) are omitted.
+      2. The two polar-cap panels are positioned BELOW the equirectangular map
+         rather than to its right.
+      3. Font sizes are controlled by FSIZE_THESIS_* constants, independent of
+         the animation FSIZE_* constants.
+
+    The figure width stays FIG_WIDTH_IN; the height is FIG_HEIGHT_THESIS_IN
+    (default 16 inches).  Both polar discs are rendered as circles using
+    aspect='equal' inside explicitly placed axes (TH_POL_LEFT_N / TH_POL_LEFT_S).
+
+    Returns a matplotlib Figure.  The caller is responsible for saving and
+    closing it.
+    """
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import matplotlib.colors as mcolors
+    from matplotlib.gridspec import GridSpec
+    from scipy.ndimage import map_coordinates
+    cmap = matplotlib.colormaps["plasma"]
+    cmap.set_bad(color=COLOUR_SPACE)
+    cmap_polar = cmap.copy()
+    norm = mcolors.Normalize(vmin=VMIN, vmax=VMAX)
+
+    T_surface = titan_temp_K(t)
+    TOP10     = compute_epoch_top10(t)
+
+    # Build lookups identical to render_frame
+    SITE_TYPE: dict = {s["label"]: s["type"] for s in CANDIDATE_SITES}
+    MARKER_SHAPE: dict = {
+        "lake":   "^",
+        "land":   "s",
+        "lander": "*",
+    }
+    MARKER_SIZE_BY_TYPE: dict = {
+        "lake":   8,
+        "land":   7,
+        "lander": 11,
+    }
+
+    _top10_labels = {label for _, _, label, _, _ in TOP10}
+    ALWAYS_EXTRA: List[Tuple[float, float, str, int, str]] = [
+        (lon, lat, lbl, 0, ("N" if lat > 50 else "S" if lat < -50 else ""))
+        for s in CANDIDATE_SITES
+        if s["label"] in ALWAYS_SHOW and s["label"] not in _top10_labels
+        for lon, lat, lbl in [(s["lon_W"], s["lat"], s["label"])]
+    ]
+
+    MARKER_SIZE: int  = 6
+    TH_TEXT     = FSIZE_THESIS_LOCATION_LABEL
+    TH_TEXT_POL = FSIZE_THESIS_LOCATION_LABEL_POLAR
+
+    # ── Local helpers (mirrors render_frame helpers) ──────────────────────────
+    def _label_offset(lon_W: float, lat: float) -> Tuple[float, float]:
+        dx: float = 6.0 if lon_W < 300 else -6.0
+        dy: float = 5.0 if lat < 70 else -6.0
+        return dx, dy
+
+    def polar_reproject(img: "np.ndarray", north: bool, size: int = 500) -> "np.ndarray":
+        nrows_i, ncols_i = img.shape
+        y0, x0 = np.mgrid[-1:1:size*1j, -1:1:size*1j]
+        r = np.sqrt(x0**2 + y0**2)
+        outside = r > 1.0
+        lat_s = 90.0 - 2.0 * np.degrees(np.arctan(r * POLAR_SCALE))
+        if not north:
+            lat_s = -lat_s
+        lon_s = (np.degrees(np.arctan2(x0, y0)) + 360.0) % 360.0
+        row_s = (90.0 - lat_s) / 180.0 * nrows_i
+        col_s = lon_s / 360.0 * ncols_i
+        flat  = img.copy().astype(np.float64)
+        flat[~np.isfinite(flat)] = -1.0
+        sampled = map_coordinates(flat, [row_s.ravel(), col_s.ravel()],
+                                  order=1, mode="wrap", cval=-1.0)
+        out = sampled.reshape(size, size).astype(np.float32)
+        out[outside] = np.nan
+        out[out < 0] = np.nan
+        return out
+
+    def _loc_to_stereo(lon_W: float, lat: float, north: bool
+                       ) -> Tuple["Optional[float]", "Optional[float]"]:
+        if (north and lat < POLAR_CAP_EDGE_DEG) or (not north and lat > -POLAR_CAP_EDGE_DEG):
+            return None, None
+        abs_lat = abs(lat)
+        r = math.tan(math.radians((90.0 - abs_lat) / 2.0)) / POLAR_SCALE
+        if r > 1.0:
+            return None, None
+        lon_rad = math.radians(lon_W)
+        return r * math.sin(lon_rad), -r * math.cos(lon_rad)
+
+    _DISC_LIM: float = 1.28
+
+    def _draw_polar_graticule(ax: "matplotlib.axes.Axes") -> None:
+        for lon_W_tick in range(0, 360, 30):
+            lon_rad = math.radians(lon_W_tick)
+            sin_l, cos_l = math.sin(lon_rad), math.cos(lon_rad)
+            ax.plot([1.00 * sin_l, 1.07 * sin_l],
+                    [-1.00 * cos_l, -1.07 * cos_l],
+                    color=COLOUR_POLAR_RING, lw=1.0, alpha=0.9, zorder=5)
+            lbl = f"{lon_W_tick}°" if lon_W_tick == 0 else f"{lon_W_tick}°W"
+            ax.text(1.17 * sin_l, -1.17 * cos_l, lbl,
+                    color=COLOUR_POLAR_RING, fontsize=FSIZE_THESIS_POLAR_GRATICULE,
+                    ha="center", va="center", zorder=6)
+
+    # ── Figure ────────────────────────────────────────────────────────────────
+    fig = plt.figure(figsize=(FIG_WIDTH_IN, FIG_HEIGHT_THESIS_IN),
+                     facecolor=COLOUR_BACKGROUND)
+
+    # GridSpec for equirectangular panel (polars use explicit fig.add_axes())
+    gs_eq = GridSpec(1, 1, figure=fig,
+                     left=TH_GS_EQ_LEFT, right=TH_GS_EQ_RIGHT,
+                     top=TH_GS_EQ_TOP, bottom=TH_GS_EQ_BOTTOM)
+
+    # ── Equirectangular map ───────────────────────────────────────────────────
+    ax1 = fig.add_subplot(gs_eq[0, 0])
+    ax1.set_facecolor(COLOUR_BACKGROUND)
+    ax1.imshow(posterior, cmap=cmap, norm=norm,
+               origin="upper", aspect="auto",
+               extent=[0, 360, -90, 90], interpolation="lanczos")
+    ax1.set_xticks(range(0, 361, 30))
+    ax1.set_yticks(range(-90, 91, 15))
+    ax1.tick_params(colors="black", labelsize=FSIZE_THESIS_MAP_TICK,
+                    length=3, width=0.7)
+    for spine in ax1.spines.values():
+        spine.set_edgecolor(COLOUR_SPINE)
+    ax1.set_xlabel("Longitude °W", color="black",
+                   fontsize=FSIZE_THESIS_MAP_AXIS_LABEL)
+    ax1.set_ylabel("Latitude °N", color="black",
+                   fontsize=FSIZE_THESIS_MAP_AXIS_LABEL, labelpad=2)
+    ax1.set_title("Global map  (equirectangular)", color="black",
+                  fontsize=FSIZE_THESIS_MAP_TITLE, pad=5)
+
+    # Top-10 markers on equirectangular
+    for lon_W, lat, label, rank, _ in TOP10:
+        _stype  = SITE_TYPE.get(label, "land")
+        _mshape = MARKER_SHAPE[_stype]
+        _msize  = MARKER_SIZE_BY_TYPE[_stype]
+        ax1.plot(lon_W, lat, _mshape, color=COLOUR_MARKER,
+                 ms=_msize, mew=1.2, markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+        dx, dy = _label_offset(lon_W, lat)
+        ax1.annotate(
+            f"#{rank} {label}",
+            xy=(lon_W, lat), xytext=(lon_W + dx, lat + dy),
+            color=COLOUR_TEXT, fontsize=TH_TEXT,
+            arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
+            zorder=11,
+            bbox=dict(boxstyle="round,pad=0.15",
+                      fc=COLOUR_ANNOT_BOX, ec="none"),
+        )
+    for lon_W, lat, label, rank, _ in ALWAYS_EXTRA:
+        _stype  = SITE_TYPE.get(label, "lander")
+        ax1.plot(lon_W, lat, MARKER_SHAPE[_stype], color=COLOUR_MARKER,
+                 ms=MARKER_SIZE_BY_TYPE[_stype], mew=1.2,
+                 markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+        dx, dy = _label_offset(lon_W, lat)
+        ax1.annotate(
+            label,
+            xy=(lon_W, lat), xytext=(lon_W + dx, lat + dy),
+            color=COLOUR_TEXT, fontsize=TH_TEXT,
+            arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
+            zorder=11,
+            bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX, ec="none"),
+        )
+
+    # ── Polar-cap helper ─────────────────────────────────────────────────────
+    def _draw_polar_panel(ax: "matplotlib.axes.Axes", north: bool,
+                          title: str) -> None:
+        ax.set_facecolor(COLOUR_BACKGROUND)
+        img = polar_reproject(posterior, north=north, size=500)
+        ax.imshow(img, cmap=cmap_polar, norm=norm,
+                  origin="upper", interpolation="lanczos",
+                  extent=[-1, 1, -1, 1])
+        theta = np.linspace(0, 2 * np.pi, 360)
+        ax.plot(np.cos(theta), np.sin(theta),
+                color=COLOUR_POLAR_RING, lw=0.8, alpha=0.6)
+        ax.set_xlim(-_DISC_LIM, _DISC_LIM)
+        ax.set_ylim(-_DISC_LIM, _DISC_LIM)
+        ax.axis("off")
+        ax.set_title(title, color="black",
+                     fontsize=FSIZE_THESIS_MAP_TITLE, pad=5)
+        _draw_polar_graticule(ax)
+
+        for lon_W, lat, label, rank, _ in TOP10:
+            xs, ys = _loc_to_stereo(lon_W, lat, north=north)
+            if xs is None:
+                continue
+            _stype  = SITE_TYPE.get(label, "land")
+            ax.plot(xs, ys, MARKER_SHAPE[_stype], color=COLOUR_MARKER,
+                    ms=MARKER_SIZE_BY_TYPE[_stype], mew=1.2,
+                    markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+            mag = math.sqrt(xs**2 + ys**2)
+            scale_out = min(1.15 / max(0.05, mag), 4.0)
+            tx = max(-0.90, min(0.90, xs * scale_out))
+            ty = max(-0.90, min(0.90, ys * scale_out))
+            ax.annotate(
+                (f"#{rank} {label}" if rank > 0 else label),
+                xy=(xs, ys), xytext=(tx, ty),
+                color=COLOUR_TEXT, fontsize=TH_TEXT_POL,
+                ha="center", va="center",
+                arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
+                zorder=11,
+                bbox=dict(boxstyle="round,pad=0.15",
+                          fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
+            )
+        for lon_W, lat, label, rank, _ in ALWAYS_EXTRA:
+            xs, ys = _loc_to_stereo(lon_W, lat, north=north)
+            if xs is None:
+                continue
+            _stype = SITE_TYPE.get(label, "lander")
+            ax.plot(xs, ys, MARKER_SHAPE[_stype], color=COLOUR_MARKER,
+                    ms=MARKER_SIZE_BY_TYPE[_stype], mew=1.2,
+                    markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
+            mag = math.sqrt(xs**2 + ys**2)
+            scale_out = min(1.15 / max(0.05, mag), 4.0)
+            tx = max(-0.90, min(0.90, xs * scale_out))
+            ty = max(-0.90, min(0.90, ys * scale_out))
+            ax.annotate(
+                label,
+                xy=(xs, ys), xytext=(tx, ty),
+                color=COLOUR_TEXT, fontsize=TH_TEXT_POL,
+                ha="center", va="center",
+                arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
+                zorder=11,
+                bbox=dict(boxstyle="round,pad=0.15",
+                          fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
+            )
+
+    # Polar panels: explicit placement so both are identical in size and
+    # the three inter-panel gaps (left / centre / right) are exactly equal.
+    ax2 = fig.add_axes([TH_POL_LEFT_N, TH_POL_BOTTOM, TH_POL_WIDTH, TH_POL_HEIGHT])
+    ax2.set_aspect("equal", adjustable="box")
+    _draw_polar_panel(ax2, north=True,
+                      title=f"North polar cap  ({POLAR_CAP_EDGE_DEG:.0f}°\u201390°N)")
+    ax3 = fig.add_axes([TH_POL_LEFT_S, TH_POL_BOTTOM, TH_POL_WIDTH, TH_POL_HEIGHT])
+    ax3.set_aspect("equal", adjustable="box")
+    _draw_polar_panel(ax3, north=False,
+                      title=f"South polar cap  ({POLAR_CAP_EDGE_DEG:.0f}°\u201390°S)")
+
+    # ── Colour bar ───────────────────────────────────────────────────────────
+    cax = fig.add_axes([TH_CBAR_LEFT, TH_CBAR_BOTTOM,
+                        1.0 - 2 * TH_CBAR_LEFT, TH_CBAR_HEIGHT])
+    cax.set_facecolor(COLOUR_BACKGROUND)
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    cb = fig.colorbar(sm, cax=cax, orientation="horizontal")
+    cb.set_label("")
+    cb.ax.xaxis.set_tick_params(color="black", labelcolor="black",
+                                labelsize=FSIZE_THESIS_CBAR_TICK)
+    fig.text(0.50, TH_CBAR_LABEL_Y, "P(habitable | features)",
+             color="black", fontsize=FSIZE_THESIS_CBAR_TITLE,
+             ha="center", va="bottom", transform=fig.transFigure)
+
+    # ── Legend ────────────────────────────────────────────────────────────────
+    _leg_y     = TH_LEGEND_Y
+    _leg_items = [
+        (0.39, "^", "Lake / sea shore"),
+        (0.50, "s", "Land site"),
+        (0.61, "*", "Mission lander"),
+    ]
+    for _lx, _lmark, _ltxt in _leg_items:
+        _icon_ax = fig.add_axes([_lx - 0.010, _leg_y - 0.012, 0.018, 0.024])
+        _icon_ax.set_facecolor("none")
+        _icon_ax.set_xlim(-1, 1)
+        _icon_ax.set_ylim(-1, 1)
+        _icon_ax.axis("off")
+        _ms = FSIZE_THESIS_LEGEND_ICON * 1.1 if _lmark == "*" else FSIZE_THESIS_LEGEND_ICON
+        _icon_ax.plot(0, 0, _lmark, color=COLOUR_MARKER,
+                      ms=_ms, mew=1.2, markeredgecolor=COLOUR_MARKER_EDGE,
+                      zorder=5, transform=_icon_ax.transData)
+        fig.text(_lx + 0.013, _leg_y, _ltxt,
+                 color=COLOUR_TEXT, fontsize=FSIZE_THESIS_LEGEND_LABEL,
+                 ha="left", va="center", transform=fig.transFigure)
+
+    # ── Narrative / summary box ───────────────────────────────────────────────
+    if narrative:
+        lines    = [ln.strip() for ln in narrative.strip().split("\n") if ln.strip()]
+        title_ln = lines[0] if lines else ""
+        body_txt = "\n".join(lines[1:]) if len(lines) > 1 else "-" * 60
+        fig.text(0.50, TH_NARR_Y, body_txt,
+                 color=COLOUR_NARRATIVE_BODY,
+                 fontsize=FSIZE_THESIS_NARRATIVE_BODY, fontweight="normal",
+                 ha="center", va="center", fontfamily="monospace",
+                 linespacing=1.55, zorder=20,
+                 bbox=dict(boxstyle="round,pad=0.55",
+                           fc=COLOUR_NARRATIVE_FILL, ec=COLOUR_NARRATIVE_BORDER,
+                           lw=1.8))
+        fig.text(0.50, TH_NARR_TITLE_Y, title_ln,
+                 color=COLOUR_NARRATIVE_TITLE,
+                 fontsize=FSIZE_THESIS_NARRATIVE_TITLE, fontweight="bold",
+                 ha="center", va="center", fontfamily="monospace", zorder=21,
+                 bbox=dict(boxstyle="round,pad=0.30",
+                           fc=COLOUR_TITLE_FILL, ec=COLOUR_TITLE_BORDER,
+                           lw=1.5))
+    else:
+        fig.text(0.50, TH_NARR_Y, " ", color=COLOUR_TRANSPARENT,
+                 fontsize=FSIZE_THESIS_NARRATIVE_BODY,
+                 fontfamily="monospace", ha="center", va="center", zorder=1)
+        fig.text(0.50, TH_NARR_TITLE_Y, " ", color=COLOUR_TRANSPARENT,
+                 fontsize=FSIZE_THESIS_NARRATIVE_TITLE,
+                 fontfamily="monospace", ha="center", va="center", zorder=1)
+
+    # ── Title + subtitle ─────────────────────────────────────────────────────
+    solar_str = (f"L\u2609 = {solar_luminosity_ratio(t):.2f}\u00d7   "
+                 f"T_surface = {titan_temp_K(t):.0f} K")
+    if T_surface >= EUTECTIC_K:
+        phase_col = COLOUR_PHASE_OCEAN
+    elif t < -3.0:
+        phase_col = COLOUR_PHASE_LHB
+    elif abs(t) < 0.1:
+        phase_col = COLOUR_PHASE_PRESENT
+    else:
+        phase_col = COLOUR_PHASE_DEFAULT
+
+    fig.text(0.5, 0.978, "TITAN SURFACE HABITABILITY", color="black",
+             fontsize=FSIZE_THESIS_FRAME_TITLE, ha="center", va="bottom",
+             fontweight="bold", fontfamily="monospace")
+    fig.text(0.5, 0.963,
+             f"Epoch:  {_epoch_label(t).replace(chr(10), ' ')}   |   "
+             f"Phase:  {_phase_label(t).replace(chr(10), ' ')}   |   {solar_str}",
+             color=phase_col, fontsize=FSIZE_THESIS_FRAME_SUBTITLE,
+             ha="center", va="bottom")
+
+    # ── Progress bar ──────────────────────────────────────────────────────────
+    # bar_ax = fig.add_axes([0.10, TH_PROGRESS_Y, 0.80, TH_PROGRESS_H])
+    # bar_ax.set_facecolor(COLOUR_BACKGROUND)
+    # bar_ax.set_xlim(0, n_epochs)
+    # bar_ax.set_ylim(0, 1)
+    # bar_ax.barh(0.5, epoch_idx + 1, height=1.0,
+    #             color=COLOUR_PROGRESS_BAR, alpha=0.7)
+    # bar_ax.axis("off")
 
     return fig
 
@@ -2113,7 +2579,7 @@ def render_poster(
     fig, axes = plt.subplots(2, 3, figsize=(21, 12), facecolor=COLOUR_BACKGROUND)
     fig.suptitle(
         "TITAN SURFACE HABITABILITY — KEY GEOLOGICAL EPOCHS",
-        color="black", fontsize=16, fontweight="bold",
+        color="black", fontsize=FSIZE_POSTER_TITLE, fontweight="bold",
         fontfamily="monospace", y=0.98,
     )
     # Use subplots_adjust instead of tight_layout to avoid the UserWarning
@@ -2135,12 +2601,12 @@ def render_poster(
                   origin="upper", aspect="auto",
                   extent=[0, 360, -90, 90],
                   interpolation="lanczos")
-        ax.set_title(title, color="black", fontsize=11, fontweight="bold", pad=6)
-        ax.tick_params(colors="black", labelsize=7)
+        ax.set_title(title, color="black", fontsize=FSIZE_POSTER_PANEL_TITLE, fontweight="bold", pad=6)
+        ax.tick_params(colors="black", labelsize=FSIZE_POSTER_TICK)
         for s in ax.spines.values():
             s.set_edgecolor(COLOUR_SPINE_POSTER)
-        ax.set_xlabel("°W", color=COLOUR_AXIS_LABEL, fontsize=8)
-        ax.set_ylabel("°N", color=COLOUR_AXIS_LABEL, fontsize=8)
+        ax.set_xlabel("°W", color=COLOUR_AXIS_LABEL, fontsize=FSIZE_POSTER_AXIS_LABEL)
+        ax.set_ylabel("°N", color=COLOUR_AXIS_LABEL, fontsize=FSIZE_POSTER_AXIS_LABEL)
 
         info: str = (f"L☉={solar_luminosity_ratio(t):.2f}×  "
                      f"T={T_s:.0f}K  "
@@ -2148,14 +2614,14 @@ def render_poster(
         col: str = (COLOUR_PHASE_OCEAN if T_s >= EUTECTIC_K
                     else COLOUR_PHASE_PRESENT if abs(t) <= 0.05
                     else COLOUR_PHASE_DEFAULT)
-        ax.text(180, -82, info, color=col, fontsize=7, ha="center", va="bottom")
+        ax.text(180, -82, info, color=col, fontsize=FSIZE_POSTER_TICK, ha="center", va="bottom")
 
     # Shared colorbar
     cax = fig.add_axes([0.15, 0.03, 0.70, 0.018])
     sm  = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     cb  = fig.colorbar(sm, cax=cax, orientation="horizontal")
-    cb.set_label("P(habitable | features)", color="black", fontsize=11)
-    cb.ax.xaxis.set_tick_params(color="black", labelcolor="black", labelsize=9)
+    cb.set_label("P(habitable | features)", color="black", fontsize=FSIZE_POSTER_PANEL_TITLE)
+    cb.ax.xaxis.set_tick_params(color="black", labelcolor="black", labelsize=FSIZE_POSTER_CBAR_TICK)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight",
@@ -2514,7 +2980,8 @@ def _run_animation_modelled(
     if using_synthetic:
         print("  *** WARNING: SYNTHETIC DATA IN USE ***  see log above.")
 
-    frames_dir = anim_dir / "frames"
+    frames_dir        = anim_dir / "frames"
+    thesis_frames_dir = anim_dir / "thesis_frames"
     frames_dir.mkdir(exist_ok=True)
 
     pause_idx, NORMAL_HOLD = _build_pause_timing(epochs, args)
@@ -2545,6 +3012,15 @@ def _run_animation_modelled(
         fig.savefig(fpath, dpi=args.dpi, bbox_inches=None,
                     facecolor=fig.get_facecolor())
         plt.close(fig)
+
+        # Thesis frame (same epoch, no info panels, polars below equirect)
+        thesis_frames_dir.mkdir(parents=True, exist_ok=True)
+        fig_th = render_thesis_frame(posterior, t, i, len(epochs),
+                                     dpi=args.dpi, narrative=frame_narrative)
+        tfpath = thesis_frames_dir / f"thesis_frame_{i:03d}.png"
+        fig_th.savefig(tfpath, dpi=args.dpi, bbox_inches=None,
+                       facecolor=fig_th.get_facecolor())
+        plt.close(fig_th)
 
 
         frame_paths.append(fpath)
@@ -2744,8 +3220,9 @@ def _run_animation_full_inference(
     #     Sun exits red-giant; L collapses 600× → 0.8×; ocean refreezes < 1 Myr.
     #     Blend toward past anchor as a proxy for the cold, no-liquid state.
 
-    fi_anim_dir = anim_dir.parent / "animation_full_inference"
-    frames_dir  = fi_anim_dir / "frames"
+    fi_anim_dir       = anim_dir.parent / "animation_full_inference"
+    frames_dir        = fi_anim_dir / "frames"
+    thesis_frames_dir = fi_anim_dir / "thesis_frames"
     fi_anim_dir.mkdir(parents=True, exist_ok=True)
     frames_dir.mkdir(exist_ok=True)
 
@@ -2805,6 +3282,16 @@ def _run_animation_full_inference(
         fig.savefig(fpath, dpi=args.dpi, bbox_inches=None,
                     facecolor=fig.get_facecolor())
         plt.close(fig)
+
+        # Thesis frame (no info panels, polars below equirect)
+        thesis_frames_dir.mkdir(parents=True, exist_ok=True)
+        fig_th = render_thesis_frame(posterior, t, i, len(epochs),
+                                     dpi=args.dpi, narrative=frame_narrative,
+                                     source=source)
+        tfpath = thesis_frames_dir / f"thesis_frame_{i:03d}.png"
+        fig_th.savefig(tfpath, dpi=args.dpi, bbox_inches=None,
+                       facecolor=fig_th.get_facecolor())
+        plt.close(fig_th)
 
 
         frame_paths.append(fpath)

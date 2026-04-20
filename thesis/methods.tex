@@ -4,20 +4,41 @@
 \chapter{Methods}
 \label{ch:methods}
 
+Note: Acronyms and notation are defined in Appendix \ref{app:notation}
+
 \section{Overview of the Analytical Approach}
 \label{sec:overview}
 
 The framework proceeds in the following stages:
 \begin{enumerate}
-    \item A one-off data-acquisition stage to gather relevant datasets from varied raw and derived sources. 
-    \item A data preprocessing stage: e.g. some map data needs converting into a canonical mapping projection so that different features can be computed/extracted from the same Titan location  
-    \item Extraction of eight habitability-proxy features from the data
-    \item Bayesian conjugate updating to produce a posterior habitability probability map at each of five named geological 'anchor' epochs, (\textit{Past}, \textit{Lake Formation}, \textit{Present}, \textit{Near Future}, \textit{Future})
-    \item Temporal scaling of features between anchor epochs to produce 72 geological epochs from $-3.8\gya$ to $+6.5\gya$ 
-    \item Ranking of named surface sites by posterior probability
+    \item A one-off data-acquisition stage to gather relevant datasets from varied raw and derived sources. Details are presented in Appendix \ref{app:data_sources}
+    \item A data preprocessing stage: e.g. some map data needs converting into a canonical mapping projection so that different features can be computed/extracted from the same Titan location. The canonical format used is 
+        \begin{enumerate}
+            \item Projection: SimpleCylindrical (equirectangular) 
+            \item Titan sphere: R=2,575,000 m
+            \item Longitude: West-positive, 0\textdegree~\rightarrow~360\textdegree,    (matches all USGS raster products)
+            \item Latitude: North-up, +90\textdegree~\rightarrow~-90\textdegree
+        \end{enumerate}
+    \item Extraction of 8 habitability-proxy features from the data, details in sections \ref{sec:data}, \ref{sec:features}.
+    \item Bayesian conjugate updating to produce a posterior habitability probability map at each of five named geological 'anchor' epochs, (\textit{Past}, \textit{Lake Formation}, \textit{Present}, \textit{Near Future}, \textit{Future}). Details are presented in \ref{sec:bayes}
+    % \item Temporal scaling of features between anchor epochs to produce 72 geological epochs from $-3.8\gya$ to $+6.5\gya$ 
+    \item Outputs: Graphs and ranking of named surface sites by posterior probability for each epoch. Details in \ref{sec:temporal_configs}
 \end{enumerate}
 
-Acronyms, notation, and the full dataset catalogue are defined in Appendix~\ref{app:notation}.
+Figure~\ref{fig:pipeline} provides a schematic overview of the five-stage
+analytical pipeline from data acquisition to visualisation.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/pipeline_flowchart.png}
+  \caption{Schematic overview of the five-stage Titan habitability analysis
+    pipeline.  All eight habitability-proxy features are extracted in Stage 3
+    and combined in the Bayesian posterior update of Stage 4 to produce
+    $P(H \mid \featurevec)$ maps at each of the five epochs.}
+  \label{fig:pipeline}
+\end{figure}
+
+The Bayesian approach taken in this thesis requires explanation and follows next.
 
 \subsection{The Bayesian Approach: Motivation and Structure}
 \label{sec:bayes_intro}
@@ -45,15 +66,18 @@ than a single-point estimate), the number of independent observational inputs
 (eight features rather than one), and the temporal scope (five epochs spanning
 geological time rather than a single snapshot).
 
-The structure of the inference is: (1) encode prior knowledge about
+The structure of the inference is: 
+\begin{enumerate}
+    \item encode prior knowledge about
 \titan{}'s habitability into a probability distribution over the latent
-variable $H$; (2) update that distribution using each observed feature
-$f_i$ as evidence; and (3) report the resulting posterior probability
-$P(H \mid \featurevec)$ as the habitability estimate at each pixel.  The
-mathematical details of this procedure are given in Section~\ref{sec:bayes};
-the present section focuses on the observational inputs.
+variable $H$;
+    \item update that distribution using each observed feature
+$f_i$ as evidence;
+    \item report the resulting posterior probability
+$P(H \mid \featurevec)$ as the habitability estimate at each pixel.
+\end{enumerate}
 
-The analysis is applied at \SI{4490}{\metre\per\text{px}} resolution on a
+The Bayesian inference and subsequernt analysis is applied at \SI{4490}{\metre\per\text{px}} resolution on a
 canonical equirectangular grid covering the full globe (1802 pixels in
 latitude $\times$ 3603 pixels in longitude), using a west-positive longitude
 convention consistent with all Cassini raster products.  This resolution is
@@ -62,19 +86,6 @@ $\sim$22\,km per pixel) whilst resolving lake margins and fluvial features
 at $\sim$45\,km scale.  All eight input datasets are reprojected to this
 common grid before feature extraction.
 
-Figure~\ref{fig:pipeline} provides a schematic overview of the five-stage
-analytical pipeline: data acquisition, preprocessing to the canonical grid,
-feature extraction, Bayesian inference, and visualisation.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{images/pipeline_flowchart.png}
-  \caption{Schematic overview of the five-stage Titan habitability analysis
-    pipeline.  All eight habitability-proxy features are extracted in Stage 3
-    and combined in the Bayesian posterior update of Stage 4 to produce
-    $P(H \mid \featurevec)$ maps at each of the five temporal configurations.}
-  \label{fig:pipeline}
-\end{figure}
 
 \section{Observational Data Sources}
 \label{sec:data}
@@ -86,15 +97,15 @@ Eight Cassini data products are used, summarised in Table~\ref{tab:data_sources}
 \small
 \caption{Cassini data sources used in the habitability framework.}
 \label{tab:data_sources}
-\begin{tabular}{p{4.2cm}p{2.8cm}p{5.5cm}}
+\begin{tabular}{p{5.2cm}p{2.6cm}p{5.8cm}}
 \toprule
 \textbf{Dataset} & \textbf{Coverage} & \textbf{Habitability feature} \\
 \midrule
-Cassini SAR mosaic      & $\sim$67\% surface & $f_1$ liquid HC; $f_7$ geodiversity \\
+Cassini SAR mosaic      & $\sim$67\% surface & $f_1$ liquid hydrocarbon; $f_7$ geodiversity \\
 VIMS 1.59/1.27\,\textmu{}m & $\sim$50\% surface & $f_2$ organic abundance \\
 CIRS thermal mosaic     & Global ($\sim$10\textdegree{}) & $f_4$ methane cycle; $f_5$ surf--atm \\
 GTDE/GTDR DEM           & $\sim$90\% (interp.) & $f_6$ topographic complexity \\
-Lopes (2019) geomorph.\ map & $\sim$90\% SAR & $f_2$ organic; $f_7$ geodiversity \\
+Lopes (2019) geomorphology\ map & $\sim$90\% SAR & $f_2$ organic; $f_7$ geodiversity \\
 Miller (2021) channel map   & SAR coverage     & $f_5$ surface--atmosphere \\
 Hedgepeth (2020) craters & SAR coverage      & $f_7$ geodiversity; past epoch \\
 Tidal $k_2$ (global)    & Global scalar      & $f_8$ subsurface ocean \\
@@ -126,7 +137,7 @@ Eight habitability-proxy features $f_1$--$f_8$ are extracted from the data sourc
 \toprule
 \textbf{$f_i$} & \textbf{Name} & $w_i$ & $\mu_i$ & \textbf{Scientific rationale} \\
 \midrule
-$f_1$ & Liquid HC availability  & 0.25 & 0.02  & Direct solvent for non-aqueous biochemistry \citep{McKaySmith2005} \\
+$f_1$ & Liquid hydrocarbon availability  & 0.25 & 0.02  & Direct solvent for non-aqueous biochemistry \citep{McKaySmith2005} \\
 $f_2$ & Organic abundance       & 0.20 & 0.70  & Tholin substrate for prebiotic chemistry \citep{MeyerDombard2025} \\
 $f_3$ & Chemical energy (acetylene) & 0.20 & 0.35 & Acetylenotrophy energy proxy \citep{McKaySmith2005,Yanez2024} \\
 $f_4$ & Methane cycle intensity & 0.15 & 0.40  & Solvent transport and chemical concentration cycling \\
@@ -444,41 +455,80 @@ The multi-epoch reconstruction applies epoch-specific scale functions to the pre
   f_i(t) = \text{clip}\bigl[\,s_i(t)\cdot f_i(0),\;0,\;1\bigr]
   \label{eq:temporal_scale}
 \end{equation}
-where $s_i(t)$ is the scale multiplier for feature $i$ at epoch $t$ (Table~\ref{tab:scale_funcs}).  The posterior is evaluated at each pixel using the scaled features and 72 epochs spanning $-3.8\gya$ to $+6.5\gya$.  An epoch-aware PCHIP interpolation between anchor posteriors provides smooth transitions between static-pipeline anchor states.
+where $s_i(t)$ is the scale multiplier for feature $i$ at epoch $t$ (Table~\ref{tab:scale_funcs}).  Two time constants appear in the scale functions: $t_\odot = 4.57\gya$, the current age of the Sun \citep{Bahcall2001}, which governs UV-dependent features ($s_3$, $s_1$ at red-giant epochs); and $t_\text{atm} = 4.0\,\text{Gyr}$, the estimated duration of active tholin photochemistry in \titan{}'s atmosphere, which governs organic accumulation ($s_2$).  The posterior is evaluated at each pixel using the scaled features and 72 epochs spanning $-3.8\gya$ to $+6.5\gya$.  An epoch-aware PCHIP interpolation between anchor posteriors provides smooth transitions between static-pipeline anchor states.
 
 
 \begin{table}[H]
 \centering
 \small
 \caption{Temporal scale functions $s_i(t)$ applied to each feature at epoch $t$
-  (Gyr from present).  A multiplier of 1.0 means no change from the present-epoch
-  value; values $< 1$ reduce the feature, values $> 1$ enhance it.  All outputs
-  are clipped to $[0, 1]$ after scaling.}
+  (Gyr from present), with supporting references.  A multiplier of 1.0 means
+  no change from the present-epoch value; values $< 1$ reduce the feature,
+  values $> 1$ enhance it.  All outputs are clipped to $[0, 1]$ after scaling.
+  The eutectic override ($T_s \geq 176\,\mathrm{K}$) applies to $f_1$, $f_3$,
+  $f_4$, and $f_8$ at the red-giant ocean epoch
+  \citep{Grasset2005,Tobie2005,Lorenz1997}.}
 \label{tab:scale_funcs}
-\begin{tabular}{p{3.8cm}p{8.5cm}}
+\begin{tabular}{p{2.2cm}p{7.0cm}p{3.6cm}}
 \toprule
-\textbf{Feature} & \textbf{Scale function $s_i(t)$} \\
+\textbf{Feature} & \textbf{Scale function $s_i(t)$} & \textbf{Key references} \\
 \midrule
-$f_1$ liquid HC & 0.10 for $t < -1.0\gya$; ramps $0.1\to1.0$ from $-1.0$ to
-  $-0.5\gya$; 1.0 until $+4.0\gya$; declines linearly to 0 by $+5.0\gya$;
-  overridden to 50 (global ocean) when $T_s \geq 176\,\mathrm{K}$. \\
-$f_2$ organic   & $\min\!\bigl((4.57\!+\!t)/4.0,\;2.5\bigr)$: accumulates
-  proportionally to atmospheric age since $t = -4.0\gya$; capped at
-  $2.5\times$ present. \\
-$f_3$ acetylene & $(4.57/(4.57\!+\!t))^{0.5}$: higher UV flux from younger
-  Sun; overridden to $0.10/0.35$ under global ocean. \\
-$f_4$ methane   & 0.60 for $t < -1.0\gya$; 0.80 for $-1.0$ to $-0.5\gya$;
-  1.0 until $+4.5\gya$; declines to 0 by $+5.0\gya$;
-  overridden to $0.30/0.40$ under global ocean. \\
-$f_5$ surf--atm & $0.40 + 0.60\,s_1(t)$: slope transport always present
-  (0.40), lake margin component scales with liquid. \\
-$f_6$ topo      & 1.30 for $t < -2.0\gya$; 1.15 for $-2.0$ to $-1.0\gya$;
-  1.0 thereafter (impact density reduces roughness over time). \\
-$f_7$ geodiv    & 0.70 for $t < -3.0\gya$; 0.85 for $-3.0$ to $-2.0\gya$;
-  1.0 thereafter (terrain classes consolidate with time). \\
-$f_8$ ocean     & 2.50 for $t < -2.0\gya$; 1.80 for $-2.0$ to $-1.0\gya$;
-  1.30 for $-1.0$ to $-0.5\gya$; 1.0 thereafter;
-  overridden to $1.0/0.03$ (surface is ocean) when $T_s \geq 176\,\mathrm{K}$. \\
+$f_1$ liquid HC &
+  0.10 for $t < -1.0\gya$ (pre-lake era); ramps $0.1\to1.0$ from $-1.0$ to
+  $-0.5\gya$ (lake establishment); 1.0 until $+4.0\gya$; declines linearly
+  to 0 by $+5.0\gya$ (solar evaporation);
+  overridden to 1.0 (global ocean) at $T_s \geq 176\,\mathrm{K}$. &
+  \citet{Tobie2006,MitchellLora2016,Lorenz1997,Hayes2016} \\[4pt]
+
+$f_2$ organic &
+  $\min\!\bigl((t_\text{atm}\!+\!t)/t_\text{atm},\;2.5\bigr)$: linear accumulation of
+  UV-photolysed tholins proportional to atmospheric age since $\sim$$-4.0\gya$;
+  capped at $2.5\times$ present.  \emph{Declared approximation}: a constant
+  production rate is assumed; the actual rate was higher under the younger,
+  more UV-active Sun (see $s_3$). &
+  \citet{Lavvas2011,Cable2012,Vuitton2007,Niemann2005} \\[4pt]
+
+$f_3$ acetylene &
+  $(t_\odot/(t_\odot\!+\!t))^{0.5}$: UV-driven C$_2$H$_2$ production scales with
+  solar EUV/FUV luminosity; young Sun was more active.  Overridden to
+  $0.10/0.35$ under global ocean (UV shielded). &
+  \citet{Strobel2010,Lavvas2011,Bahcall2001,Loison2015} \\[4pt]
+
+$f_4$ methane &
+  0.60 for $t < -1.0\gya$ (episodic outgassing, pre-lake); 0.80 for
+  $-1.0$ to $-0.5\gya$; 1.0 until $+4.5\gya$; declines to 0 by $+5.0\gya$
+  (Jeans escape and photolytic loss).  Overridden to $0.30/0.40$ under
+  global ocean. &
+  \citet{Tobie2006,Niemann2005,Flasar2005,MitchellLora2016,Strobel2010} \\[4pt]
+
+$f_5$ surf--atm &
+  $0.40 + 0.60\,s_1(t)$: fixed slope-transport component (0.40) reflects
+  aeolian and hillslope processes independent of liquid presence; lake-margin
+  evaporation--condensation exchange (0.60) scales directly with liquid
+  coverage $s_1(t)$. &
+  \citet{Radebaugh2011,Hayes2016,MitchellLora2016} \\[4pt]
+
+$f_6$ topo &
+  1.30 for $t < -2.0\gya$; 1.15 for $-2.0$ to $-1.0\gya$; 1.0 thereafter.
+  Higher roughness at early epochs reflects greater impact crater density;
+  craters are progressively buried and eroded on timescales of $\sim$1--2\,Gyr. &
+  \citet{Lorenz2013,Artemieva2003,Hedgepeth2020,Neish2010} \\[4pt]
+
+$f_7$ geodiv &
+  0.70 for $t < -3.0\gya$; 0.85 for $-3.0$ to $-2.0\gya$; 1.0 thereafter.
+  Early terrain dominated by impact ejecta (low class diversity); lacustrine
+  plains, dune fields, and shorelines accumulate to yield present-day eight-class
+  diversity \citep{Lopes2019}. &
+  \citet{Lopes2019,Artemieva2003,Malaska2020,Hayes2016} \\[4pt]
+
+$f_8$ ocean &
+  2.50 for $t < -2.0\gya$; 1.80 for $-2.0$ to $-1.0\gya$;
+  1.30 for $-1.0$ to $-0.5\gya$; 1.0 thereafter.
+  Thicker ice shell at earlier epochs places the subsurface ocean closer
+  to the surface; shell thickens as radiogenic heat declines.
+  Overridden to $1.0/0.03$ at $T_s \geq 176\,\mathrm{K}$ (ocean is
+  at the surface). &
+  \citet{Iess2012,Tobie2005,Nimmo2010,Mitri2014,Grasset2005} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -487,35 +537,71 @@ $f_8$ ocean     & 2.50 for $t < -2.0\gya$; 1.80 for $-2.0$ to $-1.0\gya$;
 \paragraph{Animation model weights.}  The animation model includes a ninth
 synthesised feature, \texttt{impact\_melt\_bonus} ($w = 0.09$,
 $\mu = 0.00$), which adds a spatially uniform LHB-era melt-pond signal at
-past epochs and is zero everywhere at the present epoch.  To accommodate
-this ninth feature while keeping $\sum w_i = 1.0$, all eight standard
-feature weights are reduced by $\approx 0.02$ relative to the pipeline
+past epochs and is zero everywhere at the present epoch
+\citep{Artemieva2003,Neish2009,Neish2018}.  The bonus follows a Gaussian
+centred on $-3.8\gya$ (Late Heavy Bombardment peak; \citealt{Gomes2005}) with a
+half-width of 500\,Myr, consistent with the crater flux decay timescale.
+To accommodate this ninth feature while keeping $\sum w_i = 1.0$, all eight
+standard feature weights are reduced by $\approx 0.02$ relative to the pipeline
 values in Table~\ref{tab:priors}.  Consequently the animation
 $\mu_0 = 0.299$ differs from the pipeline value of $0.331$; the
 \texttt{\_rescale\_bayesian()} linear mapping corrects this before display.
 
 The key scale functions encode the following physical transitions:
 \begin{itemize}
-  \item \textbf{Liquid hydrocarbon} ($s_1$): held at $0.10$ (10\% of
-    present) for $t < -1.0\gya$ reflecting incipient lake formation;
-    ramps linearly to $1.0$ between $-1.0$ and $-0.5\gya$ as Kraken
-    and Ligeia consolidate; held at $1.0$ until $+4.0\gya$; declines
-    linearly to zero by $+5.0\gya$ as solar warming evaporates the seas.
-    When $T_s \geq 176\,\mathrm{K}$ (water--ammonia eutectic), overridden
-    to $1.0$ globally to represent the red-giant surface ocean.
-  \item \textbf{Organic abundance} ($s_2$): scales as
-    $\min(t_{\rm elapsed}/4\,\mathrm{Gyr},\,2.5)$, reflecting
-    accumulation of UV-photolysed tholins since \titan{}'s atmosphere
-    formed $\sim 4\gya$.
-  \item \textbf{Chemical energy} ($s_3$): proportional to
-    $(4.57/(4.57+t))^{0.5}$, reflecting the declining UV flux from a
-    younger, more luminous Sun at early epochs.
-  \item \textbf{Subsurface ocean} ($s_8$): elevated at $2.5\times$ for
-    $t < -2.0\gya$ (thicker ice shell, closer ocean) declining to
-    $1.0\times$ at the present epoch.
+  \item \textbf{Liquid hydrocarbon} ($s_1$): held at 0.10 (10\% of
+    present) for $t < -1.0\gya$, reflecting the episodic methane outgassing
+    model of \citet{Tobie2006} in which sustained lake coverage is a
+    geologically recent development.  The ramp from $-1.0$ to $-0.5\gya$
+    corresponds to consolidation of Kraken Mare and Ligeia Mare
+    \citep{Hayes2016,MitchellLora2016}.  Decline to zero by $+5.0\gya$ is
+    driven by increasing solar luminosity vaporising the seas
+    \citep{Lorenz1997}.  The water--ammonia eutectic temperature of
+    176\,K \citep{Grasset2005,Tobie2005} triggers the global-ocean override.
+
+  \item \textbf{Organic abundance} ($s_2$): the linear form
+    $\min(t_{\rm elapsed}/4\,\mathrm{Gyr},\,2.5)$ approximates
+    steady-state UV photolysis of CH$_4$ accumulating tholins since
+    \titan{}'s atmosphere formed $\sim 4\gya$ \citep{Niemann2005,Tobie2006}.
+    Tholin synthesis rates under Cassini-era conditions are quantified in
+    \citet{Lavvas2011} and \citet{Cable2012}.  The declared approximation
+    of a constant production rate underestimates early-epoch organic
+    accumulation, since UV flux was higher under the younger Sun (see $s_3$).
+
+  \item \textbf{Chemical energy} ($s_3$): the $(L_\odot(t)/L_\odot)^{0.5}$
+    scaling follows the solar standard luminosity evolution of
+    \citet{Bahcall2001}, applied to UV-driven acetylene production
+    \citep{Strobel2010,Loison2015}.  A younger, more UV-active Sun produced
+    proportionally more C$_2$H$_2$ \citep{Lavvas2011}.  The $^{0.5}$ exponent
+    is a conservative estimate; EUV scaling is steeper \citep{Sagan1979}.
+
+  \item \textbf{Methane cycle} ($s_4$): the step at $-1.0\gya$ (0.60 to 0.80)
+    and ramp to 1.0 at $-0.5\gya$ encode the \citet{Tobie2006} three-episode
+    cryovolcanic outgassing model, in which sustained methane cycling
+    post-dates lake formation \citep{Flasar2005,Niemann2005}.  Future
+    depletion follows escape flux estimates of \citet{Strobel2010}.
+
+  \item \textbf{Topographic complexity} ($s_6$): the elevated values
+    at $t < -2.0\gya$ reflect higher impact crater density at early epochs
+    \citep{Artemieva2003}.  Crater obliteration timescales of 1--2\,Gyr,
+    inferred from the observed low crater density \citep{Hedgepeth2020}
+    and crater degradation studies \citep{Neish2010}, motivate the step
+    function transitions.
+
+  \item \textbf{Geomorphologic diversity} ($s_7$): the monotone increase
+    towards the present reflects the progressive accumulation of distinct
+    terrain classes in the \citet{Lopes2019} geomorphological map.
+    Early terrain is impact-dominated \citep{Artemieva2003}; lacustrine
+    and aeolian classes accrue from $\sim -1.0\gya$ \citep{Malaska2020}.
+
+  \item \textbf{Subsurface ocean} ($s_8$): the 2.5$\times$ enhancement at
+    $t < -2.0\gya$ is calibrated to the thermal evolution model of
+    \citet{Tobie2005}, in which a thinner ice shell at early epochs places
+    the subsurface ocean closer to potential surface-chemistry pathways.
+    Shell-thickening as radiogenic heating declines is modelled by
+    \citet{Nimmo2010} and \citet{Mitri2014}; the present-day ocean depth
+    is confirmed by \citet{Iess2012}.
 \end{itemize}
-The remaining scale functions are detailed in the pipeline source
-(\texttt{generate\_temporal\_maps.py}).
 
 \subsection{Validation}
 \label{sec:validation}

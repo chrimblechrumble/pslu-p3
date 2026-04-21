@@ -49,7 +49,7 @@ VMIN, VMAX   = 0.10, 0.75
 cmap_main = plt.get_cmap("plasma").copy()
 cmap_main.set_bad("#eeeeee")
 
-# ── Layout: main map left (wide), two polar panels stacked on right ──────────
+# -- Layout: main map left (wide), two polar panels stacked on right ----------
 fig = plt.figure(figsize=(18, 6))
 fig.patch.set_facecolor("white")
 
@@ -67,7 +67,7 @@ ax_main  = fig.add_subplot(gs[:, 0])   # spans both rows, left column
 ax_north = fig.add_subplot(gs[0, 1])   # top-right
 ax_south = fig.add_subplot(gs[1, 1])   # bottom-right
 
-# ── Main equirectangular map ─────────────────────────────────────────────────
+# -- Main equirectangular map -------------------------------------------------
 ax_main.set_facecolor("white")
 im = ax_main.imshow(post, cmap=cmap_main, vmin=VMIN, vmax=VMAX,
                     aspect="auto", origin="upper", interpolation="nearest")
@@ -102,7 +102,7 @@ ax_main.set_xticklabels(["0°", "60°", "120°", "180°", "240°", "300°", "360
 ax_main.set_yticks(np.linspace(0, nrows, 7))
 ax_main.set_yticklabels(["90°N", "60°N", "30°N", "0°", "30°S", "60°S", "90°S"])
 
-# ── Shared stereographic resampler ──────────────────────────────────────────
+# -- Shared stereographic resampler ------------------------------------------
 def make_stereo(post_arr, pole_sign, edge_deg=POLAR_EDGE, grid_n=600):
     """pole_sign=+1 for north, -1 for south."""
     xs  = np.linspace(-1, 1, grid_n)
@@ -131,11 +131,11 @@ def draw_polar(ax, stereo, title):
     ax.set_facecolor("white")
     ax.axis("off")
 
-# ── North polar cap ──────────────────────────────────────────────────────────
+# -- North polar cap ----------------------------------------------------------
 draw_polar(ax_north, make_stereo(post, pole_sign=+1),
            f"North Polar Cap\n({POLAR_EDGE:.0f}–90°N)")
 
-# ── South polar cap ──────────────────────────────────────────────────────────
+# -- South polar cap ----------------------------------------------------------
 draw_polar(ax_south, make_stereo(post, pole_sign=-1),
            f"South Polar Cap\n({POLAR_EDGE:.0f}–90°S)")
 

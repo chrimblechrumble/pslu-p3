@@ -22,7 +22,7 @@ DEG_PER_ROW = 180.0 / NROWS
 def row_to_lat(r):
     return 90.0 - (r + 0.5) * DEG_PER_ROW
 
-# ── 1. Lake coverage fraction per latitude band ──────────────────────────────
+# -- 1. Lake coverage fraction per latitude band ------------------------------
 print("=" * 65)
 print("1. Birch confirmed-lake coverage per 2-degree latitude band")
 print("=" * 65)
@@ -54,7 +54,7 @@ else:
             note += "  ** HIGH LAKE FRACTION"
         print(f"  {lat_lo:3d}-{lat_hi:3d}°N  {n_tot:9,}  {n_lake:9,}  {pct:7.1f}%{note}")
 
-# ── 2. Surface atm interaction TIF profile ────────────────────────────────────
+# -- 2. Surface atm interaction TIF profile ------------------------------------
 print()
 print("=" * 65)
 print("2. surface_atm_interaction profile near 73N and 83N")
@@ -84,7 +84,7 @@ for tif_path, name in [(sat_tif, "surface_atm_interaction"),
             nz_pct = 100.0 * float(np.nanmean(rowdata > 0.01))
             print(f"  {row:4d}  {target_lat:6.1f}  {mean_val:8.4f}  {nz_pct:11.1f}%")
 
-# ── 3. Check if surface_atm ring matches lake margin dilation width ───────────
+# -- 3. Check if surface_atm ring matches lake margin dilation width -----------
 print()
 print("=" * 65)
 print("3. Diagnosis summary")

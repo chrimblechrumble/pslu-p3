@@ -56,10 +56,10 @@ try:
 except ImportError:
     _PIL_OK = False
 
-# ─── Canonical grid ────────────────────────────────────────────────────────────
+# --- Canonical grid ------------------------------------------------------------
 NROWS, NCOLS = 1802, 3603   # must match pipeline canonical grid
 
-# ─── Site catalogue ────────────────────────────────────────────────────────────
+# --- Site catalogue ------------------------------------------------------------
 # Each entry: (short_label, lon_W_deg, lat_deg, site_type, [top10_epochs])
 # site_type: 'lake'   -> triangle  ▲
 #            'land'   -> square    ■
@@ -73,7 +73,7 @@ NROWS, NCOLS = 1802, 3603   # must match pipeline canonical grid
 # Lorenz et al. (2021) PSJ Dragonfly landing site; Lebreton et al. (2005) Nature Huygens.
 
 SITES: list[tuple] = [
-    # ── Polar lakes / seas ───────────────────────────────────────────────────
+    # -- Polar lakes / seas ---------------------------------------------------
     ("Kraken S",     310.0,  72.0,  "lake",
      ["PAST","LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
     ("Ligeia E",      82.0,  79.0,  "lake",
@@ -86,22 +86,22 @@ SITES: list[tuple] = [
      ["LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
     ("Ligeia open",   79.0,  79.0,  "lake",
      ["LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
-    # ── Impact craters (top-10 at PAST epoch) ─────────────────────────────────
+    # -- Impact craters (top-10 at PAST epoch) ---------------------------------
     ("Menrva",        87.3,  19.0,  "land",   ["PAST","FUTURE"]),
     ("Selk",         199.0,   7.0,  "land",   ["PAST","PRESENT","NEAR_FUTURE","FUTURE"]),
     ("Hano",         349.0, -38.6,  "land",   ["PAST"]),
     ("Sinlap",        16.0,  11.3,  "land",   ["PAST"]),
     ("Ksa",           65.6,  14.0,  "land",   ["PAST"]),
     ("Afekan",       200.5,  -1.4,  "land",   ["PAST"]),
-    # ── Cryovolcanic candidates (top-10 at PAST epoch) ────────────────────────
+    # -- Cryovolcanic candidates (top-10 at PAST epoch) ------------------------
     ("Hotei Regio",   75.0, -26.0,  "land",   ["PAST","PRESENT","NEAR_FUTURE"]),
     ("Sotra Facula", 144.5,   9.8,  "land",   ["PAST"]),
-    # ── Equatorial dune seas (top-10 at PRESENT / FUTURE) ─────────────────────
+    # -- Equatorial dune seas (top-10 at PRESENT / FUTURE) ---------------------
     ("Belet",        250.0,   7.0,  "land",   ["PRESENT","NEAR_FUTURE","FUTURE"]),
     ("Shangri-La",   155.0,  -5.0,  "land",   ["PRESENT","NEAR_FUTURE","FUTURE"]),
     ("Fensal",        20.0,  15.0,  "land",   ["PRESENT","NEAR_FUTURE","FUTURE"]),
     ("Aztlan",       100.0,  10.0,  "land",   ["FUTURE"]),
-    # ── Mission landers (always shown) ────────────────────────────────────────
+    # -- Mission landers (always shown) ----------------------------------------
     # Huygens: Lebreton et al. (2005); Dragonfly: Lorenz et al. (2021)
     ("Huygens",      192.3, -10.6,  "lander",
      ["PAST","LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
@@ -109,7 +109,7 @@ SITES: list[tuple] = [
      ["PAST","LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
 ]
 
-# ─── Visual constants ──────────────────────────────────────────────────────────
+# --- Visual constants ----------------------------------------------------------
 COLOURS = {
     "lake":    (100, 200, 255, 230),   # cyan-blue
     "land":    (255, 210,  60, 230),   # amber
@@ -119,7 +119,7 @@ OUTLINE_COL = (0, 0, 0, 200)
 LABEL_SHADOW = (0, 0, 0, 180)
 LABEL_FG     = (255, 255, 255, 220)
 
-# ─── Frame → epoch mapping ─────────────────────────────────────────────────────
+# --- Frame → epoch mapping -----------------------------------------------------
 _FRAME_EPOCH: dict[int, str] = {}
 # Epoch time boundaries derived from generate_temporal_maps.py linspace + pauses
 # Approximate frame ranges (0-indexed, 72 total):
@@ -150,7 +150,7 @@ def epoch_from_path(path: Path) -> str:
     return "PRESENT"
 
 
-# ─── Coordinate helpers ────────────────────────────────────────────────────────
+# --- Coordinate helpers --------------------------------------------------------
 def _lonlat_to_pixel(lon_W: float, lat: float,
                      img_w: int, img_h: int) -> tuple[int, int]:
     """Equirectangular west-positive lon/lat → pixel (x, y)."""
@@ -159,7 +159,7 @@ def _lonlat_to_pixel(lon_W: float, lat: float,
     return x, y
 
 
-# ─── Drawing helpers ───────────────────────────────────────────────────────────
+# --- Drawing helpers -----------------------------------------------------------
 def _font(size: int):
     for path in [
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
@@ -194,7 +194,7 @@ def _star(draw: ImageDraw.Draw, cx, cy, sz, fill, outline):
     draw.polygon(pts, fill=fill, outline=outline)
 
 
-# ─── Core overlay function ────────────────────────────────────────────────────
+# --- Core overlay function ----------------------------------------------------
 def overlay_frame(
     src: Path | str,
     out: Path | str | None = None,
@@ -262,7 +262,7 @@ def overlay_frame(
 
         drawn.append(label)
 
-    # ── Legend ─────────────────────────────────────────────────────────────
+    # -- Legend -------------------------------------------------------------
     lx, ly   = 12, H - 76
     leg_font = _font(max(8, marker_size - 4))
     legend   = [
@@ -282,7 +282,7 @@ def overlay_frame(
     return out
 
 
-# ─── Batch helpers ────────────────────────────────────────────────────────────
+# --- Batch helpers ------------------------------------------------------------
 def overlay_png_files(
     paths: Iterable[Path],
     out_dir: Path | None = None,
@@ -338,7 +338,7 @@ def overlay_directory(
     return len(results)
 
 
-# ─── CLI ──────────────────────────────────────────────────────────────────────
+# --- CLI ----------------------------------------------------------------------
 def _cli():
     p = argparse.ArgumentParser(
         description=__doc__,

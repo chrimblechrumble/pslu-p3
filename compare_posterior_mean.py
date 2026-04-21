@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-# ── 1. Compare posterior columns at the seam ────────────────────────────────
+# -- 1. Compare posterior columns at the seam --------------------------------
 # Run for all five anchor epochs
 epochs = ["past", "lake_formation", "present", "near_future", "future"]
 print(f"{'Epoch':<16} {'col-0 mean':>12} {'col-3602 mean':>14} {'|diff|':>10} {'max |diff|':>12}")
@@ -18,7 +18,7 @@ for epoch in epochs:
     diff  = np.abs(c0 - c3602)
     print(f"  {epoch:<14}  {c0.mean():>12.5f}  {c3602.mean():>14.5f}  {diff.mean():>10.5f}  {diff.max():>12.5f}")
 
-# ── 2. Visual check: plot the seam difference for "present" as a profile ────
+# -- 2. Visual check: plot the seam difference for "present" as a profile ----
 p = Path("outputs/present/inference/posterior_mean.npy")
 if p.exists():
     arr = np.load(p)

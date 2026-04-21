@@ -17,7 +17,7 @@ EXPECTED_LAKE_FRACTION_MAX = 0.05   # lakes should cover << 5% of Titan
 
 problems: list[str] = []
 
-# ── 1. polar_lakes_canonical.tif ─────────────────────────────────────────────
+# -- 1. polar_lakes_canonical.tif ---------------------------------------------
 print("=" * 60)
 print("1. polar_lakes_canonical.tif")
 print("=" * 60)
@@ -51,7 +51,7 @@ else:
     except Exception as e:
         print(f"  [ERROR] Could not read TIF: {e}")
 
-# ── 2. Birch shapefile inventory ─────────────────────────────────────────────
+# -- 2. Birch shapefile inventory ---------------------------------------------
 print()
 print("=" * 60)
 print("2. Birch shapefile inventory")
@@ -71,7 +71,7 @@ for subdir in ["birch_filled", "birch_empty"]:
     for shp in shps:
         print(f"    {shp.name}")
 
-# ── 3. Birch shapefile properties ────────────────────────────────────────────
+# -- 3. Birch shapefile properties --------------------------------------------
 print()
 print("=" * 60)
 print("3. Birch shapefile properties (CRS and bounds)")
@@ -125,7 +125,7 @@ try:
 except ImportError:
     print("  geopandas not installed -- run: pip install geopandas")
 
-# ── Summary ───────────────────────────────────────────────────────────────────
+# -- Summary -------------------------------------------------------------------
 print()
 print("=" * 60)
 print("SUMMARY")

@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from scipy.stats import beta as beta_dist
 
-# ── Bayesian parameters (must match temporal_config.py PRESENT epoch) ──────────
+# -- Bayesian parameters (must match temporal_config.py PRESENT epoch) ----------
 MU0    = 0.331   # prior mean = sum(w_i * mu_i)
 KAPPA  = 5.0     # prior concentration
 LAMBDA = 6.0     # likelihood sharpness
@@ -35,7 +35,7 @@ LAMBDA = 6.0     # likelihood sharpness
 ALPHA0 = MU0   * KAPPA
 BETA0  = (1 - MU0) * KAPPA
 
-# ── Representative sites with their weighted feature sums ──────────────────────
+# -- Representative sites with their weighted feature sums ----------------------
 # w_sum = sum(w_i * f_i)  from Table tab:selk_features / site feature profiles
 SITES = [
     {
@@ -88,7 +88,7 @@ def main() -> None:
 
     x = np.linspace(0.0, 1.0, 1000)
 
-    # ── Left panel: prior distribution ─────────────────────────────────────────
+    # -- Left panel: prior distribution -----------------------------------------
     ax = axes[0]
     prior_pdf = beta_dist.pdf(x, ALPHA0, BETA0)
     ax.plot(x, prior_pdf, color="#2255aa", lw=2.5, label=rf"Prior  $\mathrm{{Beta}}({ALPHA0:.3f},\,{BETA0:.3f})$")
@@ -107,7 +107,7 @@ def main() -> None:
     ax.legend(fontsize=9, facecolor="white", labelcolor="black", framealpha=0.8)
     ax.set_xlim(0, 1); ax.set_ylim(0, None)
 
-    # ── Right panel: posteriors for all sites ────────────────────────────────────
+    # -- Right panel: posteriors for all sites ------------------------------------
     ax = axes[1]
     # Draw prior faintly for comparison
     ax.plot(x, prior_pdf, color="#2255aa", lw=1.0, alpha=0.35, ls="--",
@@ -141,7 +141,7 @@ def main() -> None:
               labelcolor="black", framealpha=0.8, loc="upper left")
     ax.set_xlim(0, 1); ax.set_ylim(0, None)
 
-    # ── Shared annotation ──────────────────────────────────────────────────────
+    # -- Shared annotation ------------------------------------------------------
     fig.suptitle(
         "Bayesian conjugate update:  "
         r"$H \sim \mathrm{Beta}(\alpha_0,\beta_0)$  "

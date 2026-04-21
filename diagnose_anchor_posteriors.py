@@ -28,7 +28,7 @@ ANCHORS = [
 VMIN, VMAX = 0.10, 0.65
 NROWS, NCOLS = 1802, 3603
 
-# ── Load ──────────────────────────────────────────────────────────────────────
+# -- Load ----------------------------------------------------------------------
 print("=" * 80)
 print("ANCHOR POSTERIOR DISTRIBUTIONS")
 print(f"Colourbar range: VMIN={VMIN}  VMAX={VMAX}")
@@ -68,7 +68,7 @@ for name, path, epoch in ANCHORS:
           f"  {pcts[4]:6.3f} {pcts[5]:6.3f} {pcts[6]:6.3f} {valid.max():6.3f}"
           f"  {pct_above:8.1f}%  {pct_below:8.1f}%  {valid.mean():7.3f}{saturated_flag}")
 
-# ── Spatial breakdown for past and present ────────────────────────────────────
+# -- Spatial breakdown for past and present ------------------------------------
 print()
 print("=" * 80)
 print("SPATIAL BREAKDOWN: past vs present")
@@ -102,7 +102,7 @@ for name in ["past", "present"]:
     if name in loaded:
         lat_band_stats(loaded[name][0], name, BANDS)
 
-# ── Correlation between past and present ─────────────────────────────────────
+# -- Correlation between past and present -------------------------------------
 if "past" in loaded and "present" in loaded:
     print()
     print("=" * 80)
@@ -133,7 +133,7 @@ if "past" in loaded and "present" in loaded:
         print("  DIAGNOSIS: past and present posteriors are correlated and similar.")
         print("  Brightness difference may be within expected range.")
 
-# ── PCHIP interpolation preview ───────────────────────────────────────────────
+# -- PCHIP interpolation preview -----------------------------------------------
 if "past" in loaded and "lake_formation" in loaded and "present" in loaded:
     print()
     print("=" * 80)

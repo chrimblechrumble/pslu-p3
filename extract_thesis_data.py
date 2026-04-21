@@ -136,7 +136,7 @@ def bayesian_ph(w_sum):
     std = (a * b / ((a+b)**2 * (a+b+1)))**0.5
     return round(ph, 3), round(float(std), 3), round(lo, 3), round(hi, 3)
 
-# ─── Main ───────────────────────────────────────────────────────────────────
+# --- Main -------------------------------------------------------------------
 
 data = {"epoch_stats": {}, "site_posteriors": {}, "selk_features": {},
         "selk_features_global_median": {}, "selk_bayesian": {},
@@ -204,7 +204,7 @@ if feats:
 else:
     print("  [WARNING] Could not load features — Bayesian HDI will not be updated")
 
-# ─── Crater comparison table ─────────────────────────────────────────────────
+# --- Crater comparison table -------------------------------------------------
 print("\nCrater comparison table (past + present)...")
 crater_sites = {
     "Menrva": (87.3,  19.0, 45),
@@ -222,7 +222,7 @@ for name, (lon_W, lat, r_km) in crater_sites.items():
     data["crater_comparison"][name] = row
     print(f"  {name}: past={row.get('past','?')}  present={row.get('present','?')}")
 
-# ─── Write JSON ──────────────────────────────────────────────────────────────
+# --- Write JSON --------------------------------------------------------------
 out = Path("thesis_data.json")
 out.write_text(json.dumps(data, indent=2))
 print(f"\nWritten: {out}  ({out.stat().st_size} bytes)")

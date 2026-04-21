@@ -92,7 +92,7 @@ def ph(features: dict, weights: dict, kappa: float, lam: float) -> float:
     return (alpha0 + lam * w_sum) / (kappa + lam)
 
 
-# ── Parameter variants ────────────────────────────────────────────────────────
+# -- Parameter variants --------------------------------------------------------
 # NOTE: labels use "\n" (real newline) not r"\n" (literal backslash-n)
 kappa_vals = [2.5,   5.0,   10.0]
 kappa_lbls = [

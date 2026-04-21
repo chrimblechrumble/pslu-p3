@@ -193,7 +193,7 @@ def make_figure() -> plt.Figure:
         )
         ax.grid(True, color=grid_col, alpha=0.4, lw=0.5)
 
-    # ── Bottom panel: HDI comparison ──────────────────────────────────────────
+    # -- Bottom panel: HDI comparison ------------------------------------------
     ax_bot = fig.add_subplot(gs_bot[0, 0])
     ax_bot.set_facecolor(dark_bg)
     ax_bot.tick_params(colors=txt_col, labelsize=9)

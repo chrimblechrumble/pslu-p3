@@ -1150,7 +1150,7 @@ def _phase_label(t: float) -> str:
 # where global_signal = _impact_melt_global(t).  Non-crater sites therefore
 # receive 30% of the global LHB signal; major craters receive up to 100%.
 CANDIDATE_SITES: List[Dict] = [
-    # ── Lake / sea shores (sensitivity low: no crater structure) ──────────
+    # -- Lake / sea shores (sensitivity low: no crater structure) ----------
     {"lon_W": 310.0, "lat":  68.0, "label": "Kraken S",    "type": "lake",
      "f": {"liquid_hydrocarbon":1.00,"organic_abundance":0.05,"acetylene_energy":0.20,
            "methane_cycle":0.70,"surface_atm_interaction":0.65,"topographic_complexity":0.60,
@@ -1175,7 +1175,7 @@ CANDIDATE_SITES: List[Dict] = [
      "f": {"liquid_hydrocarbon":0.88,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.62,"surface_atm_interaction":0.52,"topographic_complexity":0.40,
            "geomorphologic_diversity":0.60,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    # ── Equatorial dune / organic land sites (low sensitivity) ────────────
+    # -- Equatorial dune / organic land sites (low sensitivity) ------------
     {"lon_W": 250.0, "lat":   7.0, "label": "Belet",       "type": "land",
      "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.82,"acetylene_energy":0.45,
            "methane_cycle":0.09,"surface_atm_interaction":0.09,"topographic_complexity":0.55,
@@ -1192,7 +1192,7 @@ CANDIDATE_SITES: List[Dict] = [
      "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.78,"acetylene_energy":0.44,
            "methane_cycle":0.09,"surface_atm_interaction":0.08,"topographic_complexity":0.48,
            "geomorphologic_diversity":0.09,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
-    # ── Cryovolcanic features (high sensitivity: subsurface conduits) ──────
+    # -- Cryovolcanic features (high sensitivity: subsurface conduits) ------
     {"lon_W":  75.0, "lat": -26.0, "label": "Hotei",       "type": "land",
      "f": {"liquid_hydrocarbon":0.03,"organic_abundance":0.65,"acetylene_energy":0.42,
            "methane_cycle":0.18,"surface_atm_interaction":0.22,"topographic_complexity":0.35,
@@ -1201,7 +1201,7 @@ CANDIDATE_SITES: List[Dict] = [
      "f": {"liquid_hydrocarbon":0.03,"organic_abundance":0.62,"acetylene_energy":0.40,
            "methane_cycle":0.16,"surface_atm_interaction":0.20,"topographic_complexity":0.38,
            "geomorphologic_diversity":0.55,"subsurface_ocean":0.12,"impact_melt_bonus":0.85}},
-    # ── Impact craters (sensitivity proportional to diameter) ─────────────
+    # -- Impact craters (sensitivity proportional to diameter) -------------
     {"lon_W":  87.3, "lat":  19.0, "label": "Menrva",      "type": "land",
      "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.30,"acetylene_energy":0.38,
            "methane_cycle":0.08,"surface_atm_interaction":0.08,"topographic_complexity":0.18,
@@ -1222,10 +1222,10 @@ CANDIDATE_SITES: List[Dict] = [
      "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.34,"acetylene_energy":0.36,
            "methane_cycle":0.08,"surface_atm_interaction":0.08,"topographic_complexity":0.14,
            "geomorphologic_diversity":0.35,"subsurface_ocean":0.07,"impact_melt_bonus":0.60}},
-    # ── Named northern lacus (IAU-named lake bodies; smaller than the three
+    # -- Named northern lacus (IAU-named lake bodies; smaller than the three
     #    main mares but confirmed by Cassini RADAR/VIMS).  Feature profiles
     #    reflect smaller liquid area (f1 0.65-0.80), moderate shoreline
-    #    geodiversity, and standard north-polar methane cycle. ──────────────
+    #    geodiversity, and standard north-polar methane cycle. --------------
     {"lon_W": 154.0, "lat":  73.0, "label": "Koitere",     "type": "lake",
      "f": {"liquid_hydrocarbon":0.72,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.58,"surface_atm_interaction":0.48,"topographic_complexity":0.38,
@@ -1255,7 +1255,7 @@ CANDIDATE_SITES: List[Dict] = [
            "methane_cycle":0.48,"surface_atm_interaction":0.40,"topographic_complexity":0.35,
            "geomorphologic_diversity":0.48,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
 
-    # ── Additional named lacus (completing the IAU catalog) ─────────────────
+    # -- Additional named lacus (completing the IAU catalog) -----------------
     # Freeman, Oib: north of Ligeia Mare (~210-220W, 82-83N)
     {"lon_W": 210.0, "lat":  83.0, "label": "Freeman",    "type": "lake",
      "f": {"liquid_hydrocarbon":0.80,"organic_abundance":0.05,"acetylene_energy":0.18,
@@ -1307,7 +1307,7 @@ CANDIDATE_SITES: List[Dict] = [
            "methane_cycle":0.18,"surface_atm_interaction":0.28,"topographic_complexity":0.26,
            "geomorphologic_diversity":0.35,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
 
-    # ── Lander sites (always shown; included here for ranking) ─────────────
+    # -- Lander sites (always shown; included here for ranking) -------------
     {"lon_W": 199.0, "lat":   7.0, "label": "Selk",        "type": "lander",
      "f": {"liquid_hydrocarbon":0.05,"organic_abundance":0.215,"acetylene_energy":0.379,
            "methane_cycle":0.025,"surface_atm_interaction":0.010,"topographic_complexity":0.054,
@@ -1842,7 +1842,7 @@ def render_frame(
         fig.text(0.50, 0.072, " ", color=COLOUR_TRANSPARENT, fontsize=FSIZE_NARRATIVE_TITLE,
                  fontfamily="monospace", ha="center", va="center", zorder=1)
 
-    # ── Title ─────────────────────────────────────────────────────────────────
+    # -- Title -----------------------------------------------------------------
     solar_str = f"L☉ = {solar_luminosity_ratio(t):.2f}×   T_surface = {titan_temp_K(t):.0f} K"
     if T_surface >= EUTECTIC_K:
         phase_col = COLOUR_PHASE_OCEAN
@@ -2269,7 +2269,7 @@ def render_thesis_frame(
     TH_TEXT     = FSIZE_THESIS_LOCATION_LABEL
     TH_TEXT_POL = FSIZE_THESIS_LOCATION_LABEL_POLAR
 
-    # ── Local helpers (mirrors render_frame helpers) ──────────────────────────
+    # -- Local helpers (mirrors render_frame helpers) --------------------------
     def _label_offset(lon_W: float, lat: float) -> Tuple[float, float]:
         dx: float = 6.0 if lon_W < 300 else -6.0
         dy: float = 5.0 if lat < 70 else -6.0
@@ -2320,7 +2320,7 @@ def render_thesis_frame(
                     color=COLOUR_POLAR_RING, fontsize=FSIZE_THESIS_POLAR_GRATICULE,
                     ha="center", va="center", zorder=6)
 
-    # ── Figure ────────────────────────────────────────────────────────────────
+    # -- Figure ----------------------------------------------------------------
     fig = plt.figure(figsize=(FIG_WIDTH_IN, FIG_HEIGHT_THESIS_IN),
                      facecolor=COLOUR_BACKGROUND)
 
@@ -2329,7 +2329,7 @@ def render_thesis_frame(
                      left=TH_GS_EQ_LEFT, right=TH_GS_EQ_RIGHT,
                      top=TH_GS_EQ_TOP, bottom=TH_GS_EQ_BOTTOM)
 
-    # ── Equirectangular map ───────────────────────────────────────────────────
+    # -- Equirectangular map ---------------------------------------------------
     ax1 = fig.add_subplot(gs_eq[0, 0])
     ax1.set_facecolor(COLOUR_BACKGROUND)
     ax1.imshow(posterior, cmap=cmap, norm=norm,
@@ -2380,7 +2380,7 @@ def render_thesis_frame(
             bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX, ec="none"),
         )
 
-    # ── Polar-cap helper ─────────────────────────────────────────────────────
+    # -- Polar-cap helper -----------------------------------------------------
     def _draw_polar_panel(ax: "matplotlib.axes.Axes", north: bool,
                           title: str) -> None:
         ax.set_facecolor(COLOUR_BACKGROUND)
@@ -2454,7 +2454,7 @@ def render_thesis_frame(
     _draw_polar_panel(ax3, north=False,
                       title=f"South polar cap  ({POLAR_CAP_EDGE_DEG:.0f}°\u201390°S)")
 
-    # ── Colour bar ───────────────────────────────────────────────────────────
+    # -- Colour bar -----------------------------------------------------------
     cax = fig.add_axes([TH_CBAR_LEFT, TH_CBAR_BOTTOM,
                         1.0 - 2 * TH_CBAR_LEFT, TH_CBAR_HEIGHT])
     cax.set_facecolor(COLOUR_BACKGROUND)
@@ -2467,7 +2467,7 @@ def render_thesis_frame(
              color="black", fontsize=FSIZE_THESIS_CBAR_TITLE,
              ha="center", va="bottom", transform=fig.transFigure)
 
-    # ── Legend ────────────────────────────────────────────────────────────────
+    # -- Legend ----------------------------------------------------------------
     _leg_y     = TH_LEGEND_Y
     _leg_items = [
         (0.39, "^", "Lake / sea shore"),
@@ -2488,7 +2488,7 @@ def render_thesis_frame(
                  color=COLOUR_TEXT, fontsize=FSIZE_THESIS_LEGEND_LABEL,
                  ha="left", va="center", transform=fig.transFigure)
 
-    # ── Narrative / summary box ───────────────────────────────────────────────
+    # -- Narrative / summary box -----------------------------------------------
     if narrative:
         lines    = [ln.strip() for ln in narrative.strip().split("\n") if ln.strip()]
         title_ln = lines[0] if lines else ""
@@ -2516,7 +2516,7 @@ def render_thesis_frame(
                  fontsize=FSIZE_THESIS_NARRATIVE_TITLE,
                  fontfamily="monospace", ha="center", va="center", zorder=1)
 
-    # ── Title + subtitle ─────────────────────────────────────────────────────
+    # -- Title + subtitle -----------------------------------------------------
     solar_str = (f"L\u2609 = {solar_luminosity_ratio(t):.2f}\u00d7   "
                  f"T_surface = {titan_temp_K(t):.0f} K")
     if T_surface >= EUTECTIC_K:
@@ -2537,14 +2537,14 @@ def render_thesis_frame(
              color=phase_col, fontsize=FSIZE_THESIS_FRAME_SUBTITLE,
              ha="center", va="bottom")
 
-    # ── Progress bar ──────────────────────────────────────────────────────────
-    # bar_ax = fig.add_axes([0.10, TH_PROGRESS_Y, 0.80, TH_PROGRESS_H])
-    # bar_ax.set_facecolor(COLOUR_BACKGROUND)
-    # bar_ax.set_xlim(0, n_epochs)
-    # bar_ax.set_ylim(0, 1)
-    # bar_ax.barh(0.5, epoch_idx + 1, height=1.0,
-    #             color=COLOUR_PROGRESS_BAR, alpha=0.7)
-    # bar_ax.axis("off")
+    # -- Progress bar ----------------------------------------------------------
+    bar_ax = fig.add_axes([0.10, TH_PROGRESS_Y, 0.80, TH_PROGRESS_H])
+    bar_ax.set_facecolor(COLOUR_BACKGROUND)
+    bar_ax.set_xlim(0, n_epochs)
+    bar_ax.set_ylim(0, 1)
+    bar_ax.barh(0.5, epoch_idx + 1, height=1.0,
+                color=COLOUR_PROGRESS_BAR, alpha=0.7)
+    bar_ax.axis("off")
 
     return fig
 
@@ -2568,8 +2568,8 @@ def render_poster(
         "Lake formation\n(-1.0 Gya)",
         "Present\n(Cassini epoch)",
         "Near future\n(+1.0 Gya)",
-        "Red giant ramp\n(+5.2 Gya)",
-        "Water ocean peak\n(+6.0 Gya)",
+        "Red giant ramp up\n(+5.2 Gya)",
+        "Red giant ramp down\nOcean refreezes\n(+6.0 Gya)",
     ]
 
     cmap = matplotlib.colormaps["plasma"]

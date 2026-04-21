@@ -144,7 +144,7 @@ for epoch in EPOCHS:
 
     all_results[epoch] = sites
 
-# ── Print results ─────────────────────────────────────────────────────────────
+# -- Print results -------------------------------------------------------------
 EPOCH_LABELS = {
     "past":           "PAST  (~3.5 Gya, LHB)",
     "lake_formation": "LAKE FORMATION  (~1.0 Gya)",
@@ -166,7 +166,7 @@ for epoch in EPOCHS:
     for i, (lat, lon, prob, prob_sm, fname, fsep) in enumerate(sites, 1):
         print(f"  {i:2d}  {lat:6.1f}  {lon:6.1f}  {prob:7.4f}  {fname:>22}  {fsep:4.1f}°")
 
-# ── Stability table across epochs ─────────────────────────────────────────────
+# -- Stability table across epochs ---------------------------------------------
 print()
 print("=" * 80)
 print("STABILITY TABLE  (which features appear across multiple epochs)")

@@ -93,12 +93,12 @@ def check_tif(label, path, expected_old=None, sites=None):
     print()
 
 
-# ═══════════════════════════════════════════════════════════════════════
+# =======================================================================
 print("═" * 65)
 print("FEATURE DIAGNOSTIC  —  Titan habitability pipeline")
 print("═" * 65)
 
-# ── 1. Canonical TIF inputs (check they are sensible) ──────────────────
+# -- 1. Canonical TIF inputs (check they are sensible) ------------------
 print("\n[1] CANONICAL INPUT TIFs (preprocessed)")
 print("-" * 65)
 
@@ -120,7 +120,7 @@ check_tif("CIRS temperature", OUTPUTS / "preprocessed/cirs_temperature_canonical
 check_tif("Polar lakes mask", OUTPUTS / "preprocessed/polar_lakes_canonical.tif",
           sites=SITES)
 
-# ── 2. Present-epoch feature TIFs ──────────────────────────────────────
+# -- 2. Present-epoch feature TIFs --------------------------------------
 print("\n[2] PRESENT-EPOCH FEATURE TIFs (outputs/present/features/tifs/)")
 print("-" * 65)
 
@@ -142,7 +142,7 @@ for label, (fname, old_val, note) in features.items():
               expected_old=old_val,
               sites=SITES)
 
-# ── 3. Specific sub-components that feed suspect features ───────────────
+# -- 3. Specific sub-components that feed suspect features ---------------
 print("\n[3] SUB-COMPONENT CHECK (intermediate files if saved)")
 print("-" * 65)
 
@@ -176,7 +176,7 @@ if sar_arr is not None:
         print(f"    ±{r_km}km ({r_px}px): median={m:.4f}  min={l:.4f}  max={h:.4f}")
     print()
 
-# ── 4. Check if subsurface_ocean feature is near-zero everywhere ────────
+# -- 4. Check if subsurface_ocean feature is near-zero everywhere --------
 print("\n[4] SUBSURFACE OCEAN — is it broken everywhere or just at Selk?")
 print("-" * 65)
 f8_arr, err = load_tif(feat_dir / "subsurface_ocean.tif")
@@ -208,7 +208,7 @@ if f8_arr is not None:
 else:
     print(f"  {err}")
 
-# ── 5. Summary ────────────────────────────────────────────────────────
+# -- 5. Summary --------------------------------------------------------
 print("\n" + "═" * 65)
 print("WHAT TO LOOK FOR:")
 print("═" * 65)

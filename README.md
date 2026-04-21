@@ -11,10 +11,10 @@ The report write up/thesis is not presented here. Please contact me for a copy (
 
 Although this project refers to many research papers, they are not presented here for copyright reasons.
 
-The current posterior-probability maps for different epochs are presented [here](key_epochs_poster.png) .
+The current posterior-probability maps for different epochs are presented [here](./key_epochs_poster.png) .
 
 The current posterior-probability video, running full inference across epochs is here: 
 
-[![Watch the video](./thesis/images/frame_001.png)](https://github.com/chrimblechrumble/pslu-p3/blob/main/titan_habitability_animation_full_inference.mp4)
+[![Watch the video](./thesis/images/thesis_frame_001.png)](https://github.com/chrimblechrumble/pslu-p3/blob/main/titan_habitability_animation_full_inference.mp4)
 
 Use of this code is subject to the license in [LICENSE.md](LICENSE.md). It is GPL v3.

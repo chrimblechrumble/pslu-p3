@@ -504,6 +504,69 @@ def run_single_mode(
             log.info("    %-35s %.3f", name, imp)
         result.save(inf_dir)
         t.done(log)
+
+        # -- Analytical Beta posterior (thesis Eq. 2.5) -----------------------
+        # The sklearn/GNB posterior above is used ONLY for feature importance
+        # validation (Section 2.3.4).  For all maps and visualisation, we use
+        # the closed-form Beta-conjugate formula that produces the P(H) values
+        # stated in the thesis tables.  This matches generate_temporal_maps.py.
+        log.info("  Computing analytical Beta posterior (thesis formula)...")
+        from scipy.stats import beta as beta_dist
+        from configs.temporal_config import get_prior_set
+
+        prior_set = get_prior_set(mode)
+        w_dict = prior_set.as_weight_dict()
+        m_dict = prior_set.as_mean_dict()
+        kappa  = cfg.priors.beta_concentration
+        lam    = cfg.priors.likelihood_sharpness
+        feat_names_a = features.feature_names()
+        arr_3d       = features.as_array()          # (F, H, W)
+        _, nrows_a, ncols_a = arr_3d.shape
+
+        mu0    = sum(m_dict[n] * w_dict[n] for n in w_dict)
+        alpha0 = mu0 * kappa
+        beta0  = (1.0 - mu0) * kappa
+
+        w_sum = np.zeros((nrows_a, ncols_a), dtype=np.float64)
+        valid_a = np.zeros((nrows_a, ncols_a), dtype=bool)
+        for i, name in enumerate(feat_names_a):
+            w = w_dict.get(name, 0.0)
+            layer = arr_3d[i].astype(np.float64)
+            finite = np.isfinite(layer)
+            imputed = np.where(finite, layer, m_dict.get(name, 0.0))
+            w_sum += w * imputed
+            valid_a |= finite
+
+        alpha_p = alpha0 + lam * w_sum
+        beta_p  = beta0  + lam * (1.0 - w_sum)
+        ab_sum  = alpha_p + beta_p
+
+        a_post = np.full((nrows_a, ncols_a), np.nan, dtype=np.float32)
+        a_post[valid_a] = (alpha_p[valid_a] / ab_sum[valid_a]).astype(np.float32)
+
+        a_std = np.full((nrows_a, ncols_a), np.nan, dtype=np.float32)
+        a_std[valid_a] = np.sqrt(
+            alpha_p[valid_a] * beta_p[valid_a]
+            / (ab_sum[valid_a]**2 * (ab_sum[valid_a] + 1))
+        ).astype(np.float32)
+
+        a_hdi_lo = np.full((nrows_a, ncols_a), np.nan, dtype=np.float32)
+        a_hdi_hi = np.full((nrows_a, ncols_a), np.nan, dtype=np.float32)
+        a_hdi_lo[valid_a] = beta_dist.ppf(
+            0.025, alpha_p[valid_a], beta_p[valid_a]).astype(np.float32)
+        a_hdi_hi[valid_a] = beta_dist.ppf(
+            0.975, alpha_p[valid_a], beta_p[valid_a]).astype(np.float32)
+
+        np.save(inf_dir / "posterior_analytical.npy", a_post)
+        log.info("  Analytical posterior: P(H) range [%.3f, %.3f]",
+                 np.nanmin(a_post), np.nanmax(a_post))
+
+        # Replace sklearn posterior with analytical for all visualisation.
+        # Feature importances are retained from sklearn (validation diagnostic).
+        result.posterior_mean = a_post
+        result.posterior_std  = a_std
+        result.hdi_low        = a_hdi_lo
+        result.hdi_high       = a_hdi_hi
     else:
         log.info("[%s] Stage 4 -- loading inference from %s", mode_str.upper(), inf_dir)
         from titan.bayesian.inference import HabitabilityResult
@@ -522,6 +585,14 @@ def run_single_mode(
             backend = "loaded"
             n_valid_pixels = int(np.sum(np.isfinite(posterior_mean)))
         result = _R()
+
+        # Prefer analytical posterior if available (matches thesis formula)
+        analytical_path = inf_dir / "posterior_analytical.npy"
+        if analytical_path.exists():
+            result.posterior_mean = np.load(analytical_path)
+            log.info("  Loaded analytical posterior from %s", analytical_path)
+        else:
+            log.warning("  Analytical posterior not found; using sklearn output")
 
     # -- Stage 5: Visualisation ---------------------------------------------
     log.info("")
@@ -542,6 +613,18 @@ def run_single_mode(
 
     # For visualisation, use only the PRESENT-style features where available
     vis_features = _make_vis_feature_stack(features, grid)
+
+    # Build epoch-aware title for maps
+    _EPOCH_LABELS = {
+        "past":           "Past Epoch (−3.5 Gya)",
+        "lake_formation": "Lake Formation Epoch (−1.0 Gya)",
+        "present":        "Present Epoch (Cassini Era)",
+        "near_future":    "Near Future Epoch (+0.25 Gya)",
+        "future":         "Future Epoch (+5.9 Gya)",
+    }
+    epoch_label = _EPOCH_LABELS.get(mode_str, mode_str.upper())
+    map_title = f"Titan Habitability — {epoch_label}"
+
     if vis_features is not None:
         generate_paper_figures(
             posterior           = result.posterior_mean,
@@ -555,9 +638,10 @@ def run_single_mode(
             annotate            = not args.no_labels,
             feature_names       = args.label_names,
             feature_categories  = args.label_categories,
+            title               = map_title,
         )
         plot_interactive(result.posterior_mean, fig_dir / "fig5_interactive.html",
-                         title=f"Titan Habitability — {mode_str.upper()} mode")
+                         title=map_title)
         log.info("  Figures -> %s", fig_dir)
 
         # Annotate posterior PNG figures with top-10 site markers.

@@ -125,7 +125,16 @@ Astrobiologically relevant chemistry is disproportionately likely at interfaces 
 
 The central methodological challenge is that no single Cassini instrument directly measures habitability.  Each provides a partial and indirect proxy: radar backscatter reveals surface composition and liquid surfaces; near-infrared spectroscopy constrains organic content; thermal emission maps the temperature field driving the methane cycle; altimetry constrains topography and hence organic accumulation patterns; and the geomorphological classification synthesises the collective information into terrain types whose habitability implications can be grounded in laboratory and theoretical work.  As defined in Section~\ref{sec:defining_habitability}, the model quantifies the co-occurrence of necessary preconditions for life --- not the probability of life itself or of abiogenesis.
 
-The approach taken here is to combine these partial proxies through a Bayesian inference model that produces, at each grid cell, a posterior probability of habitability $P(H \mid \featurevec)$ given the vector of observed features $\featurevec = (f_1, \ldots, f_8)$.  Habitability $H$ is treated as a latent variable --- a continuous probability in $[0,1]$ inferred from the observational proxies.  A Beta-conjugate (Beta-Binomial) model is chosen \citep[ch.~2]{Gelman2013} because the Beta distribution --- a continuous probability distribution defined on the interval [0,1] and parameterised by two positive shape parameters $\alpha$ and $\beta$ --- is the natural prior for a bounded probability, and conjugacy ensures analytical tractability at 6.49 million pixels without numerical integration or Markov Chain Monte Carlo (MCMC) sampling.  Each feature $f_i \in [0, 1]$ is treated as the fractional outcome of $\lambda w_i$ virtual Bernoulli trials: high feature values contribute positive pseudo-observations shifting the posterior towards higher habitability; low values do the opposite.  The prior contributes $\kappa$ virtual observations and the data from all eight features contribute a further $\lambda$ observations.  High-$f$ sites (polar lake shores, where $f_1{=}1.0$) shift the posterior rightward; low-$f$ sites (mountain terrain, where $f_1{\approx}0$ and $f_2{\approx}0.25$) shift it leftward.  The resulting posterior at each pixel is a Beta distribution whose mean is a convex combination of the prior mean and the weighted feature sum, with closed-form credible intervals that make uncertainty explicit at every location.  Background on the latent variable concept, conjugacy, and the Beta-Binomial model is given in Appendix~\ref{app:bayes_pedagogy}.
+The approach taken here is to combine these partial proxies through a Bayesian inference model that produces, at each grid cell, a posterior probability of habitability $P(H \mid \featurevec)$ given the vector of observed features $\featurevec = (f_1, \ldots, f_8)$.  Habitability $H$ is treated as a latent variable --- a continuous probability in $[0,1]$ inferred from the observational proxies.
+
+\paragraph{Justification for the Bayesian approach.}
+The use of Bayesian probability to assess habitability has strong precedent in the planetary science literature.  \citet{Catling2018} established a general Bayesian framework for exoplanet biosignature assessment, advocating that the probability of life should be expressed as a Bayesian posterior combining prior knowledge with observational likelihoods; their framework maps posterior probabilities to confidence levels from ``very unlikely'' (${\leq}10\%$) to ``very likely'' ($90{-}100\%$).  \citet{Affholder2021} applied Bayesian model comparison directly to habitability in the Saturn system, quantifying the probability of methanogenesis on Enceladus by integrating geochemical models within a Bayesian statistical framework.  \citet{Shock2007} and \citet{Mendez2021} established that habitability should be treated as a continuous, quantitative measure rather than a binary classification --- precisely the formulation that Bayesian inference is designed to handle.
+
+\paragraph{Choice of the Beta-conjugate model.}
+The specific model used here --- a Beta-conjugate (Beta-Binomial) prior-posterior update --- has not previously been applied to spatially resolved habitability mapping.  Its selection is motivated by three properties.  First, the Beta distribution is defined on $[0,1]$ and is the canonical prior for bounded probabilities \citep[ch.~2]{Gelman2013}; since $P(H)$ is by definition a probability, no alternative distributional family is more natural.  Second, conjugacy between the Beta prior and the Binomial likelihood ensures that the posterior is also a Beta distribution, obtainable by simple addition of pseudo-counts to the shape parameters; this makes the update analytically tractable at 6.49 million pixels without numerical integration or Markov Chain Monte Carlo (MCMC) sampling.  Third, the two-parameter Beta family is flexible enough to represent prior beliefs ranging from near-uniform (weak prior, $\kappa \to 2$) to sharply peaked (strong prior, $\kappa \to \infty$), allowing the analyst to encode the degree of prior confidence through a single, interpretable parameter.
+
+\paragraph{How features enter the model.}
+Each feature $f_i \in [0, 1]$ is treated as the fractional outcome of $\lambda w_i$ virtual Bernoulli trials (Appendix~\ref{sec:bernoulli}): high feature values contribute positive pseudo-observations shifting the posterior towards higher habitability; low values do the opposite.  The prior contributes $\kappa$ virtual observations and the data from all eight features contribute a further $\lambda$ observations.  High-$f$ sites (polar lake shores, where $f_1{=}1.0$) shift the posterior rightward; low-$f$ sites (mountain terrain, where $f_1{\approx}0$ and $f_2{\approx}0.25$) shift it leftward.  The resulting posterior at each pixel is a Beta distribution whose mean is a convex combination of the prior mean and the weighted feature sum, with closed-form credible intervals that make uncertainty explicit at every location.  Background on the latent variable concept, conjugacy, and the Beta-Binomial model is given in Appendix~\ref{app:bayes_pedagogy}.
 
 \subsection{Prior Distribution}
 \label{sec:prior}
@@ -136,7 +145,29 @@ The prior distribution over habitability at any pixel is (where $\sim$ denotes "
   \alpha_0 = \mu_0\kappa, \quad \beta_0 = (1 - \mu_0)\kappa
   \label{eq:prior_dist}
 \end{equation}
-where the global prior mean $\mu_0 = \sum_{i} w_i \mu_i = 0.331$ (Appendix~\ref{app:priors}) and the concentration parameter $\kappa$ controls how strongly the prior resists updating.  The parameterisation ensures $\alpha_0 + \beta_0 = \mu_0\kappa + (1-\mu_0)\kappa = \kappa$, so $\kappa$ is the total number of ``virtual observations'' encoded by the prior --- the effective sample size of prior belief.  With $\kappa = 5$: $\alpha_0 = 1.655$, $\beta_0 = 3.345$.  Both exceed 1, which is the condition for the Beta distribution to be \textit{unimodal} (possessing a single peak rather than the U-shaped or J-shaped forms that arise when either parameter falls below 1).  The prior standard deviation is the square root of the Beta variance $\mathrm{Var}(X) = \alpha\beta/[(\alpha+\beta)^2(\alpha+\beta+1)]$ \citep[p.~581, Table~A.1]{Gelman2013}:
+where the global prior mean $\mu_0 = \sum_{i} w_i \mu_i = 0.331$ (Appendix~\ref{app:priors}) and the concentration parameter $\kappa$ controls how strongly the prior resists updating.
+
+Concretely, at any pixel $(x, y)$ on the grid, before observing any Cassini features, the probability density over the habitability value $h \in [0,1]$ is given by the probability density function of the Beta distribution, which is defined in terms of the gamma function as:
+\begin{equation}
+  p_0(h) = \frac{\Gamma(\alpha_0 + \beta_0)}{\Gamma(\alpha_0)\,\Gamma(\beta_0)}\;
+  h^{\,\alpha_0 - 1}\,(1 - h)^{\,\beta_0 - 1}
+  \label{eq:prior_pdf}
+\end{equation}
+where $\Gamma(\cdot)$ is the gamma function, defined for all positive real numbers by the integral
+\begin{equation}
+  \Gamma(x) = \int_0^{\infty} t^{\,x-1}\,e^{-t}\,\mathrm{d}t
+  \label{eq:gamma_def}
+\end{equation}
+For positive integers, this reduces to the factorial: $\Gamma(n) = (n-1)!$.  For non-integer arguments such as $\alpha_0 = 1.655$, the integral must be evaluated numerically (or looked up from standard mathematical tables); in practice it is computed by the \texttt{scipy.special.gamma} library function.  The key property is the recurrence relation $\Gamma(x+1) = x\,\Gamma(x)$, which is the continuous generalisation of $n! = n \times (n-1)!$.  This is the definition of $\mathrm{Beta}(\alpha_0, \beta_0)$ from Eq.~\ref{eq:prior_dist}: the ratio of gamma functions is the Beta function $\mathrm{B}(\alpha_0, \beta_0) = \Gamma(\alpha_0)\,\Gamma(\beta_0)/\Gamma(\alpha_0 + \beta_0)$, and the PDF is $h^{\alpha_0-1}(1-h)^{\beta_0-1}$ divided by this normalising constant.  Substituting the numerical values:
+\begin{equation}
+  p_0(h) = \frac{\Gamma(5)}{\Gamma(1.655)\,\Gamma(3.345)}\;
+  h^{\,0.655}\,(1 - h)^{\,2.345}
+  \approx 9.47\;h^{\,0.655}\,(1 - h)^{\,2.345}
+  \label{eq:prior_pdf_numeric}
+\end{equation}
+The mean of this distribution is $\mathrm{E}[h] = \alpha_0/(\alpha_0 + \beta_0) = \mu_0 = 0.331$, and the mode (peak) is at $(\alpha_0 - 1)/(\alpha_0 + \beta_0 - 2) = 0.655/3 \approx 0.218$.  This prior is identical at every pixel --- no spatial information has yet been incorporated.
+
+The parameterisation ensures $\alpha_0 + \beta_0 = \mu_0\kappa + (1-\mu_0)\kappa = \kappa$, so $\kappa$ is the total number of ``virtual observations'' encoded by the prior --- the effective sample size of prior belief.  With $\kappa = 5$: $\alpha_0 = 1.655$, $\beta_0 = 3.345$.  Both exceed 1, which is the condition for the Beta distribution to be \textit{unimodal} (possessing a single peak rather than the U-shaped or J-shaped forms that arise when either parameter falls below 1).  The prior standard deviation is the square root of the Beta variance $\mathrm{Var}(X) = \alpha\beta/[(\alpha+\beta)^2(\alpha+\beta+1)]$ \citep[p.~581, Table~A.1]{Gelman2013}:
 \begin{equation}
   \sigma_0 = \sqrt{\frac{\alpha_0\,\beta_0}{(\alpha_0+\beta_0)^2\,(\alpha_0+\beta_0+1)}}
   = \sqrt{\frac{1.655 \times 3.345}{25 \times 6}} \approx 0.19
@@ -167,20 +198,46 @@ The likelihood sharpness $\lambda = 6$ sets the total weight of data relative to
 \subsection{Posterior Update}
 \label{sec:posterior_update}
 
-Given observed features $\featurevec = (f_1, \ldots, f_8)$ at a pixel, the posterior is obtained by Beta-Binomial conjugate updating.  The prior contributes $\kappa = 5$ virtual observations and the data from all eight features contribute a further $\lambda \sum_i w_i = \lambda = 6$ observations, placing prior and data on approximately equal footing:
+Given observed features $\featurevec = (f_1, \ldots, f_8)$ at a pixel $(x, y)$, the posterior is obtained by Beta-Binomial conjugate updating.  The prior contributes $\kappa = 5$ virtual observations and the data from all eight features contribute a further $\lambda \sum_i w_i = \lambda = 6$ observations, placing prior and data on approximately equal footing.  The posterior shape parameters at pixel $(x, y)$ are:
 \begin{align}
-  \alpha_\text{post}
-    &= \alpha_0 + \lambda \sum_{i=1}^{8} w_i f_i
+  \alpha_\text{post}(x,y)
+    &= \alpha_0 + \lambda \sum_{i=1}^{8} w_i \, f_i(x,y)
   \label{eq:alpha_post} \\[4pt]
-  \beta_\text{post}
-    &= \beta_0 + \lambda \sum_{i=1}^{8} w_i (1 - f_i)
+  \beta_\text{post}(x,y)
+    &= \beta_0 + \lambda \sum_{i=1}^{8} w_i \bigl(1 - f_i(x,y)\bigr)
   \label{eq:beta_post}
 \end{align}
-The posterior mean --- the primary habitability score at each pixel --- is:
+where $f_i(x,y) \in [0,1]$ is the value of feature $i$ at that pixel.  Note that $\alpha_\text{post} + \beta_\text{post} = \kappa + \lambda = 11$ at every pixel, regardless of the feature values.
+
+The full posterior probability density over $h \in [0,1]$ at pixel $(x, y)$ is then:
 \begin{equation}
-  P(H \mid \featurevec)
-  = \frac{\alpha_\text{post}}{\alpha_\text{post} + \beta_\text{post}}
-  = \frac{1.655 + 6{\displaystyle\sum_i} w_i f_i}{11}
+  p\bigl(h \mid \featurevec(x,y)\bigr)
+  = \frac{\Gamma(11)}{\Gamma\!\bigl(\alpha_\text{post}(x,y)\bigr)\;\Gamma\!\bigl(\beta_\text{post}(x,y)\bigr)}\;
+  h^{\,\alpha_\text{post}(x,y) - 1}\,
+  (1 - h)^{\,\beta_\text{post}(x,y) - 1}
+  \label{eq:posterior_pdf}
+\end{equation}
+Since $\alpha_\text{post} + \beta_\text{post} = 11$ is constant, the leading factor simplifies to $\Gamma(11) = 10! = 3{,}628{,}800$ divided by the product of two gamma functions that vary per pixel.  The posterior is a more concentrated (narrower) Beta distribution than the prior, shifted left or right depending on whether the weighted feature sum $\sum_i w_i f_i(x,y)$ falls below or above the prior mean.  The prior density (Eq.~\ref{eq:prior_pdf}) and the posterior density (Eq.~\ref{eq:posterior_pdf}) have the same functional form --- both are Beta distributions --- differing only in their shape parameters.  This is the defining property of conjugacy: the prior and posterior belong to the same distributional family, and the update reduces to adding pseudo-counts to the shape parameters.
+
+As a worked example, at Kraken Mare's southern shoreline $(x, y) = (310.0\text{\textdegree{}W},\,72.0\text{\textdegree{}N})$, the weighted feature sum is $\sum_i w_i f_i = 0.524$.  The posterior shape parameters are:
+\begin{align*}
+  \alpha_\text{post} &= 1.655 + 6 \times 0.524 = 4.799 \\
+  \beta_\text{post}  &= 3.345 + 6 \times (1 - 0.524) = 6.201
+\end{align*}
+and the full posterior density at this pixel is:
+\begin{equation}
+  p(h \mid \featurevec_\text{Kraken})
+  = \frac{3{,}628{,}800}{\Gamma(4.799)\;\Gamma(6.201)}\;
+    h^{\,3.799}\,(1 - h)^{\,5.201}
+  \label{eq:posterior_kraken}
+\end{equation}
+with posterior mean $P(H) = 4.799/11 = 0.436$ and 95\% HDI $[0.17,\,0.72]$.
+
+The posterior mean --- the primary habitability score reported at each pixel --- is:
+\begin{equation}
+  P\bigl(H \mid \featurevec(x,y)\bigr)
+  = \frac{\alpha_\text{post}(x,y)}{\alpha_\text{post}(x,y) + \beta_\text{post}(x,y)}
+  = \frac{1.655 + 6{\displaystyle\sum_i} w_i f_i(x,y)}{11}
   \label{eq:posterior_mean}
 \end{equation}
 This is a convex combination of the prior mean $\mu_0$ (weight $5/11$) and the data-driven score $\sum_i w_i f_i$ (weight $6/11$).  A 95\% highest-density interval (HDI) is computed at each pixel from the posterior Beta distribution, providing a credible interval that encompasses the central 95\% of posterior probability mass in the narrowest possible range.  Because the Beta distribution is fully characterised by its two shape parameters, which are simple sums of prior and data contributions, the HDI can be computed analytically without sampling.  Since $\alpha_\text{post} + \beta_\text{post} = \kappa + \lambda = 11$ is constant regardless of the data (reflecting the fixed total number of virtual observations), the posterior mean satisfies hard bounds determined solely by the model parameters.  When all features are zero ($\featurevec = \mathbf{0}$, the minimum possible data), the posterior reverts to the prior floor; when all are unity ($\featurevec = \mathbf{1}$, the maximum possible), the posterior reaches the ceiling:

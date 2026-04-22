@@ -183,3 +183,29 @@ The global catalogue of confirmed and probable impact structures on \titan{}
 by \citet{Hedgepeth2020} records crater diameters and positions for all
 resolved impact features in the Cassini SAR dataset.  This catalogue is used
 exclusively in the \textit{Past} epoch to generate the impact-melt proximity feature.
+
+\section{Projection and Reprojection}
+\label{sec:projection}
+
+Three coordinate reference systems are used throughout the pipeline; this section documents each and the transformations between them.
+
+\subsection{Canonical Equirectangular Grid}
+\label{sec:equirect}
+
+All analysis is performed on a simple cylindrical (equirectangular) grid with west-positive longitude (0--360\textdegree{}W) and latitude $\pm$90\textdegree{}.  The grid dimensions are 1802$\times$3603 pixels at \SI{4490}{\metre\per\text{px}}.  This projection preserves longitude--latitude coordinates at the cost of area distortion at the poles; it is the native CRS of the Cassini RADAR and GTDR raster products distributed by USGS Astropedia.
+
+\subsection{GeoTIFF Reprojection via Rasterio}
+\label{sec:rasterio_reproject}
+
+Raw Cassini data products are delivered as GeoTIFFs in a projected coordinate system (coordinates in metres, SimpleCylindrical CRS).  These are reprojected onto the canonical grid using \texttt{rasterio.warp.reproject} with bilinear resampling.  The reprojection handles the coordinate transformation from the source CRS embedded in each GeoTIFF to the canonical grid's CRS, nodata masking (source nodata values, typically 0.0, are replaced with NaN before reprojection), and resampling from the source resolution to the canonical \SI{4490}{\metre\per\text{px}} grid.  This is the only stage at which a GIS reprojection library is used; all subsequent analysis operates in the canonical equirectangular coordinate system.
+
+\subsection{Polar Stereographic Insets}
+\label{sec:polar_stereo}
+
+The polar inset maps in the animation frames and temporal reconstruction figures use an oblique polar stereographic projection following \citet{Snyder1987}.  The projection maps disc coordinates $(x, y)$ with $r = \sqrt{x^2+y^2} \in [0,1]$ to geographic coordinates via:
+\begin{equation}
+  \phi = 90\textdegree - 2\arctan\!\bigl(r \cdot k_{\mathrm{PS}}\bigr), \qquad
+  \lambda = \arctan2(x,\, y)
+  \label{eq:polar_stereo}
+\end{equation}
+where $\phi$ is latitude, $\lambda$ is west longitude, and $k_{\mathrm{PS}} = \tan\bigl((90\textdegree - \phi_{\mathrm{edge}})/2\bigr)$ is a pre-computed scale factor that maps the disc edge ($r=1$) to the desired polar cap boundary $\phi_{\mathrm{edge}}$ (55\textdegree{} by default).  For the south polar disc, $\phi$ is negated.  Pixel values are obtained by bilinear interpolation from the equirectangular grid using the inverse-projected latitude and longitude at each disc pixel.  This hand-coded implementation avoids introducing a dependency on cartographic projection libraries for what is purely a visualisation transformation.

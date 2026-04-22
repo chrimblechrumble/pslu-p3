@@ -28,11 +28,26 @@ indirect evidence about the value of $H$.
 
 The Beta distribution $\mathrm{Beta}(\alpha, \beta)$ is defined on $[0, 1]$
 and characterised by two positive shape parameters $\alpha$ and $\beta$.
-It is unimodal when both $\alpha > 1$ and $\beta > 1$, with mean
+Its probability density function is expressed in terms of the gamma function
+(Eq.~\ref{eq:prior_pdf} in Chapter~\ref{ch:methods}):
+\[
+  p(h) = \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\,\Gamma(\beta)}\;
+  h^{\,\alpha - 1}\,(1 - h)^{\,\beta - 1}, \qquad h \in [0,1]
+\]
+where the gamma function $\Gamma(\cdot)$ generalises the factorial to
+non-integer arguments (Eq.~\ref{eq:gamma_def}).
+The distribution is unimodal when both $\alpha > 1$ and $\beta > 1$, with mean
 $\alpha/(\alpha + \beta)$ and variance that decreases as $\alpha + \beta$
 grows.  Because it is bounded on $[0,1]$ and can represent any unimodal
 belief over a probability, it is the natural prior for the latent
 habitability probability $H$.
+
+\section{Bernoulli Trials and the Binomial Likelihood}
+\label{sec:bernoulli}
+
+A \textit{Bernoulli trial} is an experiment with exactly two possible outcomes --- conventionally called ``success'' and ``failure'' --- each occurring with fixed probabilities $p$ and $1-p$ respectively \citep[ch.~2]{DeGroot2012}.  A coin flip is the prototypical example: heads (success, probability $p$) or tails (failure, probability $1-p$).  The \textit{Binomial distribution} counts the total number of successes $k$ in $n$ independent Bernoulli trials; it is the natural likelihood function for data arising from repeated binary observations.
+
+In the habitability model, no actual coin flips occur.  Instead, the prior and data contributions are expressed as \textit{virtual} (or \textit{pseudo}) Bernoulli trials --- a mathematical device for encoding strength of belief in the same currency as observational data.  The prior contributes $\kappa = 5$ virtual trials, of which $\alpha_0 = 1.655$ are ``successes'' (prior evidence for habitability) and $\beta_0 = 3.345$ are ``failures'' (prior evidence against).  Each observed feature $f_i$ then contributes $\lambda w_i$ additional virtual trials, of which a fraction $f_i$ are successes and $(1-f_i)$ are failures.  This pseudo-count interpretation is the standard Bayesian device for placing prior beliefs on the same mathematical footing as observed data \citep[ch.~2]{Gelman2013}, and is the mechanism by which conjugacy yields a closed-form posterior (Section~\ref{sec:conjugacy_explained}).
 
 \section{Conjugacy}
 \label{sec:conjugacy_explained}
@@ -44,6 +59,13 @@ conjugate to the Binomial likelihood: if the prior on a success probability
 $p$ is $\mathrm{Beta}(\alpha_0, \beta_0)$ and we observe $k$ successes
 in $n$ Bernoulli trials, the posterior is
 $\mathrm{Beta}(\alpha_0 + k,\; \beta_0 + (n - k))$.
+In the habitability model, this update takes the specific form given in
+Eqs.~\ref{eq:alpha_post}--\ref{eq:beta_post}, where the pseudo-counts
+$k = \lambda\sum_i w_i f_i$ and $n - k = \lambda\sum_i w_i(1-f_i)$ are
+derived from the weighted feature values.  The resulting posterior PDF
+(Eq.~\ref{eq:posterior_pdf}) has the same gamma-function structure as
+the prior PDF (Eq.~\ref{eq:prior_pdf}), with only the shape parameters
+changed --- no new functional form is introduced.
 This analytical tractability makes the update feasible at 6.49 million
 pixels simultaneously with no numerical integration required.
 

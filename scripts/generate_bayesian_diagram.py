@@ -45,13 +45,13 @@ SITES = [
         "marker":  "▲",
         "type":    "lake",
     },
-    {
-        "name":    "Ligeia Mare\nshoreline",
-        "w_sum":   0.5188,
-        "colour":  "#006b5a",
-        "marker":  "▲",
-        "type":    "lake",
-    },
+    # {
+    #     "name":    "Ligeia Mare\nshoreline",
+    #     "w_sum":   0.5188,
+    #     "colour":  "#006b5a",
+    #     "marker":  "▲",
+    #     "type":    "lake",
+    # },
     {
         "name":    "Belet\ndune sea",
         "w_sum":   0.3177,
@@ -94,7 +94,7 @@ def main() -> None:
     ax.plot(x, prior_pdf, color="#2255aa", lw=2.5, label=rf"Prior  $\mathrm{{Beta}}({ALPHA0:.3f},\,{BETA0:.3f})$")
     ax.fill_between(x, prior_pdf, alpha=0.20, color="#2255aa")
     ax.axvline(MU0, color="#2255aa", ls="--", lw=1.2, alpha=0.7)
-    ax.text(MU0 + 0.01, max(prior_pdf) * 0.7,
+    ax.text(MU0 + 0.01, max(prior_pdf) * 1.1,
             rf"$\mu_0 = {MU0}$", color="#2255aa", fontsize=9)
     # Mark P_min and P_max
     p_min = ALPHA0 / (KAPPA + LAMBDA)
@@ -107,7 +107,16 @@ def main() -> None:
     ax.legend(fontsize=9, facecolor="white", labelcolor="black", framealpha=0.8)
     ax.set_xlim(0, 1); ax.set_ylim(0, None)
 
-    # -- Right panel: posteriors for all sites ------------------------------------
+    # ── Compute shared y-limit across both panels ─────────────────────────────
+    y_max = max(prior_pdf)
+    for s in SITES:
+        ap, bp = posterior_params(s["w_sum"])
+        pdf = beta_dist.pdf(x, ap, bp)
+        y_max = max(y_max, max(pdf))
+    y_max *= 1.1  # 10% headroom
+    axes[0].set_ylim(0, y_max)  # apply shared limit to left panel
+
+    # ── Right panel: posteriors for all sites ────────────────────────────────────
     ax = axes[1]
     # Draw prior faintly for comparison
     ax.plot(x, prior_pdf, color="#2255aa", lw=1.0, alpha=0.35, ls="--",
@@ -126,20 +135,20 @@ def main() -> None:
         # Mark posterior mean
         ax.axvline(ph_mean, color=s["colour"], ls=":", lw=1.2, alpha=0.8)
         # Label
-        ax.text(ph_mean + 0.01, beta_dist.pdf(ph_mean, ap, bp) * 0.92,
+        ax.text(ph_mean + 0.01, beta_dist.pdf(ph_mean, ap, bp) * 1.1,
                 f"$P(H)={ph_mean:.3f}$",
                 color=s["colour"], fontsize=8.5, va="top")
         handle = Line2D([0], [0], color=s["colour"], lw=2.2,
-                        label=f"{s['marker']} {s['name'].replace(chr(10), ' ')}  "
+                        label=f"{s['marker']} {s['name'].replace(chr(10), ' ')}\n"
                               f"$P(H)={ph_mean:.3f}$\n"
-                              f"   95% HDI: [{lo:.2f}, {hi:.2f}]")
-        legend_handles.append(handle)
+                              f"95% HDI: [{lo:.2f}, {hi:.2f}]")
+        legend_handles.insert(0, handle)
 
     ax.set_xlabel("Posterior mean  $P(H \\mid \\mathbf{f})$", color="black", fontsize=11)
     ax.set_title("Posterior distributions\n(after observing Cassini features)", color="black", fontsize=11, pad=8)
-    ax.legend(handles=legend_handles, fontsize=8.5, facecolor="white",
-              labelcolor="black", framealpha=0.8, loc="upper left")
-    ax.set_xlim(0, 1); ax.set_ylim(0, None)
+    ax.legend(handles=legend_handles, fontsize=8, facecolor="white",
+              labelcolor="black", framealpha=0.8, loc="upper right")
+    ax.set_xlim(0, 1); ax.set_ylim(0, y_max)
 
     # -- Shared annotation ------------------------------------------------------
     fig.suptitle(

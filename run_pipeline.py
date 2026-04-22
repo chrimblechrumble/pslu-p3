@@ -788,7 +788,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     log.info(
         "  [D3] Subsurface ocean prior  : %.3f  "
-        "(Neish et al. 2024: ~1 elephant/yr organic flux to ocean)",
+        "(Neish et al. 2024: 7,500 kg/yr or ~1 elephant/yr organic flux to ocean)",
         cfg.priors.prior_mean_subsurface_ocean,
     )
     log.info("=" * 65)

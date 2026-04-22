@@ -59,6 +59,12 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Habitability colour scale  (must match generate_temporal_maps.py)
+# ---------------------------------------------------------------------------
+HAB_VMIN = 0.10   # dark end of colour scale
+HAB_VMAX = 0.75   # bright end of colour scale
+
+# ---------------------------------------------------------------------------
 # Named geographic features  (lon_W deg, lat deg)
 # ---------------------------------------------------------------------------
 
@@ -112,14 +118,12 @@ CATEGORY_STYLES: Dict[str, Dict[str, object]] = {
 }
 
 
-def _hab_cmap() -> "matplotlib.colors.LinearSegmentedColormap":
-    """Custom perceptually-uniform habitability colourmap."""
-    from matplotlib.colors import LinearSegmentedColormap
-    return LinearSegmentedColormap.from_list(
-        "titan_hab",
-        [(0.10, 0.05, 0.20), (0.10, 0.40, 0.55),
-         (0.25, 0.75, 0.60), (0.95, 0.90, 0.10)],
-    )
+def _hab_cmap() -> object:
+    """Habitability colourmap — matches generate_temporal_maps.py."""
+    import matplotlib
+    cmap = matplotlib.colormaps["plasma"].copy()
+    cmap.set_bad(color="#0a0a2a")  # dark background for NaN
+    return cmap
 
 
 # ---------------------------------------------------------------------------
@@ -356,6 +360,7 @@ class TitanMapPlotter:
             axes = [axes]
 
         _base_map(axes[0], posterior, cbar_label="P(habitable | data)",
+                  vmin=HAB_VMIN, vmax=HAB_VMAX,
                   title=title, annotate=self.annotate,
                   feature_names=self.feature_names,
                   feature_categories=self.feature_categories,
@@ -482,6 +487,7 @@ class TitanMapPlotter:
 
         fig, ax = plt.subplots(figsize=(14, 6), dpi=self.dpi)
         _base_map(ax, posterior, cbar_label="P(habitable|data)",
+                  vmin=HAB_VMIN, vmax=HAB_VMAX,
                   title=f"Top {top_n} Highest-Probability Habitability Sites",
                   annotate=self.annotate,
                   feature_names=self.feature_names,
@@ -544,11 +550,20 @@ def plot_interactive(
     fig = go.Figure(go.Heatmap(
         z=z, x=x, y=y,
         colorscale=[
-            [0.0, "rgb(25,13,51)"], [0.3, "rgb(26,102,140)"],
-            [0.6, "rgb(64,191,153)"], [1.0, "rgb(242,229,26)"],
+            [0.0, "rgb(12,7,134)"], [0.125, "rgb(76,2,161)"],
+            [0.25, "rgb(126,3,167)"], [0.375, "rgb(169,35,149)"],
+            [0.5, "rgb(203,71,119)"], [0.625, "rgb(229,108,91)"],
+            [0.75, "rgb(248,149,64)"], [0.875, "rgb(253,196,39)"],
+            [1.0, "rgb(239,248,33)"],
         ],
-        zmin=0, zmax=1,
-        colorbar=dict(title="P(habitable|data)"),
+        zmin=HAB_VMIN, zmax=HAB_VMAX,
+        colorbar=dict(title="P(habitable|features)"),
+        hovertemplate=(
+            "Lon: %{x:.1f}°W<br>"
+            "Lat: %{y:.1f}°<br>"
+            "P(habitable|features): %{z:.3f}"
+            "<extra></extra>"
+        ),
     ))
     lons = [v[0] for v in TITAN_FEATURES.values()]
     lats = [v[1] for v in TITAN_FEATURES.values()]

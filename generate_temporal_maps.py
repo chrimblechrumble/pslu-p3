@@ -1967,7 +1967,7 @@ def render_frame(
                 "Cassini epoch = 2004-2017 CE  (CIRS T model year 2011.0)",
                 "Organic abundance: geo_only mode — Lopes (2019) terrain classes globally",
                 "El/Em Birch confirmed-empty basins → liquid_HC = 0.0",
-                "Subsurface ocean prior = 0.03  (Neish et al. 2024 organic flux ~1 elephant/yr)",
+                "Subsurface ocean prior = 0.03  (Neish et al. 2024 organic flux 7,500 kg/yr or ~1 elephant/yr)",
                 "Label balance: 50/50 positive/negative (pure median split)",
             ],
         },

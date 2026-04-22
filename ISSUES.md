@@ -9,7 +9,11 @@ how would I know which VIMS cubes to use?
 - [x] Add text sections at the bottom of video for which features are and are not included. Add a more in 
 depth explanation for what is happening for each feature that is being used and which one dominates that explains the 
 coming colour trends in locations of interest, and also what assumptions are being made.
-- [ ] Make set of labelled sites consistent across phases
+- [x] Make set of labelled sites consistent across phases
+- [x] Move all diagnose_*.py to a new scripts/diagnose folder.
+- [x] Move all generate_*.py/analyse_habitability.py to the scripts/ folder.
+- [x] Move other top level programs apart from run_pipeline.py to a different folder.
+
 
 ## Video/static frames
 - [x] Use the same habitability scoring data for all three maps in the video. The habitability colouring of eg.g Ligeia is 
@@ -24,23 +28,25 @@ otherwise they give the impression all the data is there, when it isn't
 - [x] Check that text changes match the frame of image changes, e.g. Red Giant Ramp image changes, but text 
 change is two frames later.
 - [x] Make video pausing on/off optional, with pausing off by default
-- [ ] Cross reference that all downloaded map data is actually used. If not, why not and delete, or use it.
+- [x] Cross reference that all downloaded map data is actually used. If not, why not and delete, or use it.
 - [x] Check INSTALL instructions are correct; maybe script up the manual downloaders
-- [ ] Resolve use of GT2ED00N090_T126_V01 vs GT2ED00N090_T090_V01 data
-- [ ] Explain "[D3] Subsurface ocean prior  : 0.030  (Neish et al. 2024: ~1 elephant/yr organic flux to ocean)" better
+- [x] Resolve use of GT2ED00N090_T126_V01 vs GT2ED00N090_T090_V01 data
+- [x] Explain "[D3] Subsurface ocean prior  : 0.030  (Neish et al. 2024: ~1 elephant/yr organic flux to ocean)" better
+  - 7,500 kg/yr or 1~1 elephant. Literal
 
 ## Other output
 - [x] liquid_hydrocarbon.tif has some invalid values and does not render - check. 
 - [x] organic_abundance.tif has an imbalance in resolution in E vs W hemispheres - can anything be done. 
 - [x] why do the figure/* diagrams look different to the animation frames
 - [ ] Fix framing in 'importances' pdf
-- [ ] Enumerate/give ordinals to 'top sites'
+- [x] Enumerate/give ordinals to 'top sites'
 - [ ] Change the 'interactive' map to include P
-- [ ] Investigate why the 'temporal comparison' is almost yellow everywhere, but still dotted, whereas video
+- [x] Investigate why the 'temporal comparison' is almost yellow everywhere, but still dotted, whereas video
 is not dotted (see e.g. frame 65). There is inconsistency going on. 
 - [x] Investigate how VIMS parquet file is being used; it's just an index. The code to pull in actual cubes 
 from Nantes is either being used minimally or not not being used. Is VIMS data not useful?
-- [ ] What does 'organic flux to ocean ~1 elephant/year' mean in the subsurface_ocean prior_mean?
+- [x] What does 'organic flux to ocean ~1 elephant/year' mean in the subsurface_ocean prior_mean?
+  - 7,500 kg/yr or 1~1 elephant. Literal
 
 ## Housekeeping
 
@@ -48,8 +54,10 @@ from Nantes is either being used minimally or not not being used. Is VIMS data n
 - [x] All comments and doc strings shouldn't use characters that are not available on a UK Mac keyboard. Make substitutions as necessary. For example, 
   - [x] the ° should be swapped to 'degrees'
   - [x] the ≈ should be =~
-  - [x] all greek letters α, β, Σ, λ in comments etc should be swaped for expanded names lambda etc. But keep the Greek
+  - [x] all greek letters α, β, Σ, λ in comments etc should be swapped for expanded names lambda etc. But keep the Greek
   in all equations in thesis, obvs.
+- [ ] Check INSTALL.md is correct
+  - [ ] Check all source download sites are present and documented
 - [ ] local variables without types. I still see many across the codebase
 - [ ] If the unit tests don't use fixture data that is used in the real pipeline, consider changing teh fixture (and 
 getting rid of the data that is only used by fixtures)
@@ -57,8 +65,8 @@ getting rid of the data that is only used by fixtures)
 - [x] Comments that refer to bugs in the code that I've fixed should be removed. To be clear, keep comments that refer 
 to data/library patching/manipulation
 - [ ] Add comments/references to any geometry processing
-- [ ] Create file-level constants for colours expressed as hexadecimals
-- [ ] All comments, methods, class names, variable names and documentation should use British English spelling. 
+- [x] Create file-level constants for colours expressed as hexadecimals
+- [x] All comments, methods, class names, variable names and documentation should use British English spelling. 
 - [ ] Is it possible to convert this project to snakemake?
 - [x] add (c) line to all files and all terminal output, 
 something like (for code)

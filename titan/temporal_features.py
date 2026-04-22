@@ -727,7 +727,7 @@ class TemporalFeatureExtractor:
         (3.5 Gya past epoch, 100-400 Myr near-future window).
     subsurface_ocean_base_prior:
         Base prior probability for the subsurface_ocean feature (D3).
-        Default 0.03 (Neish et al. 2024: organic flux ~1 elephant/yr).
+        Default 0.03 (Neish et al. 2024: organic flux 7,500 kg/yr or ~1 elephant/yr).
         Passed through to FeatureExtractor unchanged.
     """
 

@@ -573,6 +573,7 @@ def plot_interactive(
         marker=dict(symbol="star", size=8, color="white",
                     line=dict(color="black", width=1)),
         name="Features",
+        hoverinfo="skip",
     ))
     fig.update_layout(
         title=title, template="plotly_dark", width=1200, height=600,
@@ -603,6 +604,7 @@ def generate_paper_figures(
     feature_names:      Optional[List[str]] = None,
     feature_categories: Optional[List[str]] = None,
     category_styles:    Optional[Dict[str, Dict[str, object]]] = None,
+    title:              str = "Titan Habitability Proxy — Posterior P(habitable | features)",
 ) -> List[Path]:
     """
     Generate the complete suite of publication-ready figures at 300 dpi.
@@ -656,7 +658,8 @@ def generate_paper_figures(
 
     for ext in ("pdf", "png"):
         p = out_dir / f"fig1_posterior.{ext}"
-        plotter.plot_posterior(posterior, hdi_width=hdi_width, out_path=p)
+        plotter.plot_posterior(posterior, hdi_width=hdi_width, out_path=p,
+                              title=title)
         paths.append(p)
 
     p = out_dir / "fig2_importances.pdf"
@@ -671,7 +674,7 @@ def generate_paper_figures(
     plotter.plot_top_sites(posterior, top_n=20, out_path=p)
     paths.append(p)
 
-    plot_interactive(posterior, out_dir / "fig5_interactive.html")
+    plot_interactive(posterior, out_dir / "fig5_interactive.html", title=title)
     paths.append(out_dir / "fig5_interactive.html")
 
     logger.info("Generated %d paper figures in %s", len(paths), out_dir)

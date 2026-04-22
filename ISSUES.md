@@ -40,7 +40,7 @@ change is two frames later.
 - [x] why do the figure/* diagrams look different to the animation frames
 - [ ] Fix framing in 'importances' pdf
 - [x] Enumerate/give ordinals to 'top sites'
-- [ ] Change the 'interactive' map to include P
+- [x] Change the 'interactive' map to include P
 - [x] Investigate why the 'temporal comparison' is almost yellow everywhere, but still dotted, whereas video
 is not dotted (see e.g. frame 65). There is inconsistency going on. 
 - [x] Investigate how VIMS parquet file is being used; it's just an index. The code to pull in actual cubes 

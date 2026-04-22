@@ -33,7 +33,7 @@ change is two frames later.
 - [x] Resolve use of GT2ED00N090_T126_V01 vs GT2ED00N090_T090_V01 data
 - [x] Explain "[D3] Subsurface ocean prior  : 0.030  (Neish et al. 2024: ~1 elephant/yr organic flux to ocean)" better
   - 7,500 kg/yr or 1~1 elephant. Literal
-- [ ] interactive maps needd to use 30 degree graticules in long and 15 degree graticules in lat
+- [ ] interactive maps need to use 30 degree graticules in long and 15 degree graticules in lat
   - and use the same location markers as the thesis - circles, squares, asterisks
 
 ## Other output
@@ -66,7 +66,7 @@ getting rid of the data that is only used by fixtures)
 - [ ] Unused code. Pycharm reports a lot of declared variables that are unused
 - [x] Comments that refer to bugs in the code that I've fixed should be removed. To be clear, keep comments that refer 
 to data/library patching/manipulation
-- [ ] Add comments/references to any geometry processing
+- [x] Add comments/references to any geometry processing
 - [x] Create file-level constants for colours expressed as hexadecimals
 - [x] All comments, methods, class names, variable names and documentation should use British English spelling. 
 - [ ] Is it possible to convert this project to snakemake?

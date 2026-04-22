@@ -591,7 +591,7 @@ def get_prior_set(mode: TemporalMode) -> TemporalPriorSet:
                 0.350,  # surface_atm_interaction: lake margins (Hayes 2016)
                 0.250,  # topographic_complexity: DEM roughness (Lorenz 2013)
                 0.300,  # geomorphologic_diversity: Shannon terrain (Malaska 2025)
-                0.030,  # subsurface_ocean:   ocean confirmed; organic flux ~1 elephant/yr
+                0.030,  # subsurface_ocean:   ocean confirmed; organic flux 7,500 kg/yr or ~1 elephant/yr
                          #                    revised DOWN from 0.10 (Neish et al. 2024)
             ),
             citations=(
@@ -840,7 +840,7 @@ def describe_prior_changes(
             "  * acetylene_energy prior_mean:    0.30 -> 0.35  "
             "(Strobel 2010 H2 depletion is confirmed)\n"
             "  * subsurface_ocean prior_mean:    0.10 -> 0.03  "
-            "(Neish 2024: organic flux to ocean ~1 elephant/year)"
+            "(Neish 2024: organic flux to ocean 7,500 kg/yr or ~1 elephant/year)"
         )
 
     elif mode == TemporalMode.PAST:

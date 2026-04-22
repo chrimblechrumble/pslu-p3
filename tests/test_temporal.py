@@ -258,7 +258,7 @@ def test_present_subsurface_ocean_revised_down() -> None:
     present_m = dict(zip(present.feature_names, present.prior_means))
     assert present_m["subsurface_ocean"] < 0.08, (
         "PRESENT subsurface_ocean should be < 0.08 "
-        "(Neish 2024: organic flux ~1 elephant/year, very limited)"
+        "(Neish 2024: organic flux 7,500 kg/yr or ~1 elephant/year, very limited)"
     )
 
 def test_as_dicts() -> None:
@@ -578,7 +578,7 @@ def test_d3_subsurface_ocean_prior_default_is_0pt03() -> None:
     cfg = BayesianPriorConfig()
     assert cfg.prior_mean_subsurface_ocean == 0.03, (
         "D3: subsurface_ocean prior must default to 0.03 per Neish et al. "
-        "(2024) -- organic flux to ocean ~one elephant/year."
+        "(2024) -- organic flux to ocean 7,500 kg/yr or ~one elephant/year."
     )
 
 

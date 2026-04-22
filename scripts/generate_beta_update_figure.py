@@ -126,7 +126,7 @@ def make_figure() -> plt.Figure:
     )
     fig.text(
         0.5, 0.930,
-        ("Curves show Beta(alpha, beta) after adding each successive feature.  "
+        (r"Curves show Beta($\alpha$, $\beta$) after adding each successive feature.  "
          "Shaded region = 95% HDI of final posterior.  "
          "Note: probability density can exceed 1.0 for concentrated distributions."),
         ha="center", va="top", color=txt_col, fontsize=9,
@@ -158,7 +158,7 @@ def make_figure() -> plt.Figure:
         for step in range(n_updates):
             a_p, b_p = posterior_params(site["features"], step)
             pdf  = beta_dist.pdf(x, a_p, b_p)
-            lw   = 2.5 if step in (0, n_updates - 1) else 1.0
+            lw   = 1.8 if step == 0 else 1.5
             ls   = "--" if step == 0 else "-"
             lbl  = "Prior" if step == 0 else FEATURE_LABELS[n_features[step - 1]]
             alpha_line = 0.45 + 0.55 * (step / (n_updates - 1))
@@ -180,20 +180,15 @@ def make_figure() -> plt.Figure:
         ax.axvline(0.331, color="#888888", lw=1.0, ls=":", alpha=0.7,
                    label="Prior mean")
 
-        # Legend: prior + final P(H) + prior mean line + last 3 features
-        handles, labels_l = ax.get_legend_handles_labels()
-        # Indices: 0=Prior, 1-8=features, 9=P(H) line, 10=prior mean
-        # Show: Prior, last 3 features, P(H), prior mean
-        keep = [0, 6, 7, 8, 9, 10]
-        keep = [i for i in keep if i < len(handles)]
+        # Legend: show all features in two columns
         ax.legend(
-            [handles[i] for i in keep], [labels_l[i] for i in keep],
-            fontsize=6.8, framealpha=0.2, facecolor=dark_bg,
-            edgecolor=grid_col, labelcolor=txt_col, loc="upper left",
+            fontsize=6.5, framealpha=0.2, facecolor=dark_bg,
+            edgecolor=grid_col, labelcolor=txt_col, loc="upper right",
+            ncol=2,
         )
         ax.grid(True, color=grid_col, alpha=0.4, lw=0.5)
 
-    # -- Bottom panel: HDI comparison ------------------------------------------
+    # ── Bottom panel: HDI comparison ──────────────────────────────────────────
     ax_bot = fig.add_subplot(gs_bot[0, 0])
     ax_bot.set_facecolor(dark_bg)
     ax_bot.tick_params(colors=txt_col, labelsize=9)

@@ -13,6 +13,7 @@ coming colour trends in locations of interest, and also what assumptions are bei
 - [x] Move all diagnose_*.py to a new scripts/diagnose folder.
 - [x] Move all generate_*.py/analyse_habitability.py to the scripts/ folder.
 - [x] Move other top level programs apart from run_pipeline.py to a different folder.
+- [ ] See README at https://gitlab.com/antonin.affholder/enceladus_bayesian_methanogenesis for layout of core info for how someone can follow up.
 
 
 ## Video/static frames
@@ -35,6 +36,7 @@ change is two frames later.
   - 7,500 kg/yr or 1~1 elephant. Literal
 - [ ] interactive maps need to use 30 degree graticules in long and 15 degree graticules in lat
   - and use the same location markers as the thesis - circles, squares, asterisks
+  - [ ] Publish on GitHub pages
 
 ## Other output
 - [x] liquid_hydrocarbon.tif has some invalid values and does not render - check. 

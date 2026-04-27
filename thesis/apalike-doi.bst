@@ -1,44 +1,36 @@
-% BibTeX `apalike' bibliography style (version 0.99a, 8-Dec-10), adapted from
-% the `alpha' style, version 0.99a; for BibTeX version 0.99a.
+% BibTeX `apalike-doi' bibliography style (version 1.0, 27-Apr-2026), adapted from
+% the `apalike' style, version 0.99a; for BibTeX version 0.99a.
 %
-% Copyright (C) 1988, 2010 Oren Patashnik.
+% Copyright (C) 2026 Chris Meadows.
+%
 % Unlimited copying and redistribution of this file are permitted as long as
 % it is unmodified.  Modifications (and redistribution of modified versions)
 % are also permitted, but only if the resulting file is renamed.
 %
-% Differences between this style and `alpha' are generally heralded by a `%'.
-% The file btxbst.doc has the documentation for alpha.bst.
+% Differences between this style and `apalike' are denoted by a `%'.
 %
-% This style should be used with the `apalike' LaTeX style (apalike.sty).
-% \cite's come out like "(Jones, 1986)" in the text but there are no labels
-% in the bibliography, and something like "(1986)" comes out immediately
-% after the author.  Author (and editor) names appear as last name, comma,
-% initials.  A `year' field is required for every entry, and so is either
-% an author (or in some cases, an editor) field or a key field.
+% This style was created becasue I wanted apalike bibliography entries, but also
+% a clickable doi link, without the boilerplate 'http://'.
+% Combining this bibliography style with packages such as 
 %
-% Editorial note:
-% Many journals require a style like `apalike', but I strongly, strongly,
-% strongly recommend that you not use it if you have a choice---use something
-% like `plain' instead.  Mary-Claire van Leunen (A Handbook for Scholars,
-% Knopf, 1979) argues convincingly that a style like `plain' encourages better
-% writing than one like `apalike'.  Furthermore the strongest arguments for
-% using an author-date style like `apalike'---that it's "the most practical"
-% (The Chicago Manual of Style, University of Chicago Press, thirteenth
-% edition, 1982, pages 400--401)---fall flat on their face with the new
-% computer-typesetting technology.  For instance page 401 anachronistically
-% states "The chief disadvantage of [a style like `plain'] is that additions
-% or deletions cannot be made after the manuscript is typed without changing
-% numbers in both text references and list."  LaTeX sidesteps the disadvantage.
+%   \usepackage[
+%     colorlinks=true,
+%     linkcolor=MidnightBlue,
+%     citecolor=ForestGreen,
+%     urlcolor=Maroon,
+%     pdfauthor={some author},
+%     pdftitle={some title},
+%   ]{hyperref}
+%   \usepackage{doi}           % renders doi fields as clickable hyperlinks
 %
+% Gives you clickable doi links in the bibliography without visually messy underlining
+# and boilerplate 'http://' prefixes. No pointy hat needed.
+#
 % History:
-%   15-sep-86  (OP)  Original version by Oren Patashnik, ideas from Susan King.
-%   10-nov-86  (OP)  Truncated the sort.key$ string to the correct length
-%                    in bib.sort.order to eliminate error message.
-%   24-jan-88  (OP)  Updated for BibTeX version 0.99a, from alpha.bst 0.99a;
-%                    apalike now sorts by author, then year, then title;
-%                    THIS `apalike' VERSION DOES NOT WORK WITH BIBTEX 0.98i.
-%    8-dec-10  (OP)  Still version 0.99a, as the code itself was unchanged;
-%                    this release clarified the license.
+%   27-Apr-2026 Created/extended from https://mirror.apps.cam.ac.uk/pub/tex-archive/biblio/bibtex/base/apalike.bst
+#
+#
+
 
 ENTRY
   { address
@@ -59,8 +51,8 @@ ENTRY
     publisher
     school
     series
-    doi
-    url
+    doi                 % added by Chris Meadows
+    url                 % added by Chris Meadows
     title
     type
     volume
@@ -481,14 +473,14 @@ FUNCTION {format.incoll.inproc.crossref}
   " \cite{" * crossref * "}" *
 }
 
-FUNCTION {format.doi}
+FUNCTION {format.doi}                                   % for apalike-doi
 { doi empty$
     { "" }
     { new.block "\doi{" doi * "}" * }
   if$
 }
 
-FUNCTION {format.url}
+FUNCTION {format.url}                                   % for apalike-doi
 { url empty$
     { "" }
     { new.block "URL \url{" url * "}" * }
@@ -513,8 +505,8 @@ FUNCTION {article}
   if$
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -549,8 +541,8 @@ FUNCTION {book}
   format.edition output
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -566,8 +558,8 @@ FUNCTION {booklet}
   address output
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -604,8 +596,8 @@ FUNCTION {inbook}
   format.edition output
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -633,8 +625,8 @@ FUNCTION {incollection}
   if$
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -662,8 +654,8 @@ FUNCTION {inproceedings}
   if$
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -682,8 +674,8 @@ FUNCTION {manual}
   format.edition output
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -700,8 +692,8 @@ FUNCTION {mastersthesis}
   address output
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -716,8 +708,8 @@ FUNCTION {misc}
   howpublished output
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -734,8 +726,8 @@ FUNCTION {phdthesis}
   address output
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -754,8 +746,8 @@ FUNCTION {proceedings}
   publisher output                              % here
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -772,8 +764,8 @@ FUNCTION {techreport}
   address output
   new.block
   note output
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 
@@ -786,8 +778,8 @@ FUNCTION {unpublished}
   format.title "title" output.check
   new.block
   note "note" output.check
-  format.doi output
-  format.url output
+  format.doi output                                     % for apalike-doi
+  format.url output                                     % for apalike-doi
   fin.entry
 }
 

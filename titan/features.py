@@ -365,10 +365,12 @@ PIPELINE_CODE_VERSION: str = "5.0"
 # Controls how organic_abundance is computed.  Change this single line to
 # switch between approaches; re-run the pipeline with --overwrite to apply.
 #
-#   "blended"  (Option A) -- VIMS+ISS Seignovert mosaic primary (0-180°W),
-#              Lopes geomorphology gap-fill (180-360°W), 30° cosine taper at
-#              the ~180°W coverage boundary and at the 0/360°W wrap seam.
-#              Preserves VIMS spectral structure in western hemisphere.
+#   "blended"  (Option A) -- VIMS+ISS Seignovert mosaic primary (global coverage
+#              after longitude-convention fix in preprocessing.py).
+#              Where the mosaic has valid data (100% after fix), spectral band
+#              ratios provide continuous organic abundance.  If any pixels lack
+#              VIMS data, Lopes geomorphology gap-fills with 30° cosine taper.
+#              Preserves VIMS spectral structure globally.
 #              May retain faint boundary artefacts where VIMS terrain departs
 #              significantly from the geomorphology class mean.
 #
@@ -383,7 +385,7 @@ PIPELINE_CODE_VERSION: str = "5.0"
 # globally.  The VIMS calibration offset (global_offset ≈ -0.135) is still
 # applied so the absolute scale matches the Seignovert spectral measurements.
 # ---------------------------------------------------------------------------
-ORGANIC_SOURCE_MODE: str = "geo_only"   # "blended" | "geo_only"
+ORGANIC_SOURCE_MODE: str = "blended"   # "blended" | "geo_only"
 
 # ---------------------------------------------------------------------------
 # Organic-abundance NaN-fill helper (module-level; used by FeatureExtractor)
@@ -782,10 +784,10 @@ class FeatureExtractor:
            Seignovert et al. 2019, CaltechDATA doi:10.22002/D1.1173).
            This is the spectroscopically established tholin abundance proxy
            (Le Mouelic et al. 2019; Barnes et al. 2007).
-           Coverage: ~50 % of the globe (roughly 0-180  degW).
+           Coverage: global (after longitude-convention fix in preprocessing.py).
 
-        2. **Geomorphology-based scores -- gap-fill (global coverage).**
-           Where VIMS data is absent (180-360  degW and polar regions), organic
+        2. **Geomorphology-based scores -- gap-fill (fallback).**
+           Where VIMS data is absent (if any pixels lack coverage), organic
            abundance is assigned from the terrain-class lookup table
            :data:`TERRAIN_ORGANIC_SCORES`, which maps each Lopes et al. (2019)
            geomorphologic class to a published organic abundance value derived
@@ -923,8 +925,8 @@ class FeatureExtractor:
             # from high-resolution close flybys over Titan's most-targeted
             # (organic-rich) terrain, so their mean is systematically biased
             # upward relative to the global Seignovert mosaic.  Including
-            # them in the overlap calculation would corrupt the offset for
-            # the entire eastern hemisphere geo gap-fill.
+            # them in the overlap calculation would corrupt the global offset
+            # used for any geo gap-fill (when VIMS coverage is partial).
             seignovert_valid_mask: Optional[np.ndarray] = (
                 np.isfinite(vims_norm).copy()  # true only where Seignovert is valid
             )
@@ -1061,26 +1063,38 @@ class FeatureExtractor:
             # This makes the geo fill EXACTLY match VIMS at the boundary pixel
             # and blend smoothly to the calibrated geo value over decay_cols columns.
             nrows, ncols = vims_norm.shape
-            # Transition width: ~30 deg longitude (widened from 10° to visually
-            # eliminate the Seignovert/geo boundary step at ~180°W).
-            # At 4490 m/px (3603 cols), 30° ≈ 300 columns.
-            # DECLARED ASSUMPTION: organic abundance transitions smoothly from
-            # VIMS to geomorphology over 30° of longitude at coverage boundaries.
+            vims_valid = np.isfinite(vims_norm)
+            n_vims_total = int(vims_valid.sum())
+            full_vims = (n_vims_total == int(vims_valid.size)) or \
+                        (float(vims_valid.mean()) > 0.999)
+
+            if full_vims:
+                # ── Full VIMS coverage: use spectral data directly ─────────
+                # No geo gap-fill, no decay taper, no wrap-blend needed.
+                result = np.clip(vims_norm, 0.0, 1.0).astype(np.float32)
+                n_nan_pre = int(np.sum(~np.isfinite(result)))
+                logger.info(
+                    "organic_abundance: VIMS spectral mosaic covers entire "
+                    "globe (%d px, 100%%). No geo gap-fill, decay, or "
+                    "wrap-blend applied. global_offset=%.4f (diagnostic only). "
+                    "NaN pixels (SAR gap): %d (%.1f%%).",
+                    n_vims_total, global_offset,
+                    n_nan_pre, 100.0 * n_nan_pre / result.size,
+                )
+                return _fill_organic_nan(result)
+
+            # ── Partial VIMS coverage: decay taper + geo gap-fill ──────────
+            # Transition width: ~30 deg longitude at coverage boundaries.
             deg_per_col  = 360.0 / ncols
             decay_cols   = max(5, int(30.0 / deg_per_col))
 
             # vims_valid_for_decay: the mask that defines the VIMS coverage edge
             # for the row-wise decay.  Must be Seignovert-only so that isolated
-            # 5 um cube pixels scattered across the eastern hemisphere do not
-            # create false "edge" columns far from the true ~180 degW boundary.
-            # (The 5 um pixels are used in the final result but not for edge location.)
+            # 5 um cube pixels do not create false "edge" columns.
             if seignovert_valid_mask is not None:
                 vims_valid_for_decay: np.ndarray = seignovert_valid_mask
             else:
-                vims_valid_for_decay = np.isfinite(vims_norm)
-
-            # vims_valid is the full blended coverage used for the final composite.
-            vims_valid = np.isfinite(vims_norm)
+                vims_valid_for_decay = vims_valid
 
             # Build column-distance array relative to each row's VIMS edge.
             # For row r with last valid VIMS column c_edge(r):
@@ -1127,22 +1141,15 @@ class FeatureExtractor:
             )
             result = np.clip(result, 0.0, 1.0)
 
-            # Wrap-seam blend at the 0°/360°W map edge.
-            # The equirectangular canvas cuts at the sub-Saturn meridian (0°W).
-            # The Seignovert mosaic was not stitched to be periodic, so VIMS
-            # values at col 0 (0°W) and col ncols-1 (≈360°W) may differ by
-            # up to ~0.5 even though they are geographically adjacent.
-            # Fix: apply a cosine taper over 30° on each edge, blending the
-            # VIMS result toward calibrated_geo (which IS spatially continuous,
-            # being derived from closed shapefile polygons with no map-edge seam).
-            # DECLARED ASSUMPTION: within 30° of the sub-Saturn meridian,
-            # organic abundance is represented by the geomorphology score
-            # rather than the VIMS mosaic edge value.
-            _taper_cols = decay_cols   # same 30° width as the boundary decay
+            n_vims: int = int(np.sum(np.isfinite(vims_norm)))
+            n_geo:  int = int(np.sum(~np.isfinite(vims_norm) & np.isfinite(adjusted_geo_v)))
+
+            # ── Wrap-seam blend at 0°/360°W (needed when geo gap-fill
+            # creates a discontinuity at the map edge) ──────────────────
+            _taper_cols = decay_cols
             if np.isfinite(calibrated_geo).all() and _taper_cols > 0:
                 _w    = np.linspace(0.0, 1.0, _taper_cols, dtype=np.float64)
-                _cosw = (1.0 - np.cos(np.pi * _w)) / 2.0   # 0 at edge → 1 at interior
-                # Left edge (col 0 = 0°W): blend from geo toward result
+                _cosw = (1.0 - np.cos(np.pi * _w)) / 2.0
                 for _c in range(min(_taper_cols, ncols)):
                     _alpha = float(_cosw[_c])
                     result[:, _c] = np.clip(
@@ -1150,7 +1157,6 @@ class FeatureExtractor:
                         + _alpha * result[:, _c],
                         0.0, 1.0,
                     ).astype(np.float32)
-                # Right edge (col ncols-1 ≈ 360°W): blend toward geo
                 for _c_rev in range(min(_taper_cols, ncols)):
                     _c = ncols - 1 - _c_rev
                     _alpha = float(_cosw[_c_rev])
@@ -1160,8 +1166,6 @@ class FeatureExtractor:
                         0.0, 1.0,
                     ).astype(np.float32)
 
-            n_vims: int = int(np.sum(np.isfinite(vims_norm)))
-            n_geo:  int = int(np.sum(~np.isfinite(vims_norm) & np.isfinite(adjusted_geo_v)))
             n_observed: int = n_vims + n_geo
             n_total:    int = int(result.size)
             n_nan_pre:  int = int(np.sum(~np.isfinite(result)))
@@ -1171,11 +1175,8 @@ class FeatureExtractor:
                 "wrap-blend=%d cols. "
                 "observed coverage=%.1f%%. global_offset=%.4f. "
                 "SAR/VIMS gap (synthesised): %d px (%.1f%%). "
-                "DECLARED ASSUMPTIONS: (1) eastern hemisphere modelled from "
-                "Lopes geomorphology; (2) 30-deg cosine taper blends VIMS to "
-                "geo at the ~180 degW coverage boundary and at the 0/360 degW "
-                "wrap seam; (3) SAR-unmapped pixels filled with zonal/global median. "
-                "Output GeoTIFF has ORGANIC_GAP_FILL flag set.",
+                "Geo gap-fill uses Lopes (2019) terrain-class scores with "
+                "global level shift and 30-deg cosine taper at coverage boundaries.",
                 n_vims, n_geo, decay_cols, _taper_cols,
                 100.0 * n_observed / n_total,
                 global_offset,

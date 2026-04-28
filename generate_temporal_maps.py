@@ -1343,16 +1343,44 @@ def _site_ph(site: Dict, t: float) -> float:
     return (alpha0 + LAMBDA * w_sum) / (KAPPA + LAMBDA)
 
 
-def compute_epoch_top10(t: float) -> List[Tuple[float, float, str, int, str]]:
+def compute_epoch_top10(
+    t: float,
+    posterior: np.ndarray = None,
+) -> List[Tuple[float, float, str, int, str]]:
     """
     Rank all CANDIDATE_SITES by P(H|features) at epoch t.
 
+    Parameters
+    ----------
+    t : float
+        Epoch in Gya.
+    posterior : np.ndarray, optional
+        If provided (shape = nrows × ncols), P(H) is sampled from the
+        raster at each site's coordinates.  This ensures the labels on
+        animation frames exactly match the underlying map colours.
+        If None, P(H) is computed from CANDIDATE_SITES feature profiles
+        via _site_ph() (legacy behaviour).
+
     Returns the top-10 as a list of
         (lon_W, lat, label, rank, pole_hint)
-    in the same format as the former static TOP10 list.
     pole_hint is "N" for lat>50, "S" for lat<-50, else "".
     """
-    scored = [(s, _site_ph(s, t)) for s in CANDIDATE_SITES]
+    if posterior is not None:
+        nrows, ncols = posterior.shape
+        def _sample_ph(site):
+            lon_w, lat = site["lon_W"], site["lat"]
+            col = int(round(lon_w / 360.0 * (ncols - 1)))
+            row = int(round((90.0 - lat) / 180.0 * (nrows - 1)))
+            row = max(0, min(nrows - 1, row))
+            col = max(0, min(ncols - 1, col))
+            # 3×3 patch for stability
+            r0, r1 = max(0, row - 1), min(nrows, row + 2)
+            c0, c1 = max(0, col - 1), min(ncols, col + 2)
+            patch = posterior[r0:r1, c0:c1]
+            return float(np.nanmean(patch))
+        scored = [(s, _sample_ph(s)) for s in CANDIDATE_SITES]
+    else:
+        scored = [(s, _site_ph(s, t)) for s in CANDIDATE_SITES]
     scored.sort(key=lambda x: x[1], reverse=True)
     top10 = []
     for rank, (s, _ph) in enumerate(scored[:10], start=1):
@@ -1406,7 +1434,7 @@ def render_frame(
     # (lon_W deg, lat deg, short_label, rank, pole: N/S/blank)
     # Per-epoch top-10: computed dynamically from the Bayesian formula
     # using CANDIDATE_SITES and the epoch-specific scale functions.
-    TOP10 = compute_epoch_top10(t)
+    TOP10 = render_thesis_frame(t, posterior=posterior)
 
     # Build a lookup: label -> site type, from CANDIDATE_SITES
     SITE_TYPE: dict  = {s["label"]: s["type"] for s in CANDIDATE_SITES}
@@ -1967,7 +1995,7 @@ def render_frame(
                 "Cassini epoch = 2004-2017 CE  (CIRS T model year 2011.0)",
                 "Organic abundance: geo_only mode — Lopes (2019) terrain classes globally",
                 "El/Em Birch confirmed-empty basins → liquid_HC = 0.0",
-                "Subsurface ocean prior = 0.03  (Neish et al. 2024 organic flux 7,500 kg/yr or ~1 elephant/yr)",
+                "Subsurface ocean prior = 0.03  (Neish et al. 2024 organic flux ~1 elephant/yr)",
                 "Label balance: 50/50 positive/negative (pure median split)",
             ],
         },
@@ -2242,7 +2270,7 @@ def render_thesis_frame(
     norm = mcolors.Normalize(vmin=VMIN, vmax=VMAX)
 
     T_surface = titan_temp_K(t)
-    TOP10     = compute_epoch_top10(t)
+    TOP10     = compute_epoch_top10(t, posterior=posterior)
 
     # Build lookups identical to render_frame
     SITE_TYPE: dict = {s["label"]: s["type"] for s in CANDIDATE_SITES}
@@ -3421,10 +3449,11 @@ def main(args: argparse.Namespace) -> None:
                                            else "REAL_CASSINI",
                     # Declared data-provenance flags for downstream users.
                     # These warn that some regions use modelled gap-fills.
-                    "ORGANIC_EAST_HEMISPHERE":
-                        "MODELLED_GEO_GAPFILL -- pixels east of ~180W use "
-                        "Lopes geomorphology scores, not VIMS observations. "
-                        "See organic_abundance docstring.",
+                    "ORGANIC_DATA_SOURCE":
+                        "VIMS_ISS_MOSAIC -- Seignovert/Le Mouelic global "
+                        "spectral mosaic (1.59/1.27 um band ratio + ISS "
+                        "938nm gap-fill). Full-globe coverage after "
+                        "longitude-convention fix in preprocessing.py.",
                     "TOPOGRAPHY_SOUTH_LIMIT":
                         "GTIE_T126_TRUNCATED -- elevation NaN south of ~48-51S. "
                         "Corlies 2017 4ppd gap-filler used if available. "

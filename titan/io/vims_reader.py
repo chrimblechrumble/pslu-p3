@@ -18,6 +18,9 @@ titan/io/vims_reader.py
 ========================
 Reader and downloader for Cassini VIMS data from the Nantes portal.
 
+Note, this code isn't used anymore, but still a useful but of utility
+code to have around
+
 URL scheme (verified by direct inspection of https://vims.univ-nantes.fr):
 ---------------------------------------------------------------------------
 All cubes are downloadable with NO login and NO contact required.

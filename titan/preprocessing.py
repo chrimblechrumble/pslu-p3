@@ -67,7 +67,6 @@ from titan.io.gtdr_reader import (
     gtdr_affine_transform,
 )
 from titan.io.shapefile_rasteriser import GeomorphologyRasteriser
-from titan.io.vims_reader import VIMSFootprintIndex
 
 logger = logging.getLogger(__name__)
 
@@ -509,36 +508,38 @@ def _rasterise_channels(
                 100.0 * float(np.sum(density > 0)) / density.size)
 
 
-def _bin_vims_to_raster(
-    parquet_path: Path,
-    dst_path: Path,
-    grid: CanonicalGrid,
-) -> None:
-    """
-    Convert the VIMS spatial footprint index to a coverage-density raster.
-
-    The output represents normalised VIMS observation coverage (0->1),
-    used as a proxy for surface composition data quality in the
-    habitability feature extraction.
-
-    Parameters
-    ----------
-    parquet_path:
-        Path to the VIMS footprint parquet file.
-    dst_path:
-        Output canonical GeoTIFF.
-    grid:
-        Canonical grid.
-    """
-    index = VIMSFootprintIndex(parquet_path)
-    coverage = index.coverage_map(
-        nrows=grid.nrows,
-        ncols=grid.ncols,
-        lon_range=(0.0, 360.0),
-        lat_range=(-90.0, 90.0),
-    )
-    _write_canonical_tif(coverage, dst_path, grid)
-    logger.info("VIMS coverage raster: %s", dst_path)
+# VIMS parquet superseded by VIMS+ISS mosaic
+#
+# def _bin_vims_to_raster(
+#     parquet_path: Path,
+#     dst_path: Path,
+#     grid: CanonicalGrid,
+# ) -> None:
+#     """
+#     Convert the VIMS spatial footprint index to a coverage-density raster.
+#
+#     The output represents normalised VIMS observation coverage (0->1),
+#     used as a proxy for surface composition data quality in the
+#     habitability feature extraction.
+#
+#     Parameters
+#     ----------
+#     parquet_path:
+#         Path to the VIMS footprint parquet file.
+#     dst_path:
+#         Output canonical GeoTIFF.
+#     grid:
+#         Canonical grid.
+#     """
+#     index = VIMSFootprintIndex(parquet_path)
+#     coverage = index.coverage_map(
+#         nrows=grid.nrows,
+#         ncols=grid.ncols,
+#         lon_range=(0.0, 360.0),
+#         lat_range=(-90.0, 90.0),
+#     )
+#     _write_canonical_tif(coverage, dst_path, grid)
+#     logger.info("VIMS coverage raster: %s", dst_path)
 
 
 # ---------------------------------------------------------------------------
@@ -602,8 +603,10 @@ class DataPreprocessor:
             self._preprocess_geotiff("vims_mosaic", overwrite)
         )
 
-        # VIMS footprint parquet -> coverage raster
-        results.update(self._preprocess_vims_parquet(overwrite))
+        # VIMS parquet coverage raster no longer used by any feature.
+        # Organic abundance uses VIMS+ISS spectral mosaic; methane cycle
+        # uses CIRS + channels + latitude prior.
+        # results.update(self._preprocess_vims_parquet(overwrite))
 
         # Geomorphology shapefiles
         results.update(self._preprocess_geomorphology(overwrite))
@@ -886,43 +889,45 @@ class DataPreprocessor:
         )
         return {name: out}
 
-    def _preprocess_vims_parquet(
-        self, overwrite: bool
-    ) -> Dict[str, Path]:
-        """
-        Convert VIMS parquet footprint index to a coverage raster.
-
-        Uses get_vims_parquet() to resolve the file, which searches for
-        multiple alternative names (vims_footprints.parquet,
-        vims_sample_1000rows.parquet, any vims_*.parquet) before giving up.
-        The 1,000-row sample is sufficient for development-mode coverage maps.
-        """
-        raw = self.config.get_vims_parquet()
-        if raw is None:
-            logger.warning(
-                "VIMS parquet not found in %s. "
-                "Use --vims-parquet PATH or place vims_footprints.parquet / "
-                "vims_sample_1000rows.parquet in the data directory.",
-                self.config.data_dir,
-            )
-            return {}
-        is_sample = raw.stat().st_size < 10_000_000  # <10 MB -> sample
-        if is_sample:
-            logger.info(
-                "Using VIMS parquet SAMPLE (%s, %d KB). "
-                "Coverage maps will be sparse. "
-                "Full 227 MB catalogue gives reliable global coverage.",
-                raw.name, raw.stat().st_size // 1024,
-            )
-        else:
-            logger.info("Using VIMS parquet: %s (%.1f MB)", raw.name,
-                        raw.stat().st_size / 1e6)
-        out = self.config.processed_dir / "vims_coverage_canonical.tif"
-        if out.exists() and not overwrite:
-            return {"vims_coverage": out}
-        logger.info("Binning VIMS footprint parquet -> coverage raster ...")
-        _bin_vims_to_raster(raw, out, self.grid)
-        return {"vims_coverage": out}
+    # VIMS parquet superseded by VIMS+ISS mosaic
+    #
+    # def _preprocess_vims_parquet(
+    #     self, overwrite: bool
+    # ) -> Dict[str, Path]:
+    #     """
+    #     Convert VIMS parquet footprint index to a coverage raster.
+    #
+    #     Uses get_vims_parquet() to resolve the file, which searches for
+    #     multiple alternative names (vims_footprints.parquet,
+    #     vims_sample_1000rows.parquet, any vims_*.parquet) before giving up.
+    #     The 1,000-row sample is sufficient for development-mode coverage maps.
+    #     """
+    #     raw = self.config.get_vims_parquet()
+    #     if raw is None:
+    #         logger.warning(
+    #             "VIMS parquet not found in %s. "
+    #             "Use --vims-parquet PATH or place vims_footprints.parquet / "
+    #             "vims_sample_1000rows.parquet in the data directory.",
+    #             self.config.data_dir,
+    #         )
+    #         return {}
+    #     is_sample = raw.stat().st_size < 10_000_000  # <10 MB -> sample
+    #     if is_sample:
+    #         logger.info(
+    #             "Using VIMS parquet SAMPLE (%s, %d KB). "
+    #             "Coverage maps will be sparse. "
+    #             "Full 227 MB catalogue gives reliable global coverage.",
+    #             raw.name, raw.stat().st_size // 1024,
+    #         )
+    #     else:
+    #         logger.info("Using VIMS parquet: %s (%.1f MB)", raw.name,
+    #                     raw.stat().st_size / 1e6)
+    #     out = self.config.processed_dir / "vims_coverage_canonical.tif"
+    #     if out.exists() and not overwrite:
+    #         return {"vims_coverage": out}
+    #     logger.info("Binning VIMS footprint parquet -> coverage raster ...")
+    #     _bin_vims_to_raster(raw, out, self.grid)
+    #     return {"vims_coverage": out}
 
     def _preprocess_vims_cube_windows(
         self, overwrite: bool
@@ -978,14 +983,15 @@ class DataPreprocessor:
             if w2_out.exists(): results["vims_2um"] = w2_out
             return results
 
-        raw = self.config.get_vims_parquet()
-        if raw is None:
-            logger.info(
-                "VIMS parquet not found -- skipping 5 umm cube window mosaic. "
-                "Place vims_footprints.parquet in the data directory and re-run "
-                "preprocessing to enable the 5.0/2.03 umm organic proxy."
-            )
-            return {}
+        # raw = self.config.get_vims_parquet()
+        raw = None
+        # if raw is None:
+        #     logger.info(
+        #         "VIMS parquet not found -- skipping 5 umm cube window mosaic. "
+        #         "Place vims_footprints.parquet in the data directory and re-run "
+        #         "preprocessing to enable the 5.0/2.03 umm organic proxy."
+        #     )
+        #     return {}
 
         cube_cache = self.config.data_dir / "vims_cubes"
         mosaicker = VIMSWindowMosaicker(
@@ -1311,7 +1317,7 @@ class CanonicalDataStack:
 
         all_names = names or [
             "topography", "sar_mosaic", "iss_mosaic_450m",
-            "vims_mosaic", "vims_coverage",
+            "vims_mosaic", #"vims_coverage", VIMS coverage superseded by vims-mosaic
             "vims_5um", "vims_2um", "vims_5um_2um_ratio",
             "geomorphology", "channel_density",
             "cirs_temperature", "polar_lakes",

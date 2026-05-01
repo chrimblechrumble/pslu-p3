@@ -43,7 +43,17 @@ Bayesian missing-data imputation procedure described in Section~\ref{sec:nan}.
     latitude-dependent methane cycle signal ($f_4$), amongst others.  The
     combined posterior is derived from all eight simultaneously via the
     Bayesian update described in Section~\ref{sec:bayes}.  Prior weight $w_i$
-    and prior mean $\mu_i$ are shown for each panel.}
+    and prior mean $\mu_i$ are shown for each panel.  Blank (white) regions
+    indicate pixels where the feature data is unavailable due to Cassini
+    coverage gaps (primarily in SAR-dependent features $f_1$, $f_3$, $f_5$,
+    $f_6$, $f_8$); these pixels are imputed with the feature prior mean
+    $\mu_i$ during the Bayesian update (Section~\ref{sec:nan}), contributing
+    no evidence rather than incorrect evidence.  The vertical discontinuity
+    visible in $f_3$ at 180\textdegree{}W is an assembly seam in the USGS
+    SAR mosaic (\texttt{clon180} product), where flyby swaths from opposite
+    hemispheres were stitched at the mosaic's central meridian; this artefact
+    propagates through the SAR backscatter component of the acetylene energy
+    proxy but is attenuated in the posterior by the 20\% weight of $f_3$.}
   \label{fig:feature_panel}
 \end{figure}
 
@@ -133,7 +143,7 @@ of the SAR-classified surface by area falls into organic-rich terrain classes
 the largest single contribution to the global prior mean
 ($w_2\mu_2 = 0.140$).
 
-\paragraph{Implementation and the seamless organic mode.}
+\paragraph{Implementation and the blended VIMS mosaic.}
 The primary spectral data source is the VIMS+ISS 1.59/1.27\,\textmu{}m
 band-ratio mosaic from \citet{Seignovert2019CaltechDATA}, but this covers
 only the 0--180\textdegree{}W hemisphere ($\sim$50\% of the globe).  Extensive
@@ -142,15 +152,27 @@ class scores in the 180--360\textdegree{}W hemisphere produced a visible seam
 artefact at the 180\textdegree{}W boundary: the absolute calibration of the
 VIMS spectral ratio differs systematically from the terrain-class score at
 the coverage boundary, producing a step change of $\sim$0.13 in median organic
-abundance clearly visible in rendered maps.  This artefact cannot be eliminated
-by a single global offset because the boundary region terrain is not
-representative of all terrain classes.  The analysis therefore uses a
-seamless geomorphological mode, applying the terrain-class scores from
-Table~\ref{tab:geo_scores} (Appendix~\ref{app:geo_scores}) globally.
-Whilst this approach sacrifices per-pixel spectral variation within the
-VIMS-covered hemisphere (reducing the standard deviation from 0.27 for VIMS
-data to 0.16 for terrain-class scores), it ensures that no spatial artefact
-from the uneven VIMS coverage contaminates the habitability maps.
+abundance clearly visible in rendered maps.  The analysis resolves this with a global offset correction:
+the median VIMS value in the overlap region between VIMS and terrain-class
+coverage is aligned to the corresponding median terrain-class score,
+eliminating the boundary discontinuity while preserving per-pixel spectral
+variation within the VIMS-covered hemisphere.  In the remaining hemisphere,
+terrain-class scores from Table~\ref{tab:geo_scores}
+(Appendix~\ref{app:geo_scores}) are used directly.  This blended approach
+retains the spectral resolution of the VIMS data (standard deviation 0.27)
+at polar lake sites where per-pixel organic variation is scientifically
+significant, while maintaining seamless global coverage.\footnote{The
+Seignovert VIMS+ISS mosaic uses IAU east-positive longitude
+(\citealt{Seignovert2019CaltechDATA}; confirmed by the 2019 LPSC abstract
+referencing landmarks at east-positive coordinates).  The pipeline canonical
+grid uses west-positive longitude.  Conversion requires a horizontal flip
+of the pixel array (not a 180\textdegree{} roll), because the two conventions
+differ in column ordering direction, not origin.  Alignment was validated by
+three tests: (i)~Kraken Mare (310\textdegree{}W) shows VIMS spectral texture
+(local $\sigma > 0.02$); (ii)~no step change at the 180\textdegree{}W
+hemisphere boundary ($|\Delta P(H)| < 0.02$ at all latitude bands); and
+(iii)~the rendered global maps show smooth spatial gradients consistent
+with the Cassini-era geomorphological observations.}
 
 \paragraph{Backfill.}
 The Lopes (2019) terrain classification covers $\sim$90\% of the SAR-imaged

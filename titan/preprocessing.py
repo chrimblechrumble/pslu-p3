@@ -177,6 +177,7 @@ def _reproject_geotiff(
     grid: CanonicalGrid,
     nodata_in: float = GEOTIFF_NODATA,
     band: int = 1,
+    east_positive: bool = False,
 ) -> None:
     """
     Reproject a USGS SimpleCylindrical GeoTIFF to the canonical grid.
@@ -198,6 +199,11 @@ def _reproject_geotiff(
         Input nodata value (0.0 for USGS GeoTIFFs).
     band:
         Band index to extract (1-based).
+    east_positive:
+        If True, the source raster uses east-positive longitude (e.g.
+        Seignovert VIMS+ISS mosaic).  After the centred-longitude roll,
+        the array is flipped left-right to convert east-positive column
+        order to the canonical west-positive order.
     """
     import rasterio
     from rasterio.warp import reproject, Resampling
@@ -216,6 +222,41 @@ def _reproject_geotiff(
             src_data[src_data == nodata_in] = np.nan
         src_crs       = src.crs or grid.crs  # fallback if no CRS embedded
         src_transform = src.transform
+
+    # ── Handle centred longitude convention ────────────────────────────
+    # Some mosaics (e.g. Seignovert VIMS+ISS) use a centred x-origin
+    # running from −circumference/2 to +circumference/2 (i.e. −180° to
+    # +180°), while the canonical grid runs from 0 to +circumference
+    # (0°W to 360°W).  rasterio.warp.reproject does NOT wrap longitude,
+    # so the negative-x half would be silently clipped.
+    # Fix: detect the centred convention and np.roll the array so that
+    # x starts at 0, matching the canonical grid.
+    x_origin = src_transform.c                # left-edge x in metres
+    if x_origin < -1e3:                        # clearly negative → centred
+        ncols_src = src_data.shape[-1]
+        half      = ncols_src // 2
+        src_data  = np.roll(src_data, shift=-half, axis=-1)
+        # If the source is east-positive, flip left-right to convert
+        # to west-positive column order.  The +proj=eqc CRS does not
+        # encode longitude direction, so rasterio.warp.reproject cannot
+        # distinguish east-positive from west-positive; we must flip
+        # the pixel order explicitly.
+        if east_positive:
+            src_data = src_data[:, ::-1]
+            logger.info(
+                "East-positive source: flipped columns to west-positive."
+            )
+        # Rebuild transform with x-origin at 0, keep dx and y unchanged
+        from rasterio.transform import Affine
+        src_transform = Affine(
+            src_transform.a, src_transform.b, 0.0,   # a=dx, b=0, c=0
+            src_transform.d, src_transform.e, src_transform.f,
+        )
+        logger.info(
+            "Centred-longitude mosaic detected (x_origin=%.0f m). "
+            "Rolled %d columns to shift from [-180°,+180°] to [0°,360°].",
+            x_origin, half,
+        )
 
     dst_data = grid.empty()
     reproject(
@@ -835,7 +876,14 @@ class DataPreprocessor:
             nodata = GEOTIFF_NODATA  # 0.0 -- USGS rasters encode nodata as 0
 
         band = spec.band if spec.band is not None else 1
-        _reproject_geotiff(raw, out, self.grid, nodata_in=nodata, band=band)
+        # The Seignovert VIMS+ISS mosaic uses east-positive longitude
+        # (IAU convention); all other pipeline rasters are west-positive.
+        is_east_positive = name in ("vims_mosaic",)
+        _reproject_geotiff(
+            raw, out, self.grid,
+            nodata_in=nodata, band=band,
+            east_positive=is_east_positive,
+        )
         return {name: out}
 
     def _preprocess_vims_parquet(

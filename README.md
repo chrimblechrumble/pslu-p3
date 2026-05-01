@@ -24,7 +24,7 @@ Eight habitability-proxy features are extracted from Cassini SAR, VIMS, CIRS, al
 - All top-10 sites are **lake or lacus margins** at every epoch
 - The present-day habitability structure is a **plateau extending ≥250 Myr** into the future
 - The Future red-giant ocean epoch (+5.9 Gya) produces the highest scores ($P(H)$ up to 0.82)
-- **Selk crater** (the Dragonfly landing site) scores $P(H) = 0.24$ — below the prior mean but with the highest geomorphological diversity ($f_7 = 0.66$, 7.2× global median), consistent with Dragonfly targeting past water–organic chemistry rather than present-day solvent habitability
+- **Selk crater** (the Dragonfly landing site) scores $P(H) = 0.21$ — below the prior mean but with the highest geomorphological diversity ($f_7 = 0.66$, 7.2× global median), consistent with Dragonfly targeting past water–organic chemistry rather than present-day solvent habitability
 
 ### Visualisations
 
@@ -238,7 +238,7 @@ If you use this code or data in your research, please cite:
 This work builds on the Bayesian habitability assessment framework established by:
 
 - Affholder, A. et al. (2021). Bayesian analysis of Enceladus's plume data to assess methanogenesis. *Nature Astronomy*, 5, 805–814. [doi:10.1038/s41550-021-01372-6](https://doi.org/10.1038/s41550-021-01372-6)
-- Catling, D. C. et al. (2018). Exoplanet biosignatures: a framework for their assessment. *Astrobiology*, 18, 709–738.
+- Catling, D. C. et al. (2018). Exoplanet biosignatures: a framework for their assessment. *Astrobiology*, 18, 709–738. [doi:10.1089/ast.2017.1737](https://doi.org/10.1089/ast.2017.1737)
 
 ---
 

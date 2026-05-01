@@ -5,7 +5,7 @@
 - [x] Spacing is odd across Chapter ordinal/Chapter name/first sub section. Too much spacing
 - [x] Remove all references to teh Random Forest Classifier - does it add anything?
 - [ ] Label sub diagrams a, b, c, d etc and refer to a, b,c d in caption
-- [ ] Table and figure captions should be below 
+- [x] Table and figure captions should be below 
 
 ## Introduction
 - [x] Remove Contents - not needed

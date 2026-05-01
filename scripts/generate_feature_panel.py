@@ -32,19 +32,19 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 FEATURE_DIR = Path("outputs/present/features/tifs")
 
 FEATURES = [
-    ("liquid_hydrocarbon",       "YlOrBr",   0.25, 0.020, "SAR lake class + dark anomaly"),
-    ("organic_abundance",        "YlOrBr",   0.20, 0.700, "Lopes terrain scores (geo_only)"),
-    ("acetylene_energy",         "PuBu",     0.20, 0.350, "SAR backscatter + DEM topo"),
-    ("methane_cycle",            "GnBu",     0.15, 0.400, "VIMS density + CIRS gradient"),
-    ("surface_atm_interaction",  "RdPu",     0.08, 0.350, "Slope + margin + channel density"),
-    ("topographic_complexity",   "copper",   0.06, 0.250, "GTDE roughness (5×5 px window)"),
-    ("geomorphologic_diversity", "summer",   0.04, 0.300, "Shannon entropy of terrain classes"),
-    ("subsurface_ocean",         "Blues",    0.02, 0.030, "SAR annuli + k₂=0.589 floor"),
+    ("liquid_hydrocarbon",       "YlOrBr",   0.25, 0.020, "SAR lake class + dark anomaly",    "$f_1$"),
+    ("organic_abundance",        "YlOrBr",   0.20, 0.700, "Blended VIMS + terrain scores",    "$f_2$"),
+    ("acetylene_energy",         "PuBu",     0.20, 0.350, "SAR backscatter + DEM topo",       "$f_3$"),
+    ("methane_cycle",            "GnBu",     0.15, 0.400, "VIMS density + CIRS gradient",     "$f_4$"),
+    ("surface_atm_interaction",  "RdPu",     0.08, 0.350, "Slope + margin + channel density", "$f_5$"),
+    ("topographic_complexity",   "copper",   0.06, 0.250, "GTDE roughness (5\u00d75 px window)", "$f_6$"),
+    ("geomorphologic_diversity", "summer",   0.04, 0.300, "Shannon entropy of terrain classes","$f_7$"),
+    ("subsurface_ocean",         "Blues",    0.02, 0.030, "SAR annuli + k\u2082=0.589 floor", "$f_8$"),
 ]
 
 KEY_LOCS = {
     # name: (lon_W, lat) — annotations on each panel
-    "Kraken":  (310, 68),
+    "Freeman": (210, 83),
     "Selk":    (199,  7),
     "Xanadu":  (100,  0),
     "Ontario": (179,-72),
@@ -59,7 +59,7 @@ def lat_to_row(lat, nrows=1802):
 fig, axes = plt.subplots(2, 4, figsize=(18, 8))
 fig.patch.set_facecolor("white")
 
-for ax_flat, (fname, cmap, wi, mu, src_desc) in zip(axes.flat, FEATURES):
+for ax_flat, (fname, cmap, wi, mu, src_desc, flabel) in zip(axes.flat, FEATURES):
     ax_flat.set_facecolor("white")
     tif_path = FEATURE_DIR / f"{fname}.tif"
 
@@ -89,19 +89,27 @@ for ax_flat, (fname, cmap, wi, mu, src_desc) in zip(axes.flat, FEATURES):
 
     # Annotate key locations
     nrows, ncols = arr.shape
-    for loc_name, (lon_w, lat) in KEY_LOCS.items():
-        col = lon_to_col(lon_w, ncols)
-        row = lat_to_row(lat, nrows)
-        ax_flat.plot(col, row, "o", color="#007755", ms=3, markeredgewidth=0.5,
-                     markeredgecolor="#003322")
+    # for loc_name, (lon_w, lat) in KEY_LOCS.items():
+    #     col = lon_to_col(lon_w, ncols)
+    #     row = lat_to_row(lat, nrows)
+    #     ax_flat.plot(col, row, "o", color="#007755", ms=3, markeredgewidth=0.5,
+    #                  markeredgecolor="#003322")
 
     ax_flat.set_title(
-        f"{fname}\n$w={wi:.2f}$   $\\mu={mu:.3f}$",
+        f"{flabel}: {fname}\n$w={wi:.2f}$   $\\mu={mu:.3f}$",
         color="black", fontsize=7.5, fontfamily="monospace", pad=3,
     )
     ax_flat.text(0.02, 0.02, src_desc, transform=ax_flat.transAxes,
                  fontsize=5.5, color="#555566", va="bottom", style="italic")
-    ax_flat.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+    # Add graticules
+    nrows_arr, ncols_arr = arr.shape
+    lon_ticks = [int(l / 360 * ncols_arr) for l in range(0, 361, 60)]
+    lat_ticks = [int((90 - l) / 180 * nrows_arr) for l in range(-90, 91, 30)]
+    ax_flat.set_xticks(lon_ticks)
+    ax_flat.set_xticklabels([f"{l}°" for l in range(0, 361, 60)], fontsize=4.5, color="#666666")
+    ax_flat.set_yticks(lat_ticks)
+    ax_flat.set_yticklabels([f"{l}°" for l in range(-90, 91, 30)], fontsize=4.5, color="#666666")
+    ax_flat.tick_params(length=2, width=0.5, colors="#999999")
     for spine in ax_flat.spines.values():
         spine.set_edgecolor("#aaaaaa")
 

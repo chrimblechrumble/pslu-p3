@@ -38,39 +38,36 @@ PRIOR_MEANS = {
 }
 
 SITES = [
-    ("Kraken S Shore",  "lake",   {
-        "liquid_hc":1.00,"organic":0.05,"acetylene":0.20,
-        "methane":0.70,"sai":0.65,"topo":0.60,"geodiv":0.76,"ocean":0.04}),
-    ("Ligeia E Shore",  "lake",   {
-        "liquid_hc":1.00,"organic":0.05,"acetylene":0.20,
-        "methane":0.70,"sai":0.62,"topo":0.55,"geodiv":0.76,"ocean":0.04}),
-    ("Kraken N Shore",  "lake",   {
-        "liquid_hc":1.00,"organic":0.05,"acetylene":0.18,
-        "methane":0.68,"sai":0.60,"topo":0.52,"geodiv":0.72,"ocean":0.04}),
-    ("Punga Shore",     "lake",   {
-        "liquid_hc":0.90,"organic":0.06,"acetylene":0.18,
-        "methane":0.65,"sai":0.55,"topo":0.45,"geodiv":0.65,"ocean":0.04}),
+    ("Freeman Lacus",   "lake",   {
+        "liquid_hc":1.00,"organic":1.00,"acetylene":0.648,
+        "methane":0.720,"sai":0.250,"topo":1.000,"geodiv":0.000,"ocean":0.177}),
+    ("Oib Lacus",       "lake",   {
+        "liquid_hc":0.95,"organic":0.92,"acetylene":0.60,
+        "methane":0.68,"sai":0.22,"topo":0.90,"geodiv":0.000,"ocean":0.15}),
+    ("Koitere Lacus",   "lake",   {
+        "liquid_hc":0.72,"organic":0.88,"acetylene":0.55,
+        "methane":0.58,"sai":0.20,"topo":0.85,"geodiv":0.000,"ocean":0.12}),
     ("Ontario Lacus",   "lake",   {
-        "liquid_hc":0.85,"organic":0.08,"acetylene":0.22,
-        "methane":0.45,"sai":0.48,"topo":0.42,"geodiv":0.60,"ocean":0.04}),
+        "liquid_hc":0.85,"organic":0.69,"acetylene":0.93,
+        "methane":0.75,"sai":0.08,"topo":0.02,"geodiv":0.52,"ocean":0.00}),
     ("Belet Dunes",     "land",   {
-        "liquid_hc":0.02,"organic":0.82,"acetylene":0.45,
-        "methane":0.09,"sai":0.09,"topo":0.55,"geodiv":0.09,"ocean":0.03}),
+        "liquid_hc":0.05,"organic":0.19,"acetylene":0.20,
+        "methane":0.01,"sai":0.01,"topo":0.03,"geodiv":0.00,"ocean":0.00}),
     ("Hotei Regio",     "land",   {
-        "liquid_hc":0.03,"organic":0.65,"acetylene":0.42,
-        "methane":0.18,"sai":0.22,"topo":0.35,"geodiv":0.58,"ocean":0.10}),
+        "liquid_hc":0.01,"organic":0.16,"acetylene":0.63,
+        "methane":0.25,"sai":0.01,"topo":0.08,"geodiv":0.00,"ocean":0.00}),
     ("Huygens Site",    "lander", {
-        "liquid_hc":0.02,"organic":0.54,"acetylene":0.38,
-        "methane":0.09,"sai":0.08,"topo":0.14,"geodiv":0.20,"ocean":0.03}),
+        "liquid_hc":0.05,"organic":0.20,"acetylene":0.48,
+        "methane":0.13,"sai":0.06,"topo":0.32,"geodiv":0.65,"ocean":0.13}),
     ("Selk Crater",     "lander", {
-        "liquid_hc":0.05,"organic":0.215,"acetylene":0.379,
-        "methane":0.025,"sai":0.010,"topo":0.054,"geodiv":0.629,"ocean":0.033}),
+        "liquid_hc":0.050,"organic":0.168,"acetylene":0.454,
+        "methane":0.026,"sai":0.010,"topo":0.055,"geodiv":0.659,"ocean":0.070}),
     ("Menrva Crater",   "land",   {
-        "liquid_hc":0.02,"organic":0.30,"acetylene":0.38,
-        "methane":0.08,"sai":0.08,"topo":0.18,"geodiv":0.55,"ocean":0.035}),
+        "liquid_hc":0.01,"organic":0.62,"acetylene":0.38,
+        "methane":0.17,"sai":0.19,"topo":0.50,"geodiv":0.00,"ocean":0.03}),
     ("Xanadu Centre",   "land",   {
-        "liquid_hc":0.00,"organic":0.25,"acetylene":0.20,
-        "methane":0.25,"sai":0.15,"topo":0.40,"geodiv":0.15,"ocean":0.030}),
+        "liquid_hc":0.01,"organic":0.38,"acetylene":0.50,
+        "methane":0.07,"sai":0.02,"topo":0.11,"geodiv":0.37,"ocean":0.03}),
     ("Mithrim Montes",  "land",   {
         "liquid_hc":0.00,"organic":0.18,"acetylene":0.20,
         "methane":0.08,"sai":0.12,"topo":0.70,"geodiv":0.22,"ocean":0.030}),

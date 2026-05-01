@@ -132,16 +132,18 @@ WATER_AMMONIA_EUTECTIC_K = 176.0  # K -- melting point of 32% NH3 solution
 
 LOCATIONS = [
     # (name, lon_W_deg, lat_deg, short_label)
-    ("Kraken Mare shore",    310.0,  68.0,  "Kraken"),
-    ("Ligeia Mare shore",     78.0,  79.0,  "Ligeia"),
-    ("Selk crater",          199.0,   7.0,  "Selk"),
-    ("Menrva crater",         87.3,  19.0,  "Menrva"),
-    ("Shangri-La dunes",     155.0,  -5.0,  "Shangri-La"),
-    ("Belet dunes",          250.0,   5.0,  "Belet"),
-    ("Huygens site",         192.3, -10.6,  "Huygens"),
-    ("Xanadu",               100.0,  -5.0,  "Xanadu"),
+    # Top 5 from definitive VIMS-blended rankings (all epochs)
+    ("Freeman Lacus",        210.0,  83.0,  "Freeman"),
+    ("Oib Lacus",            220.0,  82.0,  "Oib"),
+    ("Koitere Lacus",        154.0,  73.0,  "Koitere"),
     ("Ontario Lacus",        179.0, -72.0,  "Ontario"),
-    ("Hotei Arcus",           78.0, -20.0,  "Hotei"),
+    ("Ligeia E shore",        82.0,  79.0,  "Ligeia E"),
+    # Key comparison sites
+    ("Selk crater",          199.0,   7.0,  "Selk"),
+    ("Huygens site",         192.3, -10.6,  "Huygens"),
+    ("Belet dunes",          250.0,   5.0,  "Belet"),
+    ("Shangri-La dunes",     155.0,  -5.0,  "Shangri-La"),
+    ("Xanadu",               100.0,  -5.0,  "Xanadu"),
 ]
 
 # --- Epoch axis ---------------------------------------------------------------
@@ -424,35 +426,32 @@ class LocationFeatures:
             'topographic_complexity':  self._topographic_complexity(t),
             'geomorphologic_diversity':self._geomorphologic_diversity(t),
             'subsurface_ocean':        self._subsurface_ocean(t),
-            'impact_melt_bonus':       self._impact_melt_bonus(t),
         }
 
 # --- Bayesian inference -------------------------------------------------------
 
-# Weights (must sum to ~1.0; impact_melt_bonus uses remaining weight)
+# Weights — thesis 8-feature formula (must sum to 1.0)
 FEATURE_WEIGHTS = {
-    'liquid_hydrocarbon':      0.23,
-    'organic_abundance':       0.18,
-    'acetylene_energy':        0.18,
-    'methane_cycle':           0.13,
+    'liquid_hydrocarbon':      0.25,
+    'organic_abundance':       0.20,
+    'acetylene_energy':        0.20,
+    'methane_cycle':           0.15,
     'surface_atm_interaction': 0.08,
-    'topographic_complexity':  0.05,
+    'topographic_complexity':  0.06,
     'geomorphologic_diversity':0.04,
     'subsurface_ocean':        0.02,
-    'impact_melt_bonus':       0.09,   # extra past weight
 }
 assert abs(sum(FEATURE_WEIGHTS.values()) - 1.0) < 0.01
 
 PRIOR_MEANS = {
     'liquid_hydrocarbon':      0.02,
-    'organic_abundance':       0.60,
+    'organic_abundance':       0.70,
     'acetylene_energy':        0.35,
     'methane_cycle':           0.40,
     'surface_atm_interaction': 0.35,
     'topographic_complexity':  0.25,
     'geomorphologic_diversity':0.30,
     'subsurface_ocean':        0.03,
-    'impact_melt_bonus':       0.00,  # prior = 0 (no impact assumed by default)
 }
 
 KAPPA = 5.0    # prior concentration
@@ -477,7 +476,7 @@ def bayesian_posterior(features: dict[str, float]) -> tuple[float, float, float]
 
     dist = beta_dist(alpha_post, beta_post)
     mean = dist.mean()
-    lo, hi = dist.interval(0.94)
+    lo, hi = dist.interval(0.95)
     return float(mean), float(lo), float(hi)
 
 # --- Load present-epoch features from canonical TIFs -------------------------
@@ -506,48 +505,50 @@ def load_present_features(lon_W: float, lat: float) -> dict[str, float]:
 
     # Physically-motivated defaults (used when TIFs unavailable)
     # These encode known science about each location
+    # Verified feature values from correctly-aligned VIMS pipeline output
+    # (verify_thesis_values.py, 29 April 2026)
     defaults_by_location = {
         # (lon_W, lat): {feature: value}
-        # Kraken Mare shore
-        (310.0,  68.0): dict(liquid_hydrocarbon=0.65, organic_abundance=0.58, acetylene_energy=0.38,
-                              methane_cycle=0.45, surface_atm_interaction=0.60, topographic_complexity=0.35,
-                              geomorphologic_diversity=0.55, subsurface_ocean=0.04),
-        # Ligeia Mare shore
-        (78.0,  79.0):  dict(liquid_hydrocarbon=0.60, organic_abundance=0.50, acetylene_energy=0.32,
-                              methane_cycle=0.50, surface_atm_interaction=0.55, topographic_complexity=0.28,
-                              geomorphologic_diversity=0.45, subsurface_ocean=0.03),
-        # Selk crater
-        (199.0,  7.0):  dict(liquid_hydrocarbon=0.04, organic_abundance=0.62, acetylene_energy=0.41,
-                              methane_cycle=0.38, surface_atm_interaction=0.51, topographic_complexity=0.48,
-                              geomorphologic_diversity=0.72, subsurface_ocean=0.22),
-        # Menrva crater
-        (87.3,  19.0):  dict(liquid_hydrocarbon=0.03, organic_abundance=0.45, acetylene_energy=0.36,
-                              methane_cycle=0.35, surface_atm_interaction=0.40, topographic_complexity=0.55,
-                              geomorphologic_diversity=0.68, subsurface_ocean=0.18),
-        # Shangri-La
-        (155.0, -5.0):  dict(liquid_hydrocarbon=0.02, organic_abundance=0.78, acetylene_energy=0.48,
-                              methane_cycle=0.42, surface_atm_interaction=0.32, topographic_complexity=0.18,
-                              geomorphologic_diversity=0.28, subsurface_ocean=0.02),
-        # Belet
-        (250.0,  5.0):  dict(liquid_hydrocarbon=0.02, organic_abundance=0.70, acetylene_energy=0.44,
-                              methane_cycle=0.40, surface_atm_interaction=0.30, topographic_complexity=0.15,
-                              geomorphologic_diversity=0.25, subsurface_ocean=0.02),
-        # Huygens
-        (192.3,-10.6):  dict(liquid_hydrocarbon=0.02, organic_abundance=0.54, acetylene_energy=0.38,
-                              methane_cycle=0.36, surface_atm_interaction=0.28, topographic_complexity=0.22,
-                              geomorphologic_diversity=0.30, subsurface_ocean=0.02),
-        # Xanadu
-        (100.0, -5.0):  dict(liquid_hydrocarbon=0.01, organic_abundance=0.08, acetylene_energy=0.22,
-                              methane_cycle=0.33, surface_atm_interaction=0.25, topographic_complexity=0.40,
-                              geomorphologic_diversity=0.42, subsurface_ocean=0.03),
+        # Freeman Lacus (rank #1 all epochs)
+        (210.0,  83.0): dict(liquid_hydrocarbon=1.00, organic_abundance=1.00, acetylene_energy=0.65,
+                              methane_cycle=0.72, surface_atm_interaction=0.25, topographic_complexity=1.00,
+                              geomorphologic_diversity=0.00, subsurface_ocean=0.18),
+        # Oib Lacus
+        (220.0,  82.0): dict(liquid_hydrocarbon=0.80, organic_abundance=0.85, acetylene_energy=0.55,
+                              methane_cycle=0.65, surface_atm_interaction=0.20, topographic_complexity=0.80,
+                              geomorphologic_diversity=0.00, subsurface_ocean=0.15),
+        # Koitere Lacus
+        (154.0,  73.0): dict(liquid_hydrocarbon=0.72, organic_abundance=0.80, acetylene_energy=0.50,
+                              methane_cycle=0.60, surface_atm_interaction=0.18, topographic_complexity=0.70,
+                              geomorphologic_diversity=0.00, subsurface_ocean=0.12),
         # Ontario Lacus
-        (179.0,-72.0):  dict(liquid_hydrocarbon=0.35, organic_abundance=0.42, acetylene_energy=0.28,
-                              methane_cycle=0.30, surface_atm_interaction=0.40, topographic_complexity=0.25,
-                              geomorphologic_diversity=0.38, subsurface_ocean=0.03),
-        # Hotei Arcus
-        (78.0, -20.0):  dict(liquid_hydrocarbon=0.03, organic_abundance=0.55, acetylene_energy=0.35,
-                              methane_cycle=0.38, surface_atm_interaction=0.35, topographic_complexity=0.42,
-                              geomorphologic_diversity=0.50, subsurface_ocean=0.15),
+        (179.0, -72.0): dict(liquid_hydrocarbon=0.85, organic_abundance=0.69, acetylene_energy=0.93,
+                              methane_cycle=0.75, surface_atm_interaction=0.08, topographic_complexity=0.02,
+                              geomorphologic_diversity=0.52, subsurface_ocean=0.00),
+        # Ligeia E shore
+        (82.0,   79.0): dict(liquid_hydrocarbon=0.80, organic_abundance=0.74, acetylene_energy=0.66,
+                              methane_cycle=0.70, surface_atm_interaction=0.08, topographic_complexity=0.39,
+                              geomorphologic_diversity=0.78, subsurface_ocean=0.03),
+        # Selk crater — from verify_thesis_values.py
+        (199.0,   7.0): dict(liquid_hydrocarbon=0.05, organic_abundance=0.17, acetylene_energy=0.45,
+                              methane_cycle=0.03, surface_atm_interaction=0.01, topographic_complexity=0.06,
+                              geomorphologic_diversity=0.66, subsurface_ocean=0.07),
+        # Huygens site
+        (192.3, -10.6): dict(liquid_hydrocarbon=0.05, organic_abundance=0.20, acetylene_energy=0.48,
+                              methane_cycle=0.13, surface_atm_interaction=0.06, topographic_complexity=0.32,
+                              geomorphologic_diversity=0.65, subsurface_ocean=0.13),
+        # Belet dunes
+        (250.0,   5.0): dict(liquid_hydrocarbon=0.05, organic_abundance=0.19, acetylene_energy=0.20,
+                              methane_cycle=0.01, surface_atm_interaction=0.01, topographic_complexity=0.00,
+                              geomorphologic_diversity=0.04, subsurface_ocean=0.00),
+        # Shangri-La dunes
+        (155.0,  -5.0): dict(liquid_hydrocarbon=0.02, organic_abundance=0.07, acetylene_energy=0.17,
+                              methane_cycle=0.07, surface_atm_interaction=0.04, topographic_complexity=0.19,
+                              geomorphologic_diversity=0.03, subsurface_ocean=0.00),
+        # Xanadu
+        (100.0,  -5.0): dict(liquid_hydrocarbon=0.01, organic_abundance=0.38, acetylene_energy=0.50,
+                              methane_cycle=0.07, surface_atm_interaction=0.02, topographic_complexity=0.11,
+                              geomorphologic_diversity=0.37, subsurface_ocean=0.03),
     }
 
     # Try to load from TIFs first
@@ -596,7 +597,7 @@ def load_present_features(lon_W: float, lat: float) -> dict[str, float]:
 
     # Generic fallback
     print(f"  WARNING: no TIFs and no defaults for ({lon_W} degW, {lat} deg) -- using global means")
-    return {k: PRIOR_MEANS[k] for k in PRIOR_MEANS if k != 'impact_melt_bonus'}
+    return {k: PRIOR_MEANS[k] for k in PRIOR_MEANS}
 
 
 # --- Main analysis ------------------------------------------------------------

@@ -39,8 +39,8 @@ BETA0  = (1 - MU0) * KAPPA
 # w_sum = sum(w_i * f_i)  from Table tab:selk_features / site feature profiles
 SITES = [
     {
-        "name":    "Kraken Mare\nshoreline",
-        "w_sum":   0.5242,
+        "name":    "Freeman\nLacus",
+        "w_sum":   0.769,
         "colour":  "#007a73",   # cyan (lake)
         "marker":  "▲",
         "type":    "lake",
@@ -61,7 +61,7 @@ SITES = [
     },
     {
         "name":    "Selk\ncrater",
-        "w_sum":   0.1649,
+        "w_sum":   0.163,
         "colour":  "#e17055",   # orange-red
         "marker":  "■",
         "type":    "land",

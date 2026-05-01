@@ -256,7 +256,7 @@ def _reproject_geotiff(
             "Rolled %d columns to shift from [-180°,+180°] to [0°,360°].",
             x_origin, half,
         )
-
+        src_crs = grid.crs  # After rolling, pixel layout matches canonical grid
     dst_data = grid.empty()
     reproject(
         source=src_data,

@@ -74,8 +74,9 @@ logger = logging.getLogger(__name__)
 _AUTO_DOWNLOAD_STEMS = {
     "gtde_east",        # interpolated global DEM -- preferred
     "gtde_west",
-    "gtdr_east",        # sparse GTDR standard tracks
-    "gtdr_west",
+    # gtdr_east/west removed — redundant when GTIE tiles are present.
+    # The sparse GT2E/GT0E tiles (~25% coverage) are a fallback in
+    # preprocessing.py that activates only if GTIE is absent.
     "vims_mosaic",
     "vims_mosaic_hdr",
 }
@@ -262,22 +263,24 @@ class DataAcquisitionManager:
                 status = self._check_shapefile_dir(name, spec, report)
                 continue
 
+            # VIMS parquet replaced with VIMS+ISS tif
+            #
             # -- Special case: VIMS parquet (multiple acceptable filenames) -
-            if name == "vims_footprint":
-                found = self.config.get_vims_parquet()
-                if found is not None:
-                    logger.info(
-                        "VIMS parquet found: %s (%s rows)%s",
-                        found,
-                        "~5.4M" if found.stat().st_size > 10_000_000 else "1,000 (sample)",
-                        " [via --vims-parquet]" if self.config.vims_parquet_path else "",
-                    )
-                    report.present.append(name)
-                else:
-                    report.manual_required.append(name)
-                    if not dry_run:
-                        self._print_manual_instructions(name, spec)
-                continue
+            # if name == "vims_footprint":
+            #     found = self.config.get_vims_parquet()
+            #     if found is not None:
+            #         logger.info(
+            #             "VIMS parquet found: %s (%s rows)%s",
+            #             found,
+            #             "~5.4M" if found.stat().st_size > 10_000_000 else "1,000 (sample)",
+            #             " [via --vims-parquet]" if self.config.vims_parquet_path else "",
+            #         )
+            #         report.present.append(name)
+            #     else:
+            #         report.manual_required.append(name)
+            #         if not dry_run:
+            #             self._print_manual_instructions(name, spec)
+            #     continue
 
             # -- Already present --------------------------------------------
             if dest.exists():
@@ -507,7 +510,7 @@ class AcquisitionReport:
 
         # Pipeline readiness advice
         critical = {
-            "sar_mosaic", "gtdr_east", "gtdr_west",
+            "sar_mosaic",
             "geomorphology_shapefiles"
         }
         missing_critical = critical & set(self.manual_required) & set(

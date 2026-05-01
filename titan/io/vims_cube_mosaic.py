@@ -547,6 +547,8 @@ class VIMSWindowMosaicker:
         List[str]
             Cube IDs, sorted best-resolution first.
         """
+        if not parquet_path:
+            return []
         logger.info("Loading VIMS parquet for cube selection: %s", parquet_path)
         df = pd.read_parquet(parquet_path)
 
@@ -622,7 +624,7 @@ class VIMSWindowMosaicker:
 
         cube_ids = self.select_cube_ids(parquet_path)
         if not cube_ids:
-            logger.warning(
+            logger.debug(
                 "No cubes passed the resolution filter. "
                 "Returning all-NaN mosaic."
             )

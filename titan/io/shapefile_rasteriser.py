@@ -155,7 +155,7 @@ SHAPEFILE_LAYERS: Final[Dict[str, Tuple[int, str]]] = {
 #: Lakes absent from Mendeley; lake geometry comes from Birch+2017 separately.
 RASTER_DRAW_ORDER: Final[List[str]] = [
     "Dunes", "Plains_3", "Basins", "Mountains", "Labyrinth", "Craters",
-    "Lakes",  # silently skipped if absent
+    # "Lakes",  # silently skipped if absent
 ]
 
 #: Nodata value in the integer terrain-class output raster.
@@ -412,8 +412,8 @@ class GeomorphologyRasteriser:
         for stem in draw_order:
             shp = self.shapefile_dir / f"{stem}.shp"
             if not shp.exists():
-                logger.warning("Shapefile not found, skipping: %s", shp)
-                continue
+                logger.debug("Shapefile not found, skipping: %s (expected — not in Mendeley distribution)",
+                             shp)
 
             label = SHAPEFILE_LAYERS.get(stem, (0, "?"))[0]
             logger.info("Rasterising %s -> class %d", stem, label)

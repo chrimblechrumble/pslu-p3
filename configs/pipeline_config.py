@@ -324,50 +324,14 @@ def default_dataset_catalogue() -> Dict[str, DatasetSpec]:
             ),
         ),
 
-        # -- GT0E T126: Standard GTDR final mission (~25% coverage) -----------
-        "gtdr_east": DatasetSpec(
-            name="gtdr_east",
-            description=(
-                "GT0E east tile -- standard GTDR altimetry + SARtopo tracks. "
-                "~25% surface coverage (nadir corridors only). "
-                "lon 0-180 degW (N090). 2 ppd. Through flyby T126 (final mission). "
-                "Use GTDE tiles for global coverage. "
-                "From Cornell eCommons (GT2ED00N090_T126_V01.IMG.gz). "
-                "Legacy T077 variant (GT0EB00N090_T077_V01.IMG) also accepted."
-            ),
-            url="https://data.astro.cornell.edu/RADAR/DATA/GTDR/GT2ED00N090_T126_V01.IMG.gz",
-            local_filename="GT2ED00N090_T126_V01.IMG",
-            file_format="pds3_img",
-            nodata_value=GTDR_MISSING_CONSTANT,
-            units="metres (height above 2575 km sphere)",
-            citation="Zebker2009",
-            manual_instructions=(
-                "Download from Cornell (T126 = final mission, preferred):\n"
-                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GT2ED00N090_T126_V01.IMG.gz\n"
-                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GT2ED00N090_T126_V01.LBL\n"
-                "Legacy T077 variant also accepted if you have GT0EB00N090_T077_V01.IMG."
-            ),
-        ),
-
-        "gtdr_west": DatasetSpec(
-            name="gtdr_west",
-            description=(
-                "GT0E west tile -- companion to gtdr_east. "
-                "lon 180-360 degW (N270). Through flyby T126. "
-                "From Cornell eCommons (GT2ED00N270_T126_V01.IMG.gz)."
-            ),
-            url="https://data.astro.cornell.edu/RADAR/DATA/GTDR/GT2ED00N270_T126_V01.IMG.gz",
-            local_filename="GT2ED00N270_T126_V01.IMG",
-            file_format="pds3_img",
-            nodata_value=GTDR_MISSING_CONSTANT,
-            units="metres (height above 2575 km sphere)",
-            citation="Zebker2009",
-            manual_instructions=(
-                "Download from Cornell:\n"
-                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GT2ED00N270_T126_V01.IMG.gz\n"
-                "  https://data.astro.cornell.edu/RADAR/DATA/GTDR/GT2ED00N270_T126_V01.LBL"
-            ),
-        ),
+        # -- GT0E T126: Removed from auto-download ---------------------------
+        # Sparse GTDR tiles (~25% coverage) are redundant when GTIE tiles
+        # are present.  The preprocessing fallback at line ~792 still accepts
+        # these files if manually placed in data/raw/, but they are no longer
+        # downloaded automatically.
+        #
+        # "gtdr_east": DatasetSpec(...),
+        # "gtdr_west": DatasetSpec(...),
 
         # -- SAR Backscatter (geomorphology proxy) -----------------------------
         "sar_mosaic": DatasetSpec(
@@ -1278,31 +1242,33 @@ class PipelineConfig:
         nrows = round(180.0 * m_per_deg / self.canonical_res_m)
         return nrows, ncols
 
-    def get_vims_parquet(self) -> Optional[Path]:
-        """
-        Return the VIMS parquet path, searching data_dir if not set.
-
-        Search order:
-          1. vims_parquet_path if explicitly set (via --vims-parquet)
-          2. data_dir / vims_footprints.parquet       (canonical name)
-          3. data_dir / vims_sample_1000rows.parquet  (dev sample)
-          4. First match of data_dir / vims_*.parquet
-
-        Returns None if no file is found.
-        """
-        if self.vims_parquet_path is not None:
-            p = Path(self.vims_parquet_path)
-            return p if p.exists() else None
-        candidates = [
-            self.data_dir / "vims_footprints.parquet",
-            self.data_dir / "vims_sample_1000rows.parquet",
-        ]
-        for c in candidates:
-            if c.exists():
-                return c
-        # Glob fallback
-        matches = sorted(self.data_dir.glob("vims_*.parquet"))
-        return matches[0] if matches else None
+    # VIMS parquet superseded by VIMS+ISS mosaic
+    #
+    # def get_vims_parquet(self) -> Optional[Path]:
+    #     """
+    #     Return the VIMS parquet path, searching data_dir if not set.
+    #
+    #     Search order:
+    #       1. vims_parquet_path if explicitly set (via --vims-parquet)
+    #       2. data_dir / vims_footprints.parquet       (canonical name)
+    #       3. data_dir / vims_sample_1000rows.parquet  (dev sample)
+    #       4. First match of data_dir / vims_*.parquet
+    #
+    #     Returns None if no file is found.
+    #     """
+    #     if self.vims_parquet_path is not None:
+    #         p = Path(self.vims_parquet_path)
+    #         return p if p.exists() else None
+    #     candidates = [
+    #         self.data_dir / "vims_footprints.parquet",
+    #         self.data_dir / "vims_sample_1000rows.parquet",
+    #     ]
+    #     for c in candidates:
+    #         if c.exists():
+    #             return c
+    #     # Glob fallback
+    #     matches = sorted(self.data_dir.glob("vims_*.parquet"))
+    #     return matches[0] if matches else None
 
     def get_shapefile_dir(self) -> Path:
         """Return the Lopes geomorphology shapefile directory."""

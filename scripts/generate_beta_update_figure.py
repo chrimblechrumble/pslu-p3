@@ -53,12 +53,12 @@ FEATURE_LABELS = {
 }
 
 SITES = {
-    "Kraken S Shore": {
+    "Freeman Lacus": {
         "colour": "#1565C0",
         "features": {
-            "liquid_hc": 1.000, "organic":   0.050, "acetylene": 0.200,
-            "methane":   0.700, "sai":       0.650, "topo":      0.600,
-            "geodiv":    0.760, "ocean":     0.040,
+            "liquid_hc": 1.000, "organic":   1.000, "acetylene": 0.648,
+            "methane":   0.720, "sai":       0.250, "topo":      1.000,
+            "geodiv":    0.000, "ocean":     0.177,
         },
     },
     "Belet Dunes": {
@@ -72,9 +72,9 @@ SITES = {
     "Selk Crater": {
         "colour": "#E91E63",
         "features": {
-            "liquid_hc": 0.050, "organic":   0.215, "acetylene": 0.379,
-            "methane":   0.025, "sai":       0.010, "topo":      0.054,
-            "geodiv":    0.629, "ocean":     0.033,
+            "liquid_hc": 0.050, "organic":   0.168, "acetylene": 0.454,
+            "methane":   0.026, "sai":       0.010, "topo":      0.055,
+            "geodiv":    0.659, "ocean":     0.070,
         },
     },
 }
@@ -195,7 +195,7 @@ def make_figure() -> plt.Figure:
     ax_bot.spines[:].set_color(grid_col)
 
     all_sites = {
-        "Kraken S":   {"f": SITES["Kraken S Shore"]["features"], "c": "#1565C0"},
+        "Freeman":    {"f": SITES["Freeman Lacus"]["features"], "c": "#1565C0"},
         "Ligeia E":   {"f": {"liquid_hc":1.0,"organic":0.05,"acetylene":0.20,
                              "methane":0.70,"sai":0.62,"topo":0.55,
                              "geodiv":0.76,"ocean":0.04}, "c": "#1976D2"},

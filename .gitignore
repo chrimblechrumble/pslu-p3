@@ -27,6 +27,7 @@
 **/*.tif
 **/data
 **/outputs
+**/outputs-old
 programming/p3/titan_pipeline/tests/fixtures/shapefiles
 programming/p3/titan_pipeline/tests/fixtures/vims
 programming/p3/titan_pipeline/tests/fixtures/gtdr

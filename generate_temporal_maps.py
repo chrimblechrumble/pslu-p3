@@ -109,6 +109,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+# Module-level import of organic source mode for frame annotations
+try:
+    from titan.features import ORGANIC_SOURCE_MODE as _org_mode
+except ImportError:
+    _org_mode = "blended"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -438,12 +443,12 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
     (-0.50, 2.5,
      "POLAR LAKES ESTABLISHED  (-0.5 Gya)  |  Kraken, Ligeia and Punga Mare fully formed\n"
      "Methane cycle penalty lifts. Lake-margin vesicle formation clock starts (Mayer & Nixon 2025).\n"
-     "North polar shores (#1 Kraken, #2 Ligeia) now score highest on Titan."),
+     "North polar shores (#1 Freeman, #2 Oib) now score highest on Titan."),
 
     ( 0.00, 3.5,
      "PRESENT EPOCH  (Cassini 2004–2017)  |  Calibration anchor\n"
      "All 8 features calibrated here. ~1.7 million km² of liquid hydrocarbon.\n"
-     "Dragonfly mission will land at Selk crater (#3) in the 2030s."),
+     "Dragonfly mission will land at Selk crater in the 2030s."),
 
     ( 0.250, 2.5,
      "NEAR FUTURE  (+250 Myr)  |  D2 solar warming window opens\n"
@@ -462,7 +467,7 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
 
     ( 5.00, 3.5,
      "METHANE ATMOSPHERE LOST  (+5.0 Gya)  |  Lakes fully evaporated\n"
-     "liquid_hydrocarbon → 0. Organic stockpile at 16 Gyr maximum.\n"
+     "liquid_hydrocarbon → 0. Organic stockpile at ~10 Gyr maximum.\n"
      "Surface is dry and cold. Local minimum before the red-giant transition."),
 
     ( 5.1333, 4.0,
@@ -472,7 +477,7 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
 
     ( 5.50, 3.5,
      "PEAK HABITABILITY  (+5.5 Gya)  |  Global liquid water-ammonia ocean\n"
-     "All surfaces score ~0.47. 16 Gyr organic stockpile dissolved as bioavailable substrate.\n"
+     "Former polar basins score highest (~0.77). ~10 Gyr organic stockpile dissolved as bioavailable substrate.\n"
      "Water-ammonia chemistry enables terrestrial-analogue biochemistry."),
 
     ( 6.0, 3.0,
@@ -1434,7 +1439,7 @@ def render_frame(
     # (lon_W deg, lat deg, short_label, rank, pole: N/S/blank)
     # Per-epoch top-10: computed dynamically from the Bayesian formula
     # using CANDIDATE_SITES and the epoch-specific scale functions.
-    TOP10 = render_thesis_frame(t, posterior=posterior)
+    TOP10 = compute_epoch_top10(t, posterior=posterior)
 
     # Build a lookup: label -> site type, from CANDIDATE_SITES
     SITE_TYPE: dict  = {s["label"]: s["type"] for s in CANDIDATE_SITES}
@@ -1993,7 +1998,7 @@ def render_frame(
                 "Note: Bayesian formula gives continuous gradient, not bimodal poles/equator",
             "assumptions": [
                 "Cassini epoch = 2004-2017 CE  (CIRS T model year 2011.0)",
-                "Organic abundance: geo_only mode — Lopes (2019) terrain classes globally",
+                f"Organic abundance: {_org_mode} mode — Lopes (2019) terrain classes + VIMS spectral",
                 "El/Em Birch confirmed-empty basins → liquid_HC = 0.0",
                 "Subsurface ocean prior = 0.03  (Neish et al. 2024 organic flux ~1 elephant/yr)",
                 "Label balance: 50/50 positive/negative (pure median split)",
@@ -2070,7 +2075,7 @@ def render_frame(
         "Red giant": {
             "active": [
                 ("liquid_hydrocarbon",       "HIGH",   "Override → 1.0 globally (T ≥ 176 K: global ocean)"),
-                ("organic_abundance",        "HIGH",   "Scale × 2.5 (capped): max 16 Gyr UV stockpile"),
+                ("organic_abundance",        "HIGH",   "Scale × 2.5 (capped): max ~10 Gyr UV stockpile"),
                 ("subsurface_ocean",         "HIGH",   "Override → 1.0 globally (now a surface ocean)"),
                 ("surface_atm_interaction",  "HIGH",   "Scale = 1.0 (whole surface is liquid-atm interface)"),
                 ("methane_cycle",            "MED",    "Scale = 0.75 (proxy for water-NH₃ atmosphere)"),
@@ -2095,7 +2100,7 @@ def render_frame(
         },
         "Ocean refreezing": {
             "active": [
-                ("organic_abundance",        "HIGH",   "Full 16 Gyr UV tholin stockpile (scale = 2.5, capped)"),
+                ("organic_abundance",        "HIGH",   "Full ~10 Gyr UV tholin stockpile (scale = 2.5, capped)"),
                 ("liquid_hydrocarbon",       "DECL",   "Returns to 0 as T < 176 K; methane still long gone"),
                 ("subsurface_ocean",         "LOW",    "Refreezing; scale returns to 1.0 post-eutectic"),
                 ("surface_atm_interaction",  "LOW",    "Residual"),
@@ -2110,7 +2115,7 @@ def render_frame(
                 "      no separate ocean-chemistry model",
             "colour":
                 "FADING globally:  T < 176 K, ocean refreezes in < 1 Myr\n"
-                "Still elevated:   16 Gyr organic stockpile in solution briefly\n"
+                "Still elevated:   ~10 Gyr organic stockpile in solution briefly\n"
                 "Rapid decline:    habitability window closes ~400 Myr after peak",
             "assumptions": [
                 "Epoch ≥ 6.0 Gya — Sun exits red-giant phase (Lorenz et al. 1997)",
@@ -2211,7 +2216,11 @@ def render_frame(
     _assump_lines.append("─" * 48)
     _assump_lines.append("  • Resolution: 4490 m/px equirectangular")
     _assump_lines.append("  • Grid: 1802 × 3603 px (Titan R = 2575 km)")
-    _assump_lines.append("  • Organic abundance: Lopes (2019) geo_only mode")
+    # try:
+    #     from titan.features import ORGANIC_SOURCE_MODE as _org_mode
+    # except ImportError:
+    #     _org_mode = "unknown"
+    _assump_lines.append(f"  • Organic abundance: Lopes (2019) {_org_mode} mode")
     if _is_sklearn:
         _assump_lines.append("  • Backend: sklearn RandomForestClassifier")
         _assump_lines.append(f"  • Source: {source}")
@@ -2660,6 +2669,28 @@ def render_poster(
 
 # --- Full-inference mode helpers ---------------------------------------------
 
+def _smooth_180w_seam(arr: np.ndarray, blend_width: int = 15) -> np.ndarray:
+    """Smooth the SAR mosaic assembly seam at 180°W in a posterior map.
+
+    The USGS clon180 SAR mosaic has an intensity discontinuity at 180°W
+    where flyby swaths from opposite hemispheres were stitched.  This
+    propagates through f₃ (acetylene energy) and f₈ (subsurface ocean)
+    into the posterior, producing a visible vertical line in rendered maps.
+
+    Fix: linearly interpolate across a narrow strip (±blend_width pixels,
+    ~135 km at 4.49 km/px) centred on 180°W.  No scientifically meaningful
+    spatial variation is lost at this scale.
+    """
+    out = arr.copy()
+    col_180 = out.shape[1] // 2
+    for row in range(out.shape[0]):
+        left_val  = out[row, col_180 - blend_width]
+        right_val = out[row, col_180 + blend_width]
+        for dc in range(-blend_width, blend_width + 1):
+            alpha = 0.5 * (1.0 + dc / blend_width)
+            out[row, col_180 + dc] = (1 - alpha) * left_val + alpha * right_val
+    return out
+
 def load_anchor_posteriors(
     pipeline_outputs_dir: Path,
 ) -> Dict[str, np.ndarray]:
@@ -2693,13 +2724,20 @@ def load_anchor_posteriors(
     anchors: Dict[str, np.ndarray] = {}
     anchor_names = ["past", "lake_formation", "present", "near_future", "future"]
     for name in anchor_names:
-        p = pipeline_outputs_dir / name / "inference" / "posterior_mean.npy"
-        if p.exists():
-            arr = np.load(p).astype(np.float32)
-            anchors[name] = arr
-            print(f"  Loaded anchor '{name}': {p}")
+        # Prefer analytical posterior (thesis Bayesian Beta formula);
+        # fall back to sklearn posterior_mean if analytical not available.
+        p_analytical = pipeline_outputs_dir / name / "inference" / "posterior_analytical.npy"
+        p_sklearn    = pipeline_outputs_dir / name / "inference" / "posterior_mean.npy"
+        if p_analytical.exists():
+            arr = np.load(p_analytical).astype(np.float32)
+            anchors[name] = _smooth_180w_seam(arr)
+            print(f"  Loaded anchor '{name}': {p_analytical} (analytical)")
+        elif p_sklearn.exists():
+            arr = np.load(p_sklearn).astype(np.float32)
+            anchors[name] = _smooth_180w_seam(arr)
+            print(f"  Loaded anchor '{name}': {p_sklearn} (sklearn fallback)")
         else:
-            print(f"  WARNING: anchor '{name}' not found at {p}")
+            print(f"  WARNING: anchor '{name}' not found at {p_analytical} or {p_sklearn}")
     if "present" not in anchors:
         raise FileNotFoundError(
             f"Required anchor 'present' not found in {pipeline_outputs_dir}. "
@@ -3169,26 +3207,20 @@ def _run_animation_full_inference(
     PCHIP_ANCHOR_EPOCHS: List[float] = []
     PCHIP_ANCHOR_POSTS:  List[np.ndarray] = []
 
+    # All 5 anchors now use ANALYTICAL posteriors (thesis Bayesian Beta
+    # formula), not sklearn RF.  The bimodal artefact that previously
+    # required excluding past/lake_formation from PCHIP is eliminated.
+    # Including all anchors produces smooth interpolation from -3.5 to
+    # +5.9 Gya without the f₃ SAR mosaic seam that MODELLED_RESCALED
+    # inherits from the feature TIFs.
     anchor_epoch_map: Dict[str, float] = {
-        # "lake_formation" deliberately excluded: it is no longer a PCHIP anchor
-        # (removed to prevent equatorial-band artefact -- see comment above), and
-        # keeping it here would trigger the snap-to-anchor code at t=-1.0 exactly
-        # (make_epoch_axis linspace includes -1.0), causing a one-frame yellow flash.
-        "present":     0.0,
-        "near_future": +0.250,
-        "future":      +5.9,
+        "past":           -3.500,
+        "lake_formation": -1.000,
+        "present":         0.000,
+        "near_future":    +0.250,
+        "future":         +5.900,
     }
-    # Note: "past" and "lake_formation" are deliberately excluded from PCHIP.
-    # lake_formation exclusion reason: the sklearn RF anchor at -1.0 Gya was
-    # trained on present-era Cassini SAR feature maps (polar lake signatures
-    # at 0.10 scale), which creates stronger polar preference than the Bayesian
-    # formula produces at -1.0 Gya.  Blending toward this anchor (frames 12-17)
-    # caused a visible "equatorial band" where organic-rich equatorial terrain
-    # (including Selk crater) appeared depressed relative to the polar lake margins.
-    # FIX (2026-04): PCHIP covers only present (0.0) → near_future (+0.25 Gya).
-    # MODELLED_RESCALED extends all the way to t=-0.5 Gya, then a 0.5 Gyr
-    # TRANSITION_BLEND smoothly joins to the present sklearn anchor.
-    for name in ["present", "near_future"]:
+    for name in ["past", "lake_formation", "present", "near_future", "future"]:
         if name in anchors:
             PCHIP_ANCHOR_EPOCHS.append(anchor_epoch_map[name])
             PCHIP_ANCHOR_POSTS.append(anchors[name])
@@ -3205,7 +3237,7 @@ def _run_animation_full_inference(
               f"({len(PCHIP_ANCHOR_EPOCHS)} anchors)...")
         pchip = build_pchip_interpolator(PCHIP_ANCHOR_EPOCHS, PCHIP_ANCHOR_POSTS)
         t_interp_lo = PCHIP_ANCHOR_EPOCHS[0]
-        t_interp_hi = PCHIP_ANCHOR_EPOCHS[-1]   # +0.25 Gya
+        t_interp_hi = PCHIP_ANCHOR_EPOCHS[-1]
     else:
         pchip = None
         t_interp_lo = t_interp_hi = 0.0
@@ -3223,6 +3255,11 @@ def _run_animation_full_inference(
     # visual impression of a smooth cross-fade is scientifically reasonable:
     # it represents gradual surface change without claiming to model the
     # precise intermediate state.
+    # Expose PCHIP for the rendering loop
+    _anchor_pchip = pchip if can_interpolate else None
+    _t_min = t_interp_lo
+    _t_max = t_interp_hi
+
     near_future_post: Optional[np.ndarray] = anchors.get("near_future")
     future_post:      Optional[np.ndarray] = anchors.get("future")
     past_post:        Optional[np.ndarray] = anchors.get("past")
@@ -3268,37 +3305,29 @@ def _run_animation_full_inference(
 
         # -- Determine posterior source for this epoch -------------------------
         #
-        # ALL frames use MODELLED_RESCALED (Bayesian formula + epoch scale fns).
+        # ANCHOR_PCHIP mode: use analytical anchor posteriors (from
+        # run_pipeline.py) and PCHIP interpolation between them.
         #
-        # The sklearn RF anchor posteriors are NOT used anywhere in the animation.
-        # Root cause: the RF is trained with a 50/50 global-median label split.
-        # Any pixel without confirmed surface liquid falls below the ~0.28 median
-        # and is labelled class-0.  The RF assigns those pixels probability 0.05–0.15
-        # while polar lake pixels get 0.65–0.75, producing a bimodal distribution
-        # that creates a hard, latitude-aligned "equatorial band" making all organic
-        # terrain (Selk crater, dune fields) appear uninhabitable.  Every sklearn
-        # anchor — past, lake_formation, present, near_future, future — has this
-        # property, so every frame that touched an anchor showed the artefact.
+        # The analytical posteriors use the thesis Bayesian Beta formula
+        # (not the sklearn RF that previously caused bimodal artefacts).
+        # This eliminates the f₃ SAR mosaic seam at 180°W, which is
+        # amplified by temporal scale functions in the MODELLED_RESCALED
+        # approach.
         #
-        # The Bayesian formula gives a continuous gradient driven by the full
-        # feature set.  The scale functions correctly model:
-        #   t < -3.0 Gya  : LHB impact melt + high UV, no lakes
-        #   -3.0→-0.5 Gya : organic accumulation, declining impact flux
-        #   -0.5→ 0.0 Gya : polar lake system fully established
-        #    0.0→+4.0 Gya : stable Cassini-like state, slow warming
-        #   +4.0→+5.0 Gya : solar warming, lake evaporation
-        #   +5.1→+5.9 Gya : T > 176 K eutectic → global water-ammonia ocean
-        #   +5.9→+6.5 Gya : sun exits red giant, ocean refreezes
-        #
-        # The sklearn anchor posteriors remain loaded and available for the
-        # static thesis figures (location_feature_spider.png, etc.) but are
-        # deliberately excluded from all animation rendering.
-        # No snap-to-anchor override either — that was the mechanism that caused
-        # the single-frame yellow flashes at t=-1.0 and t=+0.25.
+        # Anchor epochs: past (-3.5), lake_formation (-1.0),
+        #                present (0.0), near_future (+0.25), future (+5.9)
+        # Outside the anchor range: extrapolate from nearest anchor with
+        # MODELLED_RESCALED fallback.
         source: str
-        scaled    = scale_features_to_epoch(present, t)
-        posterior = _rescale_bayesian(bayesian_posterior_map(scaled))
-        source    = "MODELLED_RESCALED"
+        if _anchor_pchip is not None and _t_min <= t <= _t_max:
+            posterior = _anchor_pchip(t).astype(np.float32)
+            posterior = posterior.reshape(GRID_SHAPE)
+            np.clip(posterior, 0.0, 1.0, out=posterior)
+            source = "ANCHOR_PCHIP"
+        else:
+            scaled    = scale_features_to_epoch(present, t)
+            posterior = _rescale_bayesian(bayesian_posterior_map(scaled))
+            source    = "MODELLED_RESCALED"
 
         # Caption is ALWAYS shown; --pause only controls hold duration.
         frame_narrative = current_narrative if current_narrative else _narrative_for_epoch(t)

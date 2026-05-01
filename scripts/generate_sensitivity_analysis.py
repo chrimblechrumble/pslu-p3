@@ -57,11 +57,11 @@ PRIOR_MEANS = {
 }
 
 SITES = {
-    "Kraken S Shore": {
+    "Freeman Lacus": {
         "features": {
-            "liquid_hc": 1.000, "organic": 0.050, "acetylene": 0.200,
-            "methane":   0.700, "sai":     0.650, "topo":      0.600,
-            "geodiv":    0.760, "ocean":   0.040,
+            "liquid_hc": 1.000, "organic": 1.000, "acetylene": 0.648,
+            "methane":   0.720, "sai":     0.250, "topo":      1.000,
+            "geodiv":    0.000, "ocean":   0.177,
         },
         "colour": "#2196F3",
     },
@@ -75,9 +75,9 @@ SITES = {
     },
     "Selk Crater": {
         "features": {
-            "liquid_hc": 0.050, "organic": 0.215, "acetylene": 0.379,
-            "methane":   0.025, "sai":     0.010, "topo":      0.054,
-            "geodiv":    0.629, "ocean":   0.033,
+            "liquid_hc": 0.050, "organic": 0.168, "acetylene": 0.454,
+            "methane":   0.026, "sai":     0.010, "topo":      0.055,
+            "geodiv":    0.659, "ocean":   0.070,
         },
         "colour": "#E91E63",
     },

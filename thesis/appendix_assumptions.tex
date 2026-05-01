@@ -22,11 +22,13 @@ template is used as the best available proxy, with amplitude
 modifications applied through epoch-specific prior means and scale
 functions.
 
-\item \textbf{Seamless organic abundance mode.}  The organic abundance
-feature uses terrain-class scores globally rather than VIMS spectral
-band ratios, because the VIMS mosaic covers only $\sim$50\% of
-the globe and direct blending produced a visible seam at the coverage
-boundary at 180\textdegree{}W.
+\item \textbf{Blended VIMS organic abundance mode.}  The organic abundance
+feature uses a blended approach: VIMS spectral band ratios where
+coverage exists ($\sim$50\% of the globe), with a global offset
+correction to align VIMS values to terrain-class scores at the coverage
+boundary; terrain-class scores are used directly in the remaining
+hemisphere.  This preserves per-pixel spectral variation at polar
+lake sites while maintaining seamless global coverage.
 
 \item \textbf{Past-epoch Cassini feature contamination.}  The past-epoch
 posterior was computed using present-era Cassini SAR maps, which

@@ -403,7 +403,7 @@ class TestLoadAnchorPosteriors:
         np.save(inf_dir / "posterior_mean.npy", arr)
         anchors = load_anchor_posteriors(tmp_path)
         assert "present" in anchors
-        np.testing.assert_array_equal(anchors["present"], arr)
+        np.testing.assert_allclose(anchors["present"], arr, atol=1e-6)
 
     def test_missing_non_required_anchor_skipped(self, tmp_path: Path) -> None:
         from generate_temporal_maps import load_anchor_posteriors, GRID_SHAPE

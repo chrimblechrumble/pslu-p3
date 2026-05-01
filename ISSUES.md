@@ -3,8 +3,8 @@
 ## Improvements
 - [x] cirs_temperature is based on present day only. What can be done for modelling other epochs?
 - [x] how to use the /palermo mappings/shapefiles. Which ones are they in the Birch dataset?
-- [ ] swap out sklearn for pymc or numpyro  
-- [ ] the vims parquet file was created from code that is not available. Is it needed? If it as not available, 
+- [x] swap out sklearn for pymc or numpyro  
+- [x] the vims parquet file was created from code that is not available. Is it needed? If it as not available, 
 how would I know which VIMS cubes to use?
 - [x] Add text sections at the bottom of video for which features are and are not included. Add a more in 
 depth explanation for what is happening for each feature that is being used and which one dominates that explains the 
@@ -13,7 +13,7 @@ coming colour trends in locations of interest, and also what assumptions are bei
 - [x] Move all diagnose_*.py to a new scripts/diagnose folder.
 - [x] Move all generate_*.py/analyse_habitability.py to the scripts/ folder.
 - [x] Move other top level programs apart from run_pipeline.py to a different folder.
-- [ ] See README at https://gitlab.com/antonin.affholder/enceladus_bayesian_methanogenesis for layout of core info for how someone can follow up.
+- [x] See README at https://gitlab.com/antonin.affholder/enceladus_bayesian_methanogenesis for layout of core info for how someone can follow up.
 
 
 ## Video/static frames
@@ -60,8 +60,8 @@ from Nantes is either being used minimally or not not being used. Is VIMS data n
   - [x] the ≈ should be =~
   - [x] all greek letters α, β, Σ, λ in comments etc should be swapped for expanded names lambda etc. But keep the Greek
   in all equations in thesis, obvs.
-- [ ] Check INSTALL.md is correct
-  - [ ] Check all source download sites are present and documented
+- [x] Check INSTALL.md is correct
+  - [x] Check all source download sites are present and documented
 - [ ] local variables without types. I still see many across the codebase
 - [ ] If the unit tests don't use fixture data that is used in the real pipeline, consider changing teh fixture (and 
 getting rid of the data that is only used by fixtures)

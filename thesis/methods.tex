@@ -37,9 +37,7 @@ Eight Cassini data products spanning SAR imaging, near-infrared spectroscopy, th
 \begin{table}[H]
 \centering
 \small
-\caption{Cassini data sources used in the habitability framework.}
-\label{tab:data_sources}
-\begin{tabular}{p{4.2cm}p{2.8cm}p{5.5cm}}
+\begin{tabular}{p{4.8cm}p{2.8cm}p{5.5cm}}
 \toprule
 \textbf{Dataset} & \textbf{Coverage} & \textbf{Habitability feature} \\
 \midrule
@@ -53,6 +51,8 @@ Tidal $k_2$ (global)    & Global scalar      & $f_8$ subsurface ocean \\
 Hedgepeth (2020) craters & SAR coverage      & $f_7$ geodiversity; past epoch \\
 \bottomrule
 \end{tabular}
+\caption{Cassini data sources used in the habitability framework.}
+\label{tab:data_sources}
 \end{table}
 
 \section{Feature Extraction}
@@ -85,11 +85,6 @@ The prior mean $\mu_i$ for each feature encodes the expected global-average valu
 \begin{table}[H]
 \centering
 \small
-\caption{The eight habitability-proxy features.  Weight $w_i$ and prior mean
-  $\mu_i$ are the present-epoch values used in the Bayesian update
-  (Eq.~\ref{eq:posterior_mean}).  $\mu_0 = \sum_i w_i\mu_i = 0.331$.
-  Features are grouped by tier (see text).}
-\label{tab:feature_summary}
 \begin{tabular}{clp{0.5cm}p{0.6cm}p{6.0cm}}
 \toprule
 \textbf{$f_i$} & \textbf{Name} & $w_i$ & $\mu_i$ & \textbf{Scientific rationale} \\
@@ -98,15 +93,22 @@ The prior mean $\mu_i$ for each feature encodes the expected global-average valu
 $f_1$ & Liquid HC availability  & 0.25 & 0.02  & Solvent prerequisite; most spatially restrictive ($\sim$2\% coverage; \citealt{Hayes2008}) \\
 $f_2$ & Organic abundance       & 0.20 & 0.70  & Substrate prerequisite; globally abundant (82\% organic terrain; \citealt{Malaska2025}) \\
 $f_3$ & Chemical energy (C$_2$H$_2$) & 0.20 & 0.35 & Energy prerequisite; indirect SAR proxy ($\mu$ tempered; \citealt{McKaySmith2005,Yanez2024}) \\[4pt]
+\midrule
 \multicolumn{5}{l}{\textit{Tier 2: enhancing conditions}} \\[2pt]
 $f_4$ & Methane cycle intensity & 0.15 & 0.40  & Transport agent; broad mid--high-lat activity (\citealt{MitchellLora2016,Turtle2011}) \\
 $f_5$ & Surface--atm.\ interaction & 0.08 & 0.35 & Delivery mechanism; subordinate to cycle (\citealt{Hayes2016,Miller2021channels}) \\[4pt]
+\midrule
 \multicolumn{5}{l}{\textit{Tier 3: secondary modulators}} \\[2pt]
 $f_6$ & Topographic complexity  & 0.06 & 0.25  & Micro-environment diversity; low global roughness (\citealt{Corlies2017Titan,Lopes2019}) \\
 $f_7$ & Geomorphological diversity & 0.04 & 0.30 & Geochemical interfaces; moderate global heterogeneity (\citealt{Shock2007,Lopes2019}) \\
 $f_8$ & Subsurface ocean proximity & 0.02 & 0.03 & Water conduit; uncertain surface expression (\citealt{Iess2012,Hemingway2013}) \\
 \bottomrule
 \end{tabular}
+\caption{The eight habitability-proxy features.  Weight $w_i$ and prior mean
+  $\mu_i$ are the present-epoch values used in the Bayesian update
+  (Eq.~\ref{eq:posterior_mean}).  $\mu_0 = \sum_i w_i\mu_i = 0.331$.
+  Features are grouped by tier (see text).}
+\label{tab:feature_summary}
 \end{table}
 
 Figure~\ref{fig:feature_panel} (Appendix~\ref{app:features}) shows all eight feature maps at the present epoch, illustrating their distinct spatial patterns: the polar concentration of liquid hydrocarbon ($f_1$), the near-global organic abundance ($f_2$), the topographically modulated chemical energy proxy ($f_3$), and the latitude-dependent methane cycle signal ($f_4$).  Figure~\ref{fig:epoch_timeline} shows how the relative activity of each feature is modulated across geological time.  Implementation details, backfill strategies, and equations for composite features are given in Appendix~\ref{app:features}; the scientific basis for each feature is summarised below.
@@ -237,19 +239,19 @@ The full posterior probability density over $h \in [0,1]$ at pixel $(x, y)$ is t
 \end{equation}
 Since $\alpha_\text{post} + \beta_\text{post} = 11$ is constant, the leading factor simplifies to $\Gamma(11) = 10! = 3{,}628{,}800$ divided by the product of two gamma functions that vary per pixel.  The posterior is a more concentrated (narrower) Beta distribution than the prior, shifted left or right depending on whether the weighted feature sum $\sum_i w_i f_i(x,y)$ falls below or above the prior mean.  The prior density (Eq.~\ref{eq:prior_pdf}) and the posterior density (Eq.~\ref{eq:posterior_pdf}) have the same functional form --- both are Beta distributions --- differing only in their shape parameters.  This is the defining property of conjugacy: the prior and posterior belong to the same distributional family, and the update reduces to adding pseudo-counts to the shape parameters.
 
-As a worked example, at Freeman Lacus $(x, y) = (210.0\text{\textdegree{}W},\,83.0\text{\textdegree{}N})$, the weighted feature sum is $\sum_i w_i f_i = 0.769$.  The posterior shape parameters are:
+As a worked example, at Freeman Lacus $(x, y) = (210.0\text{\textdegree{}W},\,83.0\text{\textdegree{}N})$, the weighted feature sum is $\sum_i w_i f_i = 0.753$.  The posterior shape parameters are:
 \begin{align*}
-  \alpha_\text{post} &= 1.655 + 6 \times 0.769 = 6.270 \\
-  \beta_\text{post}  &= 3.345 + 6 \times (1 - 0.769) = 4.730
+  \alpha_\text{post} &= 1.655 + 6 \times 0.753 = 6.172 \\
+  \beta_\text{post}  &= 3.345 + 6 \times (1 - 0.753) = 4.828
 \end{align*}
 and the full posterior density at this pixel is:
 \begin{equation}
   p(h \mid \featurevec_\text{Freeman})
-  = \frac{3{,}628{,}800}{\Gamma(6.270)\;\Gamma(4.730)}\;
-    h^{\,5.270}\,(1 - h)^{\,3.730}
+  = \frac{3{,}628{,}800}{\Gamma(6.172)\;\Gamma(4.828)}\;
+    h^{\,5.172}\,(1 - h)^{\,3.828}
   \label{eq:posterior_freeman}
 \end{equation}
-with posterior mean $P(H) = 6.270/11 = 0.570$ and 95\% HDI $[0.28,\,0.83]$.
+with posterior mean $P(H) = 6.172/11 = 0.561$ and 95\% HDI $[0.28,\,0.82]$.
 
 The posterior mean --- the primary habitability score reported at each pixel --- is:
 \begin{equation}
@@ -328,15 +330,7 @@ where $s_i(t)$ is the scale multiplier for feature $i$ at epoch $t$ (Table~\ref{
 \begin{table}[H]
 \centering
 \small
-\caption{Temporal scale functions $s_i(t)$ applied to each feature at epoch $t$
-  (Gyr from present), with supporting references.  A multiplier of 1.0 means
-  no change from the present-epoch value; values $< 1$ reduce the feature,
-  values $> 1$ enhance it.  All outputs are clipped to $[0, 1]$ after scaling.
-  The eutectic override ($T_s \geq 176\,\mathrm{K}$) applies to $f_1$, $f_3$,
-  $f_4$, and $f_8$ at the red-giant ocean epoch
-  \citep{Grasset2005,Tobie2005,Lorenz1997}.}
-\label{tab:scale_funcs}
-\begin{tabular}{p{2.2cm}p{7.0cm}p{3.6cm}}
+\begin{tabular}{p{3.2cm}p{7.0cm}p{3.6cm}}
 \toprule
 \textbf{Feature} & \textbf{Scale function $s_i(t)$} & \textbf{Key references} \\
 \midrule
@@ -368,16 +362,16 @@ $f_4$ methane &
   global ocean. &
   \citet{Tobie2006,Niemann2005,Flasar2005,MitchellLora2016,Strobel2010} \\[4pt]
 
-$f_5$ surf--atm &
+$f_5$ surface atmosphere &
   $0.40 + 0.60\,s_1(t)$: fixed slope-transport component (0.40); lake-margin
   exchange (0.60) scales with liquid coverage. &
   \citet{Radebaugh2011,Hayes2016,MitchellLora2016} \\[4pt]
 
-$f_6$ topo &
+$f_6$ topography &
   1.30 for $t < -2.0\gya$; 1.15 for $-2.0$ to $-1.0\gya$; 1.0 thereafter
   (crater density reduces roughness over time). & \citet{Hedgepeth2020} \\[4pt]
 
-$f_7$ geodiv &
+$f_7$ geo diversity &
   0.70 for $t < -3.0\gya$; 0.85 for $-3.0$ to $-2.0\gya$; 1.0 thereafter
   (terrain classes consolidate). & \citet{Lopes2019} \\[4pt]
 
@@ -388,6 +382,14 @@ $f_8$ ocean &
   \citet{Iess2012,Nimmo2010,Tobie2005} \\
 \bottomrule
 \end{tabular}
+\caption{Temporal scale functions $s_i(t)$ applied to each feature at epoch $t$
+  (Gyr from present), with supporting references.  A multiplier of 1.0 means
+  no change from the present-epoch value; values $< 1$ reduce the feature,
+  values $> 1$ enhance it.  All outputs are clipped to $[0, 1]$ after scaling.
+  The eutectic override ($T_s \geq 176\,\mathrm{K}$) applies to $f_1$, $f_3$,
+  $f_4$, and $f_8$ at the red-giant ocean epoch
+  \citep{Grasset2005,Tobie2005,Lorenz1997}.}
+\label{tab:scale_funcs}
 \end{table}
 
 The key scale functions encode the following physical transitions:
@@ -421,7 +423,7 @@ At $+5.1\gya$ surface temperature crosses the water--ammonia eutectic (176\,K; \
 \subsection{Validation}
 \label{sec:validation}
 
-The reconstruction is validated against three criteria: (i)~each anchor epoch's scaled posterior is within 0.02 of the corresponding static-pipeline posterior at the 95th percentile, confirming that the scale functions faithfully reproduce the anchor-epoch feature values; (ii)~the global mean rises monotonically through the lake-formation transition ($-1.0$ to $-0.5\gya$), consistent with the physical expectation that the establishment of the polar sea system represents a genuine increase in surface habitability potential; and (iii)~the N-polar/equatorial ratio follows the expected pattern: $\sim$1.47 at the LHB (moderate polar enhancement from VIMS organic abundance, no polar seas), rising to $\sim$1.55 at the present epoch (organic + lake dominance), and declining to $\sim$1.39 at the global ocean (uniform liquid coverage reduces but does not eliminate spatial differentiation, because the organic accumulation advantage of the polar basins persists).  All three criteria are satisfied.  The reconstruction also reproduces the known qualitative transitions: the impact-crater signal fading between $-3.0$ and $-2.0\gya$, the cryovolcanic signal persisting through the mid-Titan epoch, and the abrupt onset of the global ocean at the eutectic crossing.
+The reconstruction is validated against three criteria: (i)~each anchor epoch's scaled posterior is within 0.02 of the corresponding static-pipeline posterior at the 95th percentile, confirming that the scale functions faithfully reproduce the anchor-epoch feature values; (ii)~the global mean rises monotonically through the lake-formation transition ($-1.0$ to $-0.5\gya$), consistent with the physical expectation that the establishment of the polar sea system represents a genuine increase in surface habitability potential; and (iii)~the N-polar/equatorial ratio follows the expected pattern: $\sim$1.45 at the LHB (moderate polar enhancement from VIMS organic abundance, no polar seas), rising to $\sim$1.53 at the present epoch (organic + lake dominance), and declining to $\sim$1.39 at the global ocean (uniform liquid coverage reduces but does not eliminate spatial differentiation, because the organic accumulation advantage of the polar basins persists).  All three criteria are satisfied.  The reconstruction also reproduces the known qualitative transitions: the impact-crater signal fading between $-3.0$ and $-2.0\gya$, the cryovolcanic signal persisting through the mid-Titan epoch, and the abrupt onset of the global ocean at the eutectic crossing.
 
 \section{Scope of This Thesis}
 \label{sec:scope_thesis}

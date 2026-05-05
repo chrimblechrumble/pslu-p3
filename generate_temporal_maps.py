@@ -263,31 +263,31 @@ FSIZE_POSTER_CBAR_TICK:     float = 9.0
 #: "TITAN SURFACE HABITABILITY" title on thesis frames.
 FSIZE_THESIS_FRAME_TITLE:          float = 15.0
 #: Epoch / phase / solar subtitle on thesis frames.
-FSIZE_THESIS_FRAME_SUBTITLE:       float = 12.0
+FSIZE_THESIS_FRAME_SUBTITLE:       float = 14.0
 #: Map panel titles (equirectangular, N polar, S polar) on thesis frames.
-FSIZE_THESIS_MAP_TITLE:            float = 12.0
+FSIZE_THESIS_MAP_TITLE:            float = 14.0
 #: Axis labels ("Longitude °W", "Latitude °N") on thesis equirectangular panel.
-FSIZE_THESIS_MAP_AXIS_LABEL:       float = 12.0
+FSIZE_THESIS_MAP_AXIS_LABEL:       float = 14.0
 #: Tick-label size on the thesis equirectangular graticule.
-FSIZE_THESIS_MAP_TICK:             float = 12
+FSIZE_THESIS_MAP_TICK:             float = 14
 #: Longitude labels on the polar-disc graticule in thesis frames.
-FSIZE_THESIS_POLAR_GRATICULE:      float = 12.0
+FSIZE_THESIS_POLAR_GRATICULE:      float = 14.0
 #: Site-name annotation text on the thesis equirectangular panel.
-FSIZE_THESIS_LOCATION_LABEL:       float = 12
+FSIZE_THESIS_LOCATION_LABEL:       float = 14
 #: Site-name annotation text on the thesis polar panels.
-FSIZE_THESIS_LOCATION_LABEL_POLAR: float = 12
+FSIZE_THESIS_LOCATION_LABEL_POLAR: float = 14
 #: Marker icon size in the legend on thesis frames.
-FSIZE_THESIS_LEGEND_ICON:          float = 12.0
+FSIZE_THESIS_LEGEND_ICON:          float = 14.0
 #: Label text in the legend on thesis frames.
-FSIZE_THESIS_LEGEND_LABEL:         float = 12
+FSIZE_THESIS_LEGEND_LABEL:         float = 14
 #: "P(habitable | features)" title above the colour bar on thesis frames.
-FSIZE_THESIS_CBAR_TITLE:           float = 12.0
+FSIZE_THESIS_CBAR_TITLE:           float = 14.0
 #: Tick-label size on the colour bar on thesis frames.
-FSIZE_THESIS_CBAR_TICK:            float = 12.0
+FSIZE_THESIS_CBAR_TICK:            float = 14.0
 #: Narrative / summary body text on thesis frames.
-FSIZE_THESIS_NARRATIVE_BODY:       float = 12
+FSIZE_THESIS_NARRATIVE_BODY:       float = 14
 #: Narrative / summary title on thesis frames.
-FSIZE_THESIS_NARRATIVE_TITLE:      float = 12.0
+FSIZE_THESIS_NARRATIVE_TITLE:      float = 14.0
 
 # --- Thesis-frame geometry ---------------------------------------------------
 #: Figure height for thesis frames (width stays FIG_WIDTH_IN).
@@ -1894,12 +1894,12 @@ def render_frame(
              color=phase_col, fontsize=FSIZE_FRAME_SUBTITLE, ha="center", va="bottom")
 
     # -- Progress bar ----------------------------------------------------------
-    # bar_ax = fig.add_axes([0.10, 0.948, 0.80, 0.006])
-    # bar_ax.set_facecolor(COLOUR_BACKGROUND)
-    # bar_ax.set_xlim(0, n_epochs)
-    # bar_ax.set_ylim(0, 1)
-    # bar_ax.barh(0.5, epoch_idx + 1, height=1.0, color=COLOUR_PROGRESS_BAR, alpha=0.7)
-    # bar_ax.axis("off")
+    bar_ax = fig.add_axes([0.10, 0.948, 0.80, 0.006])
+    bar_ax.set_facecolor(COLOUR_BACKGROUND)
+    bar_ax.set_xlim(0, n_epochs)
+    bar_ax.set_ylim(0, 1)
+    bar_ax.barh(0.5, epoch_idx + 1, height=1.0, color=COLOUR_PROGRESS_BAR, alpha=0.7)
+    bar_ax.axis("off")
 
     # -- Epoch-aware feature / assumption panel ----------------------------------
     # Three-column panel in the expanded lower figure area:
@@ -2526,6 +2526,8 @@ def render_thesis_frame(
                  ha="left", va="center", transform=fig.transFigure)
 
     # -- Narrative / summary box -----------------------------------------------
+    # Disable narrative
+    narrative = None
     if narrative:
         lines    = [ln.strip() for ln in narrative.strip().split("\n") if ln.strip()]
         title_ln = lines[0] if lines else ""
@@ -2568,20 +2570,20 @@ def render_thesis_frame(
     fig.text(0.5, 0.978, "TITAN SURFACE HABITABILITY", color="black",
              fontsize=FSIZE_THESIS_FRAME_TITLE, ha="center", va="bottom",
              fontweight="bold", fontfamily="monospace")
-    fig.text(0.5, 0.963,
+    fig.text(0.5, 0.958,
              f"Epoch:  {_epoch_label(t).replace(chr(10), ' ')}   |   "
              f"Phase:  {_phase_label(t).replace(chr(10), ' ')}   |   {solar_str}",
              color=phase_col, fontsize=FSIZE_THESIS_FRAME_SUBTITLE,
              ha="center", va="bottom")
 
     # -- Progress bar ----------------------------------------------------------
-    bar_ax = fig.add_axes([0.10, TH_PROGRESS_Y, 0.80, TH_PROGRESS_H])
-    bar_ax.set_facecolor(COLOUR_BACKGROUND)
-    bar_ax.set_xlim(0, n_epochs)
-    bar_ax.set_ylim(0, 1)
-    bar_ax.barh(0.5, epoch_idx + 1, height=1.0,
-                color=COLOUR_PROGRESS_BAR, alpha=0.7)
-    bar_ax.axis("off")
+    # bar_ax = fig.add_axes([0.10, TH_PROGRESS_Y, 0.80, TH_PROGRESS_H])
+    # bar_ax.set_facecolor(COLOUR_BACKGROUND)
+    # bar_ax.set_xlim(0, n_epochs)
+    # bar_ax.set_ylim(0, 1)
+    # bar_ax.barh(0.5, epoch_idx + 1, height=1.0,
+    #             color=COLOUR_PROGRESS_BAR, alpha=0.7)
+    # bar_ax.axis("off")
 
     return fig
 

@@ -60,8 +60,8 @@ try:
     if crater_catalogue.exists():
         gdf = gpd.read_file(crater_catalogue)
         print(f"Loaded {len(gdf)} crater sites for mask")
-        crater_rows = [int((90 - lat) / 180 * NROWS) for lat in gdf.geometry.y]
-        crater_cols = [int(lon / 360 * NCOLS) for lon in gdf.geometry.x]
+        crater_rows = [int((90 - lat) / 180 * NROWS) for lat in gdf["lat"]]
+        crater_cols = [int(lon_w / 360 * NCOLS) for lon_w in gdf["lon_west"]]
         crater_mask = np.zeros(GRID_SHAPE, dtype=bool)
         for r, c in zip(crater_rows, crater_cols):
             r0, r1 = max(0,r-5), min(NROWS,r+5)
@@ -101,6 +101,12 @@ if npy_dir.exists() and len(list(npy_dir.glob("*.npy"))) > 0:
             vals = vals[np.isfinite(vals)]
             region_medians[rname].append(float(np.median(vals)) if len(vals) > 0 else np.nan)
     epochs = np.array(epochs)
+
+    # Sort by epoch time (files are alphabetically sorted, not temporally)
+    order = np.argsort(epochs)
+    epochs = epochs[order]
+    for rname in region_medians:
+        region_medians[rname] = np.array(region_medians[rname])[order]
 else:
     # Fallback: use anchor posteriors + linear interpolation
     print("Per-frame posteriors not found. Using anchor posteriors + interpolation.")
@@ -205,7 +211,7 @@ for rname, vals in region_medians.items():
 
 # Ocean window shading
 ax.axvspan(5.1, 6.0, alpha=0.12, color="#4488ff", zorder=0)
-ax.text(5.5, 0.76, "Ocean\nwindow", ha="center", fontsize=8, color="#2255aa", style="italic")
+ax.text(5.5, 0.60, "Ocean\nwindow", ha="center", fontsize=8, color="#2255aa", style="italic")
 
 # Key event verticals – labels placed BELOW the x-axis using the
 # mixed-transform (data-x, axes-fraction-y).  clip_on=False lets
@@ -214,22 +220,22 @@ ax.text(5.5, 0.76, "Ocean\nwindow", ha="center", fontsize=8, color="#2255aa", st
 # staggered to two depth levels (-0.06 and -0.14 axis fraction)
 # so they do not overlap each other or the x-tick labels.
 EVENTS = [
-    (-3.8, "#cc3311", "LHB peak −3.8",       -0.06),
-    (-1.0, "#3355cc", "Lake formation −1.0",  -0.06),
-    ( 0.0, "#0088aa", "Present 0.0",          -0.06),
-    ( 0.25,"#226622", "+0.25 Gya",            -0.14),
-    ( 4.0, "#996600", "Solar warm +4.0",      -0.06),
-    ( 5.1, "#cc7700", "Eutectic +5.1",        -0.06),
-    ( 5.9, "#887700", "Ocean peak +5.9",      -0.14),
-    ( 6.0, "#cc2222", "RGB ends +6.0",        -0.06),
+    (-3.8, "#cc3311", "LHB peak −3.8",        0.95),
+    (-1.0, "#3355cc", "Lake formation −1.0",  0.98),
+    ( 0.0, "#0088aa", "Present 0.0",          0.95),
+    ( 0.25,"#226622", "+0.25",                0.90),
+    ( 4.0, "#996600", "Solar warm +4.0",      0.95),
+    ( 5.1, "#cc7700", "Eutectic +5.1",        0.98),
+    ( 5.9, "#887700", "Ocean peak +5.9",      0.95),
+    ( 6.0, "#cc2222", "RGB ends +6.0",        0.90),
 ]
 xfm = ax.get_xaxis_transform()   # x in data coords, y in axes-fraction
 for xv, col, label, yoff in EVENTS:
     ax.axvline(xv, color=col, linewidth=1.0, linestyle="--", alpha=0.7)
-    ax.text(xv, yoff, label,
+    ax.text(xv + (0.3 if xv == 6.0 else 0), yoff, label,
             transform=xfm, clip_on=False,
             ha="center", va="top",
-            fontsize=6.5, color=col, style="italic")
+            fontsize=8, color=col, style="italic")
 
 ax.set_xlim(-4.2, 6.7)
 ax.set_ylim(0.10, 0.92)   # raised top so N-polar curve never clips against title

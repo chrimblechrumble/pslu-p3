@@ -112,7 +112,7 @@ w1_vals = [0.15, 0.20, 0.25]
 w1_lbls = [
     "$w_1=0.15$",
     "$w_1=0.20$",
-    "$w_1=0.25$ (base)",
+    "$w_1=0.25$\n(base)",
 ]
 
 
@@ -147,12 +147,12 @@ def make_figure() -> plt.Figure:
         ("Each panel shows P(H) under one parameter variation for one site.  "
          "Baseline: kappa=5, lambda=6, w_1=0.25.  "
          "Deviations from baseline shown in parentheses."),
-        ha="center", va="top", color=txt_col, fontsize=8.5,
+        ha="center", va="top", color=txt_col, fontsize=11,
     )
 
     gs = gridspec.GridSpec(
         3, n_sites, figure=fig,
-        top=0.875, bottom=0.065,
+        top=0.875, bottom=0.1,
         left=0.14, right=0.97,
         hspace=0.65, wspace=0.35,
     )
@@ -171,14 +171,14 @@ def make_figure() -> plt.Figure:
         fig.text(
             0.01, 0.78 - row_i * 0.268,
             row_title,
-            ha="left", va="center", color=txt_col, fontsize=8.5,
+            ha="left", va="center", color=txt_col, fontsize=11,
             rotation=90, fontweight="bold",
         )
 
         for col_i, (site_name, site) in enumerate(SITES.items()):
             ax = fig.add_subplot(gs[row_i, col_i])
             ax.set_facecolor(dark_bg)
-            ax.tick_params(colors=txt_col, labelsize=7.5)
+            ax.tick_params(colors=txt_col, labelsize=11)
             ax.spines[:].set_color(grid_col)
 
             # Compute P(H) for each variant
@@ -207,7 +207,7 @@ def make_figure() -> plt.Figure:
                     f"{v:.3f}",
                     ha="center", va="bottom",
                     color=txt_col,
-                    fontsize=7.0, fontweight="bold",
+                    fontsize=11, fontweight="bold",
                 )
                 ax.text(
                     j, v - 0.018,
@@ -215,29 +215,29 @@ def make_figure() -> plt.Figure:
                     ha="center", va="top",
                     color=("#4CAF50" if delta > 0.001 else
                            "#FF5252" if delta < -0.001 else "#888888"),
-                    fontsize=6.5,
+                    fontsize=11,
                 )
 
             ax.axhline(baseline_val, color="#444444", lw=0.8, ls="--", alpha=0.4)
 
             ax.set_xticks(range(len(vals)))
-            ax.set_xticklabels(lbls, color=txt_col, fontsize=7)
+            ax.set_xticklabels(lbls, color=txt_col, fontsize=11)
             ax.set_ylim(0.05, max(ph_vals) * 1.40)
-            ax.set_ylabel("P(H)", color=txt_col, fontsize=8)
+            ax.set_ylabel("P(H)", color=txt_col, fontsize=11)
             ax.yaxis.label.set_color(txt_col)
             ax.grid(True, color=grid_col, alpha=0.3, axis="y", lw=0.5)
 
             if row_i == 0:
                 ax.set_title(site_name, color=site["colour"],
-                             fontsize=10, fontweight="bold", pad=5)
+                             fontsize=11, fontweight="bold", pad=5)
 
     # Colourbar
     sm = ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    cax = fig.add_axes([0.15, 0.018, 0.70, 0.015])
+    cax = fig.add_axes([0.2, 0.00, 0.70, 0.015])
     cb  = fig.colorbar(sm, cax=cax, orientation="horizontal")
-    cb.set_label("P(H | features)", color=txt_col, fontsize=9)
-    cb.ax.tick_params(colors=txt_col, labelsize=8)
+    cb.set_label("P(H | features)", color=txt_col, fontsize=11)
+    cb.ax.tick_params(colors=txt_col, labelsize=11)
     cb.outline.set_edgecolor(grid_col)
 
     return fig

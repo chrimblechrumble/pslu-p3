@@ -271,18 +271,19 @@ This is a convex combination of the prior mean $\mu_0$ (weight $5/11$) and the d
   \centering
   \includegraphics[width=\textwidth]{images/beta_update_figure.png}
   \caption{Beta prior-to-posterior update for three representative sites.
-    \textit{Top row:} each curve shows the Beta distribution after
+    Each curve shows the Beta distribution after
     incorporating successive features, from the prior (dashed) through to
     the 8-feature posterior (solid).  Shaded region = 95\% HDI of the final
-    posterior.  \textit{Bottom panel:} 95\% HDI bars for eight key
-    present-epoch sites, sorted by posterior mean.}
+    posterior.}
   \label{fig:beta_update}
 \end{figure}
 
 \subsection{Missing Data Imputation}
 \label{sec:nan}
 
-Where a feature is absent at a pixel (due to SAR coverage gaps affecting $\sim$33\% of the globe, or VIMS gaps affecting $\sim$50\%), it is imputed with its prior mean $\mu_i$.  Substituting $f_i = \mu_i$ into the update equations adds exactly the amounts the prior already encodes for that feature, so a missing observation contributes no evidence --- the formally correct Bayesian treatment of missing-at-random data.  The primary coverage limitation is in the south polar region, where SAR, VIMS, and altimetry coverage all degrade simultaneously; here the posterior reverts most strongly towards the prior.
+Where a feature is absent at a pixel (due to SAR coverage gaps affecting $\sim$33\% of the globe, or VIMS gaps affecting $\sim$50\%), it is imputed with its prior mean $\mu_i$.  Substituting $f_i = \mu_i$ into the update equations adds exactly the amounts the prior already encodes for that feature, so a missing observation contributes no evidence --- the formally correct
+Bayesian treatment of missing-at-random data
+\citep[Ch.\,6]{LittleRubin2019}.  The primary coverage limitation is in the south polar region, where SAR, VIMS, and altimetry coverage all degrade simultaneously; here the posterior reverts most strongly towards the prior.
 
 \subsection{Feature Importance Validation}
 \label{sec:classifier}

@@ -129,7 +129,7 @@ def make_figure() -> plt.Figure:
         (r"Curves show Beta($\alpha$, $\beta$) after adding each successive feature.  "
          "Shaded region = 95% HDI of final posterior.  "
          "Note: probability density can exceed 1.0 for concentrated distributions."),
-        ha="center", va="top", color=txt_col, fontsize=9,
+        ha="center", va="top", color=txt_col, fontsize=11,
     )
 
     # Compute global y-limit for top panels
@@ -143,12 +143,12 @@ def make_figure() -> plt.Figure:
     for col, (site_name, site) in enumerate(SITES.items()):
         ax = fig.add_subplot(gs_top[0, col])
         ax.set_facecolor(dark_bg)
-        ax.tick_params(colors=txt_col, labelsize=8)
+        ax.tick_params(colors=txt_col, labelsize=11)
         ax.spines[:].set_color(grid_col)
         ax.set_title(site_name, color=site["colour"], fontsize=11,
                      fontweight="bold", pad=6)
-        ax.set_xlabel("P(H | features)", color=txt_col, fontsize=9)
-        ax.set_ylabel("Probability density", color=txt_col, fontsize=9)
+        ax.set_xlabel("P(H | features)", color=txt_col, fontsize=11)
+        ax.set_ylabel("Probability density", color=txt_col, fontsize=11)
         ax.set_xlim(0, 1)
         ax.set_ylim(0, ylim_top)       # consistent y-axis across all panels
 
@@ -176,80 +176,80 @@ def make_figure() -> plt.Figure:
         )
         p_mean = posterior_mean(a_f, b_f)
         ax.axvline(p_mean, color=site["colour"], lw=2.0, ls="-",
-                   label=f"P(H) = {p_mean:.3f}")
+                   label=f"P(H) = {p_mean:.2f}")
         ax.axvline(0.331, color="#888888", lw=1.0, ls=":", alpha=0.7,
                    label="Prior mean")
 
         # Legend: show all features in two columns
         ax.legend(
-            fontsize=6.5, framealpha=0.2, facecolor=dark_bg,
-            edgecolor=grid_col, labelcolor=txt_col, loc="upper right",
+            fontsize=8, framealpha=0.2, facecolor=dark_bg,
+            edgecolor=grid_col, labelcolor=txt_col, loc="upper right" if col !=0 else "upper left",
             ncol=2,
         )
         ax.grid(True, color=grid_col, alpha=0.4, lw=0.5)
 
     # ── Bottom panel: HDI comparison ──────────────────────────────────────────
-    ax_bot = fig.add_subplot(gs_bot[0, 0])
-    ax_bot.set_facecolor(dark_bg)
-    ax_bot.tick_params(colors=txt_col, labelsize=9)
-    ax_bot.spines[:].set_color(grid_col)
-
-    all_sites = {
-        "Freeman":    {"f": SITES["Freeman Lacus"]["features"], "c": "#1565C0"},
-        "Ligeia E":   {"f": {"liquid_hc":1.0,"organic":0.05,"acetylene":0.20,
-                             "methane":0.70,"sai":0.62,"topo":0.55,
-                             "geodiv":0.76,"ocean":0.04}, "c": "#1976D2"},
-        "Punga":      {"f": {"liquid_hc":0.90,"organic":0.06,"acetylene":0.18,
-                             "methane":0.65,"sai":0.55,"topo":0.45,
-                             "geodiv":0.65,"ocean":0.04}, "c": "#1E88E5"},
-        "Ontario":    {"f": {"liquid_hc":0.85,"organic":0.08,"acetylene":0.22,
-                             "methane":0.45,"sai":0.48,"topo":0.42,
-                             "geodiv":0.60,"ocean":0.04}, "c": "#42A5F5"},
-        "Belet":      {"f": SITES["Belet Dunes"]["features"], "c": "#8B5000"},
-        "Huygens":    {"f": {"liquid_hc":0.02,"organic":0.54,"acetylene":0.38,
-                             "methane":0.09,"sai":0.08,"topo":0.14,
-                             "geodiv":0.20,"ocean":0.03}, "c": "#966000"},
-        "Selk":       {"f": SITES["Selk Crater"]["features"], "c": "#E91E63"},
-        "Xanadu":     {"f": {"liquid_hc":0.00,"organic":0.25,"acetylene":0.20,
-                             "methane":0.25,"sai":0.15,"topo":0.40,
-                             "geodiv":0.15,"ocean":0.03}, "c": "#9C27B0"},
-    }
-
-    names, means, los, his = [], [], [], []
-    for name, sdata in all_sites.items():
-        a_f, b_f = posterior_params(sdata["f"], 8)
-        m  = posterior_mean(a_f, b_f)
-        lo = beta_dist.ppf(0.025, a_f, b_f)
-        hi = beta_dist.ppf(0.975, a_f, b_f)
-        names.append(name); means.append(m)
-        los.append(m - lo); his.append(hi - m)
-
-    y_pos = np.arange(len(names))
-    cols  = [all_sites[n]["c"] for n in names]
-    for i, (y, m, lo_e, hi_e, col) in enumerate(zip(y_pos, means, los, his, cols)):
-        ax_bot.barh(y, lo_e + hi_e, left=m - lo_e, height=0.55,
-                    color=col, alpha=0.25, zorder=2)
-        ax_bot.plot([m - lo_e, m + hi_e], [y, y], color=col, lw=1.5, zorder=3)
-        ax_bot.scatter([m], [y], color=col, s=55, zorder=4)
-        ax_bot.text(m + hi_e + 0.01, y, f"{m:.3f}", va="center",
-                    color=col, fontsize=8.5, fontweight="bold")
-
-    ax_bot.set_yticks(y_pos)
-    ax_bot.set_yticklabels(names, color=txt_col, fontsize=9)
-    # Plain % - no LaTeX
-    ax_bot.set_xlabel("P(H | features) with 95% HDI", color=txt_col, fontsize=9)
-    ax_bot.set_title("95% Highest Density Intervals at Key Present-Epoch Sites",
-                     color=txt_col, fontsize=10, pad=4)
-    ax_bot.axvline(0.331, color="#888888", lw=1.2, ls=":", alpha=0.7,
-                   label="Prior mean (0.331)")
-    ax_bot.set_xlim(0.05, 0.82)
-    ax_bot.grid(True, color=grid_col, alpha=0.4, lw=0.5, axis="x")
-    ax_bot.legend(fontsize=8, framealpha=0.2, facecolor=dark_bg,
-                  edgecolor=grid_col, labelcolor=txt_col,
-                  loc="upper right")          # moved to upper right
-    ax_bot.set_facecolor(dark_bg)
-    ax_bot.tick_params(colors=txt_col, labelsize=9)
-    ax_bot.spines[:].set_color(grid_col)
+    # ax_bot = fig.add_subplot(gs_bot[0, 0])
+    # ax_bot.set_facecolor(dark_bg)
+    # ax_bot.tick_params(colors=txt_col, labelsize=9)
+    # ax_bot.spines[:].set_color(grid_col)
+    #
+    # all_sites = {
+    #     "Freeman":    {"f": SITES["Freeman Lacus"]["features"], "c": "#1565C0"},
+    #     "Ligeia E":   {"f": {"liquid_hc":1.0,"organic":0.05,"acetylene":0.20,
+    #                          "methane":0.70,"sai":0.62,"topo":0.55,
+    #                          "geodiv":0.76,"ocean":0.04}, "c": "#1976D2"},
+    #     "Punga":      {"f": {"liquid_hc":0.90,"organic":0.06,"acetylene":0.18,
+    #                          "methane":0.65,"sai":0.55,"topo":0.45,
+    #                          "geodiv":0.65,"ocean":0.04}, "c": "#1E88E5"},
+    #     "Ontario":    {"f": {"liquid_hc":0.85,"organic":0.08,"acetylene":0.22,
+    #                          "methane":0.45,"sai":0.48,"topo":0.42,
+    #                          "geodiv":0.60,"ocean":0.04}, "c": "#42A5F5"},
+    #     "Belet":      {"f": SITES["Belet Dunes"]["features"], "c": "#8B5000"},
+    #     "Huygens":    {"f": {"liquid_hc":0.02,"organic":0.54,"acetylene":0.38,
+    #                          "methane":0.09,"sai":0.08,"topo":0.14,
+    #                          "geodiv":0.20,"ocean":0.03}, "c": "#966000"},
+    #     "Selk":       {"f": SITES["Selk Crater"]["features"], "c": "#E91E63"},
+    #     "Xanadu":     {"f": {"liquid_hc":0.00,"organic":0.25,"acetylene":0.20,
+    #                          "methane":0.25,"sai":0.15,"topo":0.40,
+    #                          "geodiv":0.15,"ocean":0.03}, "c": "#9C27B0"},
+    # }
+    #
+    # names, means, los, his = [], [], [], []
+    # for name, sdata in all_sites.items():
+    #     a_f, b_f = posterior_params(sdata["f"], 8)
+    #     m  = posterior_mean(a_f, b_f)
+    #     lo = beta_dist.ppf(0.025, a_f, b_f)
+    #     hi = beta_dist.ppf(0.975, a_f, b_f)
+    #     names.append(name); means.append(m)
+    #     los.append(m - lo); his.append(hi - m)
+    #
+    # y_pos = np.arange(len(names))
+    # cols  = [all_sites[n]["c"] for n in names]
+    # for i, (y, m, lo_e, hi_e, col) in enumerate(zip(y_pos, means, los, his, cols)):
+    #     ax_bot.barh(y, lo_e + hi_e, left=m - lo_e, height=0.55,
+    #                 color=col, alpha=0.25, zorder=2)
+    #     ax_bot.plot([m - lo_e, m + hi_e], [y, y], color=col, lw=1.5, zorder=3)
+    #     ax_bot.scatter([m], [y], color=col, s=55, zorder=4)
+    #     ax_bot.text(m + hi_e + 0.01, y, f"{m:.3f}", va="center",
+    #                 color=col, fontsize=8.5, fontweight="bold")
+    #
+    # ax_bot.set_yticks(y_pos)
+    # ax_bot.set_yticklabels(names, color=txt_col, fontsize=9)
+    # # Plain % - no LaTeX
+    # ax_bot.set_xlabel("P(H | features) with 95% HDI", color=txt_col, fontsize=11)
+    # ax_bot.set_title("95% Highest Density Intervals at Key Present-Epoch Sites",
+    #                  color=txt_col, fontsize=11, pad=4)
+    # ax_bot.axvline(0.331, color="#888888", lw=1.2, ls=":", alpha=0.7,
+    #                label="Prior mean (0.331)")
+    # ax_bot.set_xlim(0.05, 0.82)
+    # ax_bot.grid(True, color=grid_col, alpha=0.4, lw=0.5, axis="x")
+    # ax_bot.legend(fontsize=8, framealpha=0.2, facecolor=dark_bg,
+    #               edgecolor=grid_col, labelcolor=txt_col,
+    #               loc="upper right")          # moved to upper right
+    # ax_bot.set_facecolor(dark_bg)
+    # ax_bot.tick_params(colors=txt_col, labelsize=9)
+    # ax_bot.spines[:].set_color(grid_col)
 
     return fig
 

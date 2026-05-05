@@ -72,7 +72,7 @@ Bayesian missing-data imputation procedure described in Section~\ref{sec:nan}.
   \label{fig:epoch_timeline}
 \end{figure}
 
-\section[Feature 1: Liquid Hydrocarbon Availability \\
+\section[Feature 1: Liquid Hydrocarbon Availability 
   ($w_1 = 0.25, \mu_1 = 0.02$)]{Feature 1: Liquid Hydrocarbon Availability \\
   ($\boldsymbol{w_1 = 0.25, \mu_1 = 0.02}$)}
 \label{sec:feat_lhc}
@@ -115,8 +115,9 @@ higher feature values.
 In regions lacking both SAR and ISS coverage, the feature is assigned NaN and
 imputed at the prior mean during inference.
 
-\section{Feature 2: Organic Abundance
-  ($w_2 = 0.20$, $\mu_2 = 0.70$)}
+\section[Feature 2: Organic Abundance 
+  ($w_2 = 0.20$, $\mu_2 = 0.70$)]{Feature 2: Organic Abundance 
+  ($\boldsymbol{w_2 = 0.20, \mu_2 = 0.70}$)}
 \label{sec:feat_organic}
 
 \paragraph{Scientific basis.}
@@ -179,8 +180,9 @@ The Lopes (2019) terrain classification covers $\sim$90\% of the SAR-imaged
 surface ($\sim$67\% of the globe).  In regions outside SAR coverage, terrain
 class is estimated from ISS albedo units with reduced specificity.
 
-\section{Feature 3: Chemical Energy Availability
-  ($w_3 = 0.20$, $\mu_3 = 0.35$)}
+\section[Feature 3: Chemical Energy Availability 
+  ($w_3 = 0.20$, $\mu_3 = 0.35$)]{Feature 3: Chemical Energy Availability \\
+  ($\boldsymbol{w_3 = 0.20, \mu_3 = 0.35}$)}
 \label{sec:feat_energy}
 
 \paragraph{Scientific basis.}
@@ -209,8 +211,9 @@ the GTDE elevation ($-z$) assigns high values to topographic lows.
 In SAR-absent regions, the feature reverts to the pure topographic
 inversion component.
 
-\section{Feature 4: Methane Cycle Intensity
-  ($w_4 = 0.15$, $\mu_4 = 0.40$)}
+\section[Feature 4: Methane Cycle Intensity
+  ($w_4 = 0.15$, $\mu_4 = 0.40$)]{Feature 4: Methane Cycle Intensity \\
+  ($\boldsymbol{w_4 = 0.15, \mu_4 = 0.40}$)}
 \label{sec:feat_methane}
 
 \paragraph{Scientific basis.}
@@ -249,8 +252,9 @@ computed components:
 This feature has 100\% global coverage by construction and requires no
 backfill.
 
-\section{Feature 5: Surface--Atmosphere Interaction Intensity
-  ($w_5 = 0.08$, $\mu_5 = 0.35$)}
+\section[Feature 5: Surface--Atmosphere Interaction Intensity
+  ($w_5 = 0.08$, $\mu_5 = 0.35$)]{Feature 5: Surface--Atmosphere Interaction Intensity \\
+  ($\boldsymbol{w_5 = 0.08, \mu_5 = 0.35}$)}
 \label{sec:feat_sai}
 
 \paragraph{Scientific basis.}
@@ -280,8 +284,9 @@ channel density from the Miller et al.\ (2021) dataset, normalised at the
 within-feature weight (40\%) because shorelines concentrate all three relevant
 processes --- liquid contact, organic delivery, and thermal/chemical cycling.
 
-\section{Feature 6: Topographic Complexity
-  ($w_6 = 0.06$, $\mu_6 = 0.25$)}
+\section[Feature 6: Topographic Complexity
+  ($w_6 = 0.06$, $\mu_6 = 0.25$)]{Feature 6: Topographic Complexity \\
+  ($\boldsymbol{w_6 = 0.06, \mu_6 = 0.25}$)}
 \label{sec:feat_topo}
 
 \paragraph{Scientific basis.}
@@ -300,8 +305,9 @@ Local standard deviation of GTDE elevation computed in a $5\times5$ pixel
 percentile range.  South polar gaps in the primary GTDE are filled with the
 Corlies et al.\ (2017) globally interpolated DEM prior to roughness computation.
 
-\section{Feature 7: Geomorphological Diversity
-  ($w_7 = 0.04$, $\mu_7 = 0.30$)}
+\section[Feature 7: Geomorphological Diversity
+  ($w_7 = 0.04$, $\mu_7 = 0.30$)]{Feature 7: Geomorphological Diversity \\
+  ($\boldsymbol{w_7 = 0.04, \mu_7 = 0.30}$)}
 \label{sec:feat_geodiv}
 
 \paragraph{Scientific basis.}
@@ -362,8 +368,9 @@ entropy (uniform distribution across all present classes) to 1.0, ensuring
 the feature is comparable across pixels with different numbers of terrain
 classes.
 
-\section{Feature 8: Subsurface Ocean Proximity
-  ($w_8 = 0.02$, $\mu_8 = 0.03$)}
+\section[Feature 8: Subsurface Ocean Proximity
+  ($w_8 = 0.02$, $\mu_8 = 0.03$)]{Feature 8: Subsurface Ocean Proximity \\
+  ($\boldsymbol{w_8 = 0.02, \mu_8 = 0.03}$)}
 \label{sec:feat_ocean}
 
 \paragraph{Scientific basis.}

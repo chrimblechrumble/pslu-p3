@@ -252,6 +252,6 @@ Copyright © 2025–2026 Chris Meadows, University of Cambridge.
 
 ## Contact
 
-Chris Meadows — [cm10004@cam.ac.uk](mailto:cm10004@cam.ac.uk)
+Chris Meadows — cm one triple zero 4 @cam.ac.uk
 
 Please read [INSTALL.md](INSTALL.md) for data setup and [ISSUES.md](ISSUES.md) for known limitations. Although this project references many research papers, they are not included here for copyright reasons.

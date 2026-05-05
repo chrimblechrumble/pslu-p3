@@ -146,8 +146,8 @@ SHAPEFILE_LAYERS: Final[Dict[str, Tuple[int, str]]] = {
     "Basins":    (4, "Ba"),
     "Mountains": (5, "Mt"),   # corresponds to "Hummocky terrain" in Lopes 2020 paper
     "Labyrinth": (6, "Lb"),
-    "Lakes":     (7, "Lk"),   # ABSENT in Mendeley -- entry retained for compatibility
-                              # only.  The rasteriser skips missing shapefiles silently.
+    # "Lakes":     (7, "Lk"),   # ABSENT in Mendeley -- entry retained for compatibility
+    #                           # only.  The rasteriser skips missing shapefiles silently.
 }
 
 #: Draw order for Lopes rasterisation -- lower index drawn first so higher

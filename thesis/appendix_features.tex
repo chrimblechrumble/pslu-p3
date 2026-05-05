@@ -1,12 +1,12 @@
 %% appendix_features.tex — Feature Engineering: Scientific Basis and Implementation
 %% Extracted from main.tex
-\chapter{Feature Engineering: Scientific Basis and Implementation}
+\chapter{Feature Engineering: Scientific Basis and \\ Implementation}
 \label{app:features}
 
 The eight habitability-proxy features are extracted from the Cassini data
 sources described in Appendix~\ref{app:notation}.  Each subsection gives the
 scientific basis, prior mean justification, implementation procedure, and
-missing-data backfill strategy.
+missing-data backfill strategy.  Features derived from SAR backscatter ($f_1$, $f_3$, $f_5$, $f_7$, $f_8$) are affected by the $\sim$35\% areal coverage of the Cassini RADAR SAR imaging mode; in unmapped regions, the pipeline assigns physically motivated floor values rather than interpolated estimates.  No published method exists for interpolating SAR backscatter intensity on Titan: unlike topography, which varies smoothly and can be splined from sparse profiles \citep{Lorenz2013,Corlies2017Titan}, backscatter depends on local roughness, composition, and viewing geometry and lacks the spatial autocorrelation needed for meaningful gap-filling.
 
 
 

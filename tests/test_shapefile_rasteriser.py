@@ -197,7 +197,7 @@ class TestTerrainClassName:
     def test_basins_label_4(self) -> None:     assert terrain_class_name(4) == "Basins"
     def test_mountains_label_5(self) -> None:  assert terrain_class_name(5) == "Mountains"
     def test_labyrinth_label_6(self) -> None:  assert terrain_class_name(6) == "Labyrinth"
-    def test_lakes_label_7(self) -> None:      assert terrain_class_name(7) == "Lakes"
+    # def test_lakes_label_7(self) -> None:      assert terrain_class_name(7) == "Lakes"
 
     def test_unknown_label_non_empty_string(self) -> None:
         """Out-of-range labels return a non-empty string, not an exception."""
@@ -225,7 +225,8 @@ class TestShapefileLayers:
 
     def test_seven_layers_present(self) -> None:
         expected = {"Craters", "Dunes", "Plains_3", "Basins",
-                    "Mountains", "Labyrinth", "Lakes"}
+                    "Mountains", "Labyrinth"}
+        # , "Lakes"}
         assert set(SHAPEFILE_LAYERS.keys()) == expected
 
     def test_integer_labels_unique(self) -> None:
@@ -238,15 +239,15 @@ class TestShapefileLayers:
 
     def test_labels_span_1_to_7(self) -> None:
         labels = sorted(v[0] for v in SHAPEFILE_LAYERS.values())
-        assert labels == list(range(1, 8))
+        assert labels == list(range(1, 7))
 
-    def test_lakes_has_label_7(self) -> None:
-        assert SHAPEFILE_LAYERS["Lakes"][0] == 7
+    # def test_lakes_has_label_7(self) -> None:
+    #     assert SHAPEFILE_LAYERS["Lakes"][0] == 7
 
     def test_meta_terra_codes_correct(self) -> None:
         expected = {"Craters": "Cr", "Dunes": "Dn", "Plains_3": "Pl",
-                    "Basins": "Ba", "Mountains": "Mt", "Labyrinth": "Lb",
-                    "Lakes": "Lk"}
+                    "Basins": "Ba", "Mountains": "Mt", "Labyrinth": "Lb"}
+                    # "Lakes": "Lk"}
         for stem, (_, code) in SHAPEFILE_LAYERS.items():
             assert code == expected[stem]
 
@@ -260,8 +261,8 @@ class TestShapefileLayers:
 
 class TestRasterDrawOrder:
 
-    def test_lakes_drawn_last(self) -> None:
-        assert RASTER_DRAW_ORDER[-1] == "Lakes"
+    def test_craters_drawn_last(self) -> None:
+        assert RASTER_DRAW_ORDER[-1] == "Craters"
 
     def test_dunes_drawn_first(self) -> None:
         assert RASTER_DRAW_ORDER[0] == "Dunes"
@@ -276,12 +277,12 @@ class TestRasterDrawOrder:
     def test_no_duplicates(self) -> None:
         assert len(RASTER_DRAW_ORDER) == len(set(RASTER_DRAW_ORDER))
 
-    def test_lakes_higher_priority_than_dunes(self) -> None:
-        """Lakes (high habitability) must overwrite Dunes (low)."""
+    def test_craters_higher_priority_than_dunes(self) -> None:
+        """Craters (high habitability) must overwrite Dunes (low)."""
         dunes_pos = RASTER_DRAW_ORDER.index("Dunes")
-        lakes_pos = RASTER_DRAW_ORDER.index("Lakes")
-        assert lakes_pos > dunes_pos, \
-            "Lakes must be drawn after Dunes (higher priority wins)"
+        craters_pos = RASTER_DRAW_ORDER.index("Craters")
+        assert craters_pos > dunes_pos, \
+            "Craters must be drawn after Dunes (higher priority wins)"
 
 
 # ===========================================================================

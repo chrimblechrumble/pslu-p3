@@ -1,7 +1,7 @@
 %% appendix_dragonfly.tex — Dragonfly Mission Validation
 %% Moved from Discussion chapter to appendix for word-count compliance.
 
-\chapter{Dragonfly Mission: Site Validation and Instrument Mapping}
+\chapter{Dragonfly Mission: Site Validation and \\ Instrument Mapping}
 \label{app:dragonfly}
 
 \section{Mission Science Objectives}
@@ -9,75 +9,59 @@
 
 NASA's \dragonfly{} rotorcraft \citep{Lorenz2018Dragonfly}, due at \titan{} in 2034, traverses $\sim$175\,km from Belet dunes to Selk crater.  Its instruments --- DraMS (mass spectrometry), DraGNS (gamma-ray and neutron spectrometry), DragonCam (imaging), and DraGMet (meteorology) --- directly measure the features underpinning the habitability scores at its landing sites.
 
-\section{Two Distinct Habitability Frameworks}
+\section{Reconciling Selk's Low Score with Mission Selection}
 \label{sec:two_frameworks}
 
-Before evaluating the pipeline's results against the \dragonfly{} site
-selection, it is essential to distinguish two fundamentally different
-scientific frameworks for assessing \titan{}'s habitability, which
-produce different site rankings and address different mission objectives.
+RQ4 asks whether the habitability map independently validates the
+\dragonfly{} landing site at Selk crater.  Selk scores
+$P(H) = 0.214$ --- well below the prior mean of 0.331 and
+$\sim$35 percentage points below Freeman Lacus.  On the face of it,
+this appears to \textit{contradict} the site selection.  The resolution
+lies in recognising that this thesis and the \dragonfly{} mission
+address fundamentally different habitability questions.
 
-\paragraph{Present-day solvent habitability.}
-This framework asks: \textit{where does liquid solvent exist at the present
-epoch that could support metabolic chemistry?}  For water-based life, the
-answer is the inaccessible subsurface ocean.  For non-aqueous hydrocarbon
-biochemistry \citep{McKaySmith2005}, the answer is the north polar
-methane--ethane lakes.  The Bayesian pipeline in this thesis implements
-\textit{present-day solvent habitability}: the eight features weight liquid
-hydrocarbon availability ($w_1 = 0.25$), methane cycle activity
-($w_4 = 0.15$), and surface--atmosphere interaction ($w_5 = 0.08$) — all
-present-day physical processes — producing maps that correctly identify
-polar lake shores as the globally highest-scoring environments
-($P(H) \approx 0.56$ at the present epoch; Freeman Lacus).
+\paragraph{This thesis: present-day solvent habitability.}
+The pipeline asks: \textit{where does liquid solvent currently exist
+that could support metabolic chemistry?}  The eight features weight
+liquid hydrocarbon availability ($w_1 = 0.25$), methane cycle activity
+($w_4 = 0.15$), and surface--atmosphere interaction ($w_5 = 0.08$) ---
+all present-day physical processes.  By construction, polar lake shores
+score highest ($P(H) \approx 0.56$; Freeman Lacus), and dry equatorial
+craters score low.  Selk's low score is therefore the \textit{expected}
+output of a correctly functioning present-day solvent model.
 
-\paragraph{Prebiotic chemistry habitability.}
-This framework asks: \textit{where has liquid water most plausibly
-contacted organic material on geologically relevant timescales?}
-\citet{Neish2018} identified large impact craters as the clear answer.
-The thermal energy of a major impact melts the water-ice crust, producing
-transient liquid water that remains liquid for $10^3$--$10^6$\,yr at
-temperatures that accelerate chemical reaction rates by several orders of
-magnitude over ambient conditions \citep{Artemieva2003, OBrien2005}.
-Water-ice mixed with \titan{}'s photolysed tholin organics under these
-conditions is expected to produce amino acids and nucleobase precursors
-via Strecker synthesis \citep{Neish2010}.  Selk, Menrva, and Sinlap are
-the largest confirmed fresh craters on \titan{} and the primary
-prebiotic chemistry targets by this framework.  This is the scientific
-framework within which \dragonfly{} was selected: the mission explicitly
-targets \textit{evidence of past water--organic contact chemistry}, not
-present-day liquid \citep{Lorenz2021Landing}.
+\paragraph{Dragonfly: prebiotic chemistry habitability.}
+The mission asks: \textit{where has liquid water most plausibly
+contacted organic material?}  \citet{Neish2018} showed that large
+impact craters are the primary targets: a major impact melts the
+water-ice crust, producing transient liquid water ($10^3$--$10^6$\,yr;
+\citealt{Artemieva2003, OBrien2005}) that drives Strecker synthesis of
+amino acids and nucleobase precursors from surface tholins
+\citep{Neish2010}.  \dragonfly{} explicitly targets
+\textit{evidence of past water--organic contact}, not present-day
+liquid \citep{Lorenz2021Landing}.
 
-\paragraph{Why the two frameworks give different site rankings.}
-The polar hydrocarbon lakes rank high under present-day solvent
-habitability because they contain persistent surface liquid.  They rank
-\textit{lower} under the prebiotic chemistry framework precisely because
-liquid methane and ethane are non-polar: they do not dissolve the ionic
-species required for Strecker synthesis, and they never contact the
-water-ice crust in a chemically productive way.
-Conversely, impact craters rank low under present-day solvent habitability
-(no present liquid at the equatorial surface) but high under prebiotic
-chemistry habitability (confirmed past liquid water).  \citet{Neish2018}
-explicitly concluded that the polar lakes are \textit{not} the best places
-to search for biosignatures, because the non-polar solvent cannot drive the
-relevant prebiotic chemistry.
-
-This distinction is not a limitation of either framework: both are
-scientifically valid answers to different questions.  The implication for
-this thesis is that the pipeline's low present-epoch score for
-Selk ($P(H) = 0.214$) is not a contradiction of the \dragonfly{} mission's rationale
---- it is a \textit{consequence} of targeting different habitability.
-Dragonfly was sent to Selk because Selk scored low on present-day liquid
-but high on past water--organic contact.
+The two frameworks give opposite site rankings because the polar lakes
+contain non-polar hydrocarbon liquid that cannot drive the ionic
+chemistry required for Strecker synthesis, while equatorial craters
+lack present-day liquid but preserve evidence of past aqueous
+processing.  \citet{Neish2018} explicitly concluded that the polar
+lakes are \textit{not} the best places to search for biosignatures.
+The pipeline's low score for Selk is therefore not a contradiction of
+the mission rationale --- it is a \textit{consequence} of the two
+frameworks targeting different habitability questions.  The independent
+validation of Selk comes not from its aggregate $P(H)$ but from a
+specific feature within the pipeline, as shown in the following section.
 
 \section{Quantitative Validation of Site Selection}
 \label{sec:dragonfly_quant}
 
 The pipeline is a present-day solvent habitability model.  By this
 metric, the north polar lake margins are the most habitable environments
-on \titan{}, reaching $P(H) \approx 0.57$ (Freeman Lacus) and
+on \titan{}, reaching $P(H) \approx 0.56$ (Freeman Lacus) and
 $0.53$ (Oib Lacus).  Selk scores $P(H) = 0.214$, below the
 prior mean of $0.33$, because it lacks present-day surface liquid
-($f_1 \approx 0.05$) and its methane-cycle and surface--atmosphere scores
+($f_1 \approx 0.01$) and its methane-cycle and surface--atmosphere scores
 are equatorial-low.  \textit{This is scientifically correct}: a model that
 correctly captures present-day solvent habitability should rank polar lake
 shores above a dry equatorial crater.

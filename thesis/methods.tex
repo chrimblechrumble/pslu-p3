@@ -85,29 +85,32 @@ The prior mean $\mu_i$ for each feature encodes the expected global-average valu
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{clp{0.5cm}p{0.6cm}p{6.0cm}}
+\begin{tabular}{clp{0.45cm}p{0.55cm}p{0.6cm}p{5.2cm}}
 \toprule
-\textbf{$f_i$} & \textbf{Name} & $w_i$ & $\mu_i$ & \textbf{Scientific rationale} \\
+\textbf{$f_i$} & \textbf{Name} & $w_i$ & $\mu_i$ & $w_i\mu_i$ & \textbf{Scientific rationale} \\
 \midrule
-\multicolumn{5}{l}{\textit{Tier 1: necessary conditions}} \\[2pt]
-$f_1$ & Liquid HC availability  & 0.25 & 0.02  & Solvent prerequisite; most spatially restrictive ($\sim$2\% coverage; \citealt{Hayes2008}) \\
-$f_2$ & Organic abundance       & 0.20 & 0.70  & Substrate prerequisite; globally abundant (82\% organic terrain; \citealt{Malaska2025}) \\
-$f_3$ & Chemical energy (C$_2$H$_2$) & 0.20 & 0.35 & Energy prerequisite; indirect SAR proxy ($\mu$ tempered; \citealt{McKaySmith2005,Yanez2024}) \\[4pt]
+\multicolumn{6}{l}{\textit{Tier 1: necessary conditions}} \\[2pt]
+$f_1$ & Liquid HC availability  & 0.25 & 0.02  & 0.005 & Solvent prerequisite; most spatially restrictive ($\sim$2\% coverage; \citealt{Hayes2008}) \\
+$f_2$ & Organic abundance       & 0.20 & 0.70  & 0.140 & Substrate prerequisite; globally abundant (82\% organic terrain; \citealt{Malaska2025}) \\
+$f_3$ & Chemical energy (C$_2$H$_2$) & 0.20 & 0.35 & 0.070 & Energy prerequisite; indirect SAR proxy ($\mu$ tempered; \citealt{McKaySmith2005,Yanez2024}) \\[4pt]
 \midrule
-\multicolumn{5}{l}{\textit{Tier 2: enhancing conditions}} \\[2pt]
-$f_4$ & Methane cycle intensity & 0.15 & 0.40  & Transport agent; broad mid--high-lat activity (\citealt{MitchellLora2016,Turtle2011}) \\
-$f_5$ & Surface--atm.\ interaction & 0.08 & 0.35 & Delivery mechanism; subordinate to cycle (\citealt{Hayes2016,Miller2021channels}) \\[4pt]
+\multicolumn{6}{l}{\textit{Tier 2: enhancing conditions}} \\[2pt]
+$f_4$ & Methane cycle intensity & 0.15 & 0.40  & 0.060 & Transport agent; broad mid--high-lat activity (\citealt{MitchellLora2016,Turtle2011}) \\
+$f_5$ & Surface--atm.\ interaction & 0.08 & 0.35 & 0.028 & Delivery mechanism; subordinate to cycle (\citealt{Hayes2016,Miller2021channels}) \\[4pt]
 \midrule
-\multicolumn{5}{l}{\textit{Tier 3: secondary modulators}} \\[2pt]
-$f_6$ & Topographic complexity  & 0.06 & 0.25  & Micro-environment diversity; low global roughness (\citealt{Corlies2017Titan,Lopes2019}) \\
-$f_7$ & Geomorphological diversity & 0.04 & 0.30 & Geochemical interfaces; moderate global heterogeneity (\citealt{Shock2007,Lopes2019}) \\
-$f_8$ & Subsurface ocean proximity & 0.02 & 0.03 & Water conduit; uncertain surface expression (\citealt{Iess2012,Hemingway2013}) \\
+\multicolumn{6}{l}{\textit{Tier 3: secondary modulators}} \\[2pt]
+$f_6$ & Topographic complexity  & 0.06 & 0.25  & 0.015 & Micro-environment diversity; low global roughness (\citealt{Corlies2017Titan,Lopes2019}) \\
+$f_7$ & Geomorphological diversity & 0.04 & 0.30 & 0.012 & Geochemical interfaces; moderate global heterogeneity (\citealt{Shock2007,Lopes2019}) \\
+$f_8$ & Subsurface ocean proximity & 0.02 & 0.03 & 0.001 & Water conduit; uncertain surface expression (\citealt{Iess2012,Hemingway2013}) \\
+\midrule
+\multicolumn{4}{r}{\textit{Sum}} & \textbf{0.331} & $= \mu_0$ \\
 \bottomrule
 \end{tabular}
-\caption{The eight habitability-proxy features.  Weight $w_i$ and prior mean
-  $\mu_i$ are the present-epoch values used in the Bayesian update
-  (Eq.~\ref{eq:posterior_mean}).  $\mu_0 = \sum_i w_i\mu_i = 0.331$.
-  Features are grouped by tier (see text).}
+\caption{The eight habitability-proxy features.  Weight $w_i$, prior mean $\mu_i$,
+  and contribution $w_i\mu_i$ to the global prior mean are the present-epoch values
+  used in the Bayesian update (Eq.~\ref{eq:posterior_mean}).
+  The sum $\mu_0 = \sum_i w_i\mu_i = 0.331$ is directly verifiable from the $w_i\mu_i$
+  column.  Features are grouped by tier (see text).}
 \label{tab:feature_summary}
 \end{table}
 
@@ -147,7 +150,7 @@ The methane cycle is the dominant agent of chemical transport on \titan{}, deliv
 \paragraph{$f_5$: Surface--atmosphere interaction ($w_5 = 0.08$, $\mu_5 = 0.35$).}
 The physical interface between surface and atmosphere is where gas-phase photochemical products encounter liquid solvents and organic substrates.  Lake margins and fluvial channel termini are the primary loci of this exchange \citep{Hayes2016,Miller2021channels}.  The feature combines topographic slope (30\%; steep slopes drive physical transport), a lake-margin proximity mask (40\%; evaporation zones), and the Miller et al.\ (\citeyear{Miller2021channels}) global channel density map (30\%). The lake-margin component receives the highest within-feature weight
 because shorelines are where atmospheric products, surface liquids, and
-organic substrates converge; the remaining weight is split equally between
+organic substrates are simultaneously accessible; the remaining weight is split equally between
 the two transport-mechanism proxies.  The posterior is insensitive to
 this internal split given the 8\% overall feature weight.
 
@@ -171,11 +174,11 @@ Astrobiologically relevant chemistry is disproportionately likely at interfaces 
 \textit{Prior mean justification:} $\mu_7 = 0.30$ (moderate) because the six Lopes terrain classes are distributed heterogeneously: $\sim$47\% of pixels have $\geq$2 classes within the sliding window, giving moderate global diversity.  The research in \citep{imaan} provides details on observational evidence and empirically supports this feature.
 
 \paragraph{$f_8$: Subsurface ocean proximity ($w_8 = 0.02$, $\mu_8 = 0.03$).}
-\titan{}'s confirmed subsurface water--ammonia ocean \citep{Iess2012} is potentially habitable by conventional criteria \citep{Affholder2025}, and SAR-bright annular features around impact craters provide indirect evidence of past ocean--surface contact \citep{Wood2010}.  The feature combines a global floor value of 0.03 (reflecting the ubiquitous ocean) with localised Gaussian enhancements at confirmed annular structures.  
+\titan{}'s interior was long thought to host a global subsurface water--ammonia ocean inferred from the tidal Love number $k_2$ \citep{Iess2012}, though a 2025 reanalysis of Cassini radiometric data points instead to a thick slushy ice layer with isolated liquid water pockets \citep{Petricca2025}.  Isolated pockets of warm water remain potentially habitable \citep{Affholder2025}, and SAR-bright annular features around impact craters provide indirect evidence of past ocean--surface contact \citep{Wood2010}.  The feature combines a global floor value of 0.03 (reflecting the subsurface water signal) with localised Gaussian enhancements at confirmed annular structures.  
 
-\textit{Weight justification:} $w_8 = 0.02$ (lowest) because the present-day surface expression of ocean--surface coupling is the most uncertain of all eight features.  The tidal $k_2 = 0.589 \pm 0.150$ \citep{Iess2012} confirms the ocean's existence but constrains neither its depth nor whether active conduits connect it to the surface.  \citet{Hemingway2013} showed that the ice shell thickness ($\sim$50--100\,km) makes sustained present-day cryovolcanism energetically difficult, limiting the weight to reflect this uncertainty.  The feature becomes more important at past and future epochs when the ocean--surface coupling is stronger (temporal scale factor $s_8$ rises to 2.5 at LHB).  
+\textit{Weight justification:} $w_8 = 0.02$ (lowest) because the present-day surface expression of ocean--surface coupling is the most uncertain of all eight features.  The tidal $k_2 = 0.589 \pm 0.150$ \citep{Iess2012} originally supported a global ocean, but reanalysis now favours a slushy interior with isolated water pockets \citep{Petricca2025}; the nature and extent of subsurface liquid therefore remains uncertain.  \citet{Hemingway2013} showed that the ice shell thickness ($\sim$50--100\,km) makes sustained present-day cryovolcanism energetically difficult, and \citet{Neish2024b} constrained the flux of surface organics reaching any subsurface water body via impact cratering to an upper limit of $\sim$7{,}500\,kg\,yr$^{-1}$ of glycine --- far too low to sustain a substantial biosphere \citep{Affholder2025}.  These uncertainties are reflected in the low weight $w_8 = 0.02$.  
 
-\textit{Prior mean justification:} $\mu_8 = 0.03$ (lowest of all features) because the global floor represents the uniform tidal forcing, while localised enhancements are restricted to the $\sim$12 confirmed SAR-bright annular features \citep{Wood2010}, affecting $<$0.1\% of the surface.  In the present epoch, tidal dissipation from Saturn's gravitational forcing maintains the ocean's liquid state and could generate fractures or brine conduits through the ice shell --- providing the physical basis for why this feature matters at specific locations rather than being a uniform global constant.  It explains how ocean material reaches the surface at cryovolcanic sites like Hotei and Sotra, and why the Gaussian enhancement at those sites is physically motivated rather than ad hoc.  See also \citet{charlotte} for modelling of tidal conduit formation.
+\textit{Prior mean justification:} $\mu_8 = 0.03$ (lowest of all features) because the global floor represents the uniform tidal forcing, while localised enhancements are restricted to the $\sim$12 confirmed SAR-bright annular features \citep{Wood2010}, affecting $<$0.1\% of the surface.  Tidal dissipation from Saturn's gravitational forcing heats the interior and could generate brine conduits through the ice shell whether the interior is a global ocean or a slushy layer \citep{Petricca2025} --- providing the physical basis for why this feature matters at specific locations rather than being a uniform global constant.  It explains how water-bearing material reaches the surface at cryovolcanic sites like Hotei and Sotra, and why the Gaussian enhancement at those sites is physically motivated rather than ad hoc.  See also \citet{charlotte} for modelling of tidal conduit formation.
 
 \section{Bayesian Inference Model}
 \label{sec:bayes}
@@ -276,19 +279,19 @@ The full posterior probability density over $h \in [0,1]$ at pixel $(x, y)$ is t
 \end{equation}
 Since $\alpha_\text{post} + \beta_\text{post} = 11$ is constant, the leading factor simplifies to $\Gamma(11) = 10! = 3{,}628{,}800$ divided by the product of two gamma functions that vary per pixel.  The posterior is a more concentrated (narrower) Beta distribution than the prior, shifted left or right depending on whether the weighted feature sum $\sum_i w_i f_i(x,y)$ falls below or above the prior mean.  The prior density (Eq.~\ref{eq:prior_pdf}) and the posterior density (Eq.~\ref{eq:posterior_pdf}) have the same functional form --- both are Beta distributions --- differing only in their shape parameters.  This is the defining property of conjugacy: the prior and posterior belong to the same distributional family, and the update reduces to adding pseudo-counts to the shape parameters.
 
-As a worked example, at Freeman Lacus $(x, y) = (210.0\text{\textdegree{}W},\,83.0\text{\textdegree{}N})$, the weighted feature sum is $\sum_i w_i f_i = 0.753$.  The posterior shape parameters are:
+As a worked example, at Freeman Lacus $(x, y) = (210.0\text{\textdegree{}W},\,83.0\text{\textdegree{}N})$, the weighted feature sum is $\sum_i w_i f_i = 0.716$.  The posterior shape parameters are:
 \begin{align*}
-  \alpha_\text{post} &= 1.655 + 6 \times 0.753 = 6.172 \\
-  \beta_\text{post}  &= 3.345 + 6 \times (1 - 0.753) = 4.828
+  \alpha_\text{post} &= 1.655 + 6 \times 0.716 = 5.951 \\
+  \beta_\text{post}  &= 3.345 + 6 \times (1 - 0.716) = 5.049
 \end{align*}
 and the full posterior density at this pixel is:
 \begin{equation}
   p(h \mid \featurevec_\text{Freeman})
-  = \frac{3{,}628{,}800}{\Gamma(6.172)\;\Gamma(4.828)}\;
-    h^{\,5.172}\,(1 - h)^{\,3.828}
+  = \frac{3{,}628{,}800}{\Gamma(5.951)\;\Gamma(5.049)}\;
+    h^{\,4.951}\,(1 - h)^{\,4.049}
   \label{eq:posterior_freeman}
 \end{equation}
-with posterior mean $P(H) = 6.172/11 = 0.561$ and 95\% HDI $[0.28,\,0.82]$.
+with posterior mean $P(H) = 5.951/11 = 0.541$ and 95\% HDI $[0.28,\,0.82]$.
 
 The posterior mean --- the primary habitability score reported at each pixel --- is:
 \begin{equation}
@@ -348,8 +351,8 @@ Polar lake consolidation epoch.  Liquid hydrocarbon at the onset of sustained po
 \paragraph{\textit{Present} (Cassini era, 2004--2017).}
 All features at directly measured Cassini values; no temporal scaling applied.  This is the observational anchor of the entire framework and the epoch with highest confidence, as the posterior probabilities are derived entirely from data rather than modelled extrapolations.  The fully established polar hydrocarbon sea system, active methane cycle, and mature organic inventory produce the most spatially differentiated habitability map of any epoch.
 
-\paragraph{\textit{Near Future} ($+0.25\gya$).}
-Solar luminosity $+1.4\%$ above present \citep{Bahcall2001}, corresponding to a surface temperature increase of $\sim$1--2\,K --- entirely absorbed by the model and producing no spatially structured change in any feature.  The spatial correlation with Present exceeds $r = 0.999$; all rankings are preserved.  This demonstrates that \titan{}'s lake--organic habitability system is robust to main-sequence solar evolution perturbations.
+\paragraph{\textit{Near Future} ($+0.25$ to $+1.2\,\gya$; stable plateau).}
+Solar luminosity rises from $+1.4\%$ to $\sim+6\%$ above present across this window \citep{Bahcall2001}, corresponding to surface temperature increases of $\sim$1--5\,K --- entirely absorbed by the model and producing no spatially structured change in any feature.  The representative animation frame is drawn from $+1.19\,\gya$ within the plateau; this epoch and all intermediate epochs within the window are functionally equivalent for habitability purposes.  The spatial correlation between any two epochs in this range exceeds $r = 0.999$; all rankings are preserved.  This demonstrates that \titan{}'s lake--organic habitability system is robust to main-sequence solar evolution over at least $\sim$1\,Gyr.
 
 \paragraph{\textit{Future} ($+5.9\gya$).}
 Red-giant ocean peak at $T_s\approx466$\,K, well above the water--ammonia eutectic at all latitudes.  Both $f_1$ (liquid availability) and $f_8$ (subsurface ocean proximity) are overridden to 1.0 globally, reflecting the global ocean.  Organic accumulation reaches $2.5\times$ present after $\sim$10\,Gyr of UV photolysis.  The methane cycle ($f_4$) is suppressed (the hydrocarbon is replaced by a water cycle) and acetylene photochemistry ($f_3$) is reduced under the water--ammonia atmosphere because UV penetration is inhibited.  The ocean window spans $+5.1$ to $+6.0\gya$ ($\sim$0.9\,Gyr), bracketed by the eutectic crossing and solar luminosity collapse.
@@ -453,9 +456,13 @@ The key scale functions encode the following physical transitions:
     applied to UV-driven acetylene production \citep{Strobel2010,Loison2015}.
 
   \item \textbf{Subsurface ocean} ($s_8$): the $2.5\times$ enhancement at
-    $t < -2.0\gya$ reflects the thinner ice shell during early epochs, when the
-    ocean was closer to the surface and cryovolcanic conduits were potentially
-    more active \citep{Iess2012,Nimmo2010,Tobie2005}.
+    $t < -2.0\gya$ reflects the thinner ice shell during early epochs, when any
+    subsurface water body was closer to the surface and cryovolcanic conduits were potentially
+    more active \citep{Iess2012,Nimmo2010,Tobie2005}.  Recent evidence that the present-day
+    interior may be slushy rather than a continuous ocean \citep{Petricca2025} does not
+    invalidate $s_8$ at past epochs, where the ice shell was thinner and warm-water pockets
+    were likely more extensive; it does caution against treating the feature as implying
+    a well-connected global ocean at any epoch.
 \end{itemize}
 
 At $+5.1\gya$ surface temperature crosses the water--ammonia eutectic (176\,K; \citealt{Grasset2005}).  Liquid hydrocarbon gives way to a global water--ammonia ocean ($f_1 \to 1.0$ everywhere); subsurface ocean merges with the surface ($f_8 \to 1.0$); organic accumulation reaches $2.5\times$ present.  The methane cycle becomes a water cycle; acetylene photochemistry is suppressed \citep{Lorenz1997}.

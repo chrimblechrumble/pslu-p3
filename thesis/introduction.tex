@@ -16,8 +16,8 @@ structurally analogous to Earth's hydrological cycle.  Its atmosphere
 continuously produces complex organic tholins at
 $\sim5\times10^{-14}$\,g\,cm$^{-2}$\,s$^{-1}$ \citep{Lavvas2011}, building
 a global organic sediment layer over $\sim$4\,Gyr \citep{Lorenz2008}.
-At depth, a global water--ammonia ocean at $\sim$55--80\,km is confirmed by the
-tidal Love number $k_2 = 0.589\pm0.150$ \citep{Iess2012}. Tidal dissipation from Saturn's gravitational forcing maintains the ocean's liquid state and may generate fractures or brine conduits through the ice shell, as investigated by \citet{charlotte}. This convergence of
+At depth, a subsurface water body at $\sim$55--80\,km was inferred from the
+tidal Love number $k_2 = 0.589\pm0.150$ \citep{Iess2012}.  A 2025 reanalysis of the same Cassini radiometric data found interior tidal dissipation of $\sim$3--4\,TW inconsistent with a continuous global ocean, pointing instead to a thick slushy high-pressure ice layer with isolated pockets of liquid water \citep{Petricca2025}.  Tidal heating within this slushy layer maintains liquid water pockets and may generate brine conduits through the ice shell, as investigated by \citet{charlotte}. This convergence of
 cycling solvent, vast organic inventory, and subsurface water makes \titan{} a
 natural laboratory for prebiotic chemistry operating at planetary scale
 across geological time.
@@ -39,7 +39,7 @@ provides the terrain classification underpinning this thesis.
 
 Habitability is a term used in diverse and sometimes incompatible ways across the planetary science literature \citep{Cockell2016}.  In its strictest sense it denotes a binary property --- whether an environment can sustain the metabolic activity of at least one known organism --- but in practice astrobiologists use it as a continuous measure of how many prerequisites for life co-occur in a given location \citep{Mendez2021}.  This thesis adopts the continuous usage.  The posterior probability $P(H \mid \featurevec)$ at each pixel quantifies the degree to which the \textit{necessary physical and chemical preconditions} for life are simultaneously present: liquid solvent, organic substrate, chemical energy, solvent cycling, atmosphere--surface exchange, topographic and geomorphological diversity, and subsurface water access.  High $P(H)$ does not imply that life exists at a site, nor that abiogenesis could occur there; it implies that more of the known prerequisites are satisfied, and satisfied more strongly, than at a low-$P(H)$ site.
 
-Abiogenesis --- the emergence of life from non-living chemistry --- demands conditions beyond those captured by the habitability proxy.  In aqueous systems, the minimum requirements include liquid water, a source of organic monomers, free energy to drive polymerisation, and a mechanism for compartmentalisation \citep{Ruiz-Mirazo2014}.  On \titan{}, two fundamentally different abiogenesis scenarios are conceivable: \textit{aqueous abiogenesis} in transient impact-melt ponds or the future red-giant ocean, where liquid water contacts accumulated organics; and \textit{non-aqueous abiogenesis} in the present-day hydrocarbon lakes, where azotosome membranes \citep{Stevenson2015} could provide compartmentalisation and acetylenotrophy \citep{McKaySmith2005} could provide energy, but where the low temperature (94\,K) severely constrains reaction kinetics.  The habitability maps produced in this thesis therefore represent a \textit{necessary but not sufficient} condition for either form of abiogenesis: they identify where the preconditions converge spatially and temporally, but cannot assess whether the additional requirements for the origin of life --- sustained chemical disequilibrium, information-carrying polymers, or encapsulation --- are met.
+Abiogenesis --- the emergence of life from non-living chemistry --- demands conditions beyond those captured by the habitability proxy.  In aqueous systems, the minimum requirements include liquid water, a source of organic monomers, free energy to drive polymerisation, and a mechanism for compartmentalisation \citep{Ruiz-Mirazo2014}.  On \titan{}, two fundamentally different abiogenesis scenarios are conceivable: \textit{aqueous abiogenesis} in transient impact-melt ponds or the future red-giant ocean, where liquid water contacts accumulated organics; and \textit{non-aqueous abiogenesis} in the present-day hydrocarbon lakes, where azotosome membranes \citep{Stevenson2015} could provide compartmentalisation and acetylenotrophy \citep{McKaySmith2005} could provide energy, but where the low temperature (94\,K) severely constrains reaction kinetics.  The habitability maps produced in this thesis therefore represent a \textit{necessary but not sufficient} condition for either form of abiogenesis: they identify where the preconditions are jointly satisfied spatially and temporally, but cannot assess whether the additional requirements for the origin of life --- sustained chemical disequilibrium, information-carrying polymers, or encapsulation --- are met.
 
 \section{Chemical Habitability Scenarios}
 \label{sec:prior_theory}
@@ -80,7 +80,15 @@ produces a single scalar per body with no spatial resolution;
 criteria matrices; \citet{Affholder2021} applied rigorous Bayesian inference
 to Enceladus plume data but at a single spatial point and epoch.  None
 integrates the full suite of Cassini data modalities into a spatially-resolved,
-multi-epoch probabilistic framework.  A detailed methodological comparison is
+multi-epoch probabilistic framework.  Three properties in combination distinguish
+this work from all prior assessments: (i)~spatial resolution at $\sim$20\,km per pixel,
+resolving individual lake margins and crater structures rather than producing a
+whole-body scalar; (ii)~the simultaneous use of all eight principal Cassini
+data modalities (SAR, VIMS, CIRS, altimetry, geomorphological map, channel map,
+tidal gravity, crater catalogue) rather than a subset; and (iii)~temporal
+extrapolation across $\sim$10\,Gyr from the LHB to the red-giant ocean,
+enabling a unified narrative of how habitability evolves rather than a
+snapshot at a single epoch.  A detailed methodological comparison is
 given in Appendix~\ref{app:lit_review}.
 
 This thesis develops a Bayesian Beta-conjugate posterior framework combining

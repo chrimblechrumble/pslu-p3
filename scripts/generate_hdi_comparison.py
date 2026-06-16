@@ -7,6 +7,12 @@ Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
 
 Generates Figure: 95% HDI comparison across representative Titan sites.
 
+All feature values are read at runtime from the canonical TIF files in
+outputs/present/features/tifs/ using the same pixel-sampling method as
+verify_thesis_values.py and generate_rankings.py.  No feature values are
+hardcoded — running this script after run_pipeline.py guarantees that the
+figure is consistent with all other pipeline outputs.
+
 Usage:   python scripts/generate_hdi_comparison.py
 Output:  outputs/diagnostics/fig_hdi_comparison.pdf / .png
 """
@@ -20,62 +26,117 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy.stats import beta as beta_dist
 
-OUT_DIR = Path("outputs/diagnostics")
+OUT_DIR  = Path("outputs/diagnostics")
+TIF_DIR  = Path("outputs/present/features/tifs")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 KAPPA  = 5.0
 LAMBDA = 6.0
 
-WEIGHTS = {
-    "liquid_hc": 0.25, "organic":   0.20, "acetylene": 0.20,
-    "methane":   0.15, "sai":       0.08, "topo":      0.06,
-    "geodiv":    0.04, "ocean":     0.02,
-}
-PRIOR_MEANS = {
-    "liquid_hc": 0.020, "organic":   0.700, "acetylene": 0.350,
-    "methane":   0.400, "sai":       0.350, "topo":      0.250,
-    "geodiv":    0.300, "ocean":     0.030,
-}
+# Feature names must match TIF filenames exactly (without .tif)
+FEATURE_NAMES = [
+    "liquid_hydrocarbon",
+    "organic_abundance",
+    "acetylene_energy",
+    "methane_cycle",
+    "surface_atm_interaction",
+    "topographic_complexity",
+    "geomorphologic_diversity",
+    "subsurface_ocean",
+]
 
-SITES = [
-    ("Freeman Lacus",   "lake",   {
-        "liquid_hc":1.00,"organic":1.00,"acetylene":0.648,
-        "methane":0.720,"sai":0.250,"topo":1.000,"geodiv":0.000,"ocean":0.177}),
-    ("Oib Lacus",       "lake",   {
-        "liquid_hc":0.95,"organic":0.92,"acetylene":0.60,
-        "methane":0.68,"sai":0.22,"topo":0.90,"geodiv":0.000,"ocean":0.15}),
-    ("Koitere Lacus",   "lake",   {
-        "liquid_hc":0.72,"organic":0.88,"acetylene":0.55,
-        "methane":0.58,"sai":0.20,"topo":0.85,"geodiv":0.000,"ocean":0.12}),
-    ("Ontario Lacus",   "lake",   {
-        "liquid_hc":0.85,"organic":0.69,"acetylene":0.93,
-        "methane":0.75,"sai":0.08,"topo":0.02,"geodiv":0.52,"ocean":0.00}),
-    ("Belet Dunes",     "land",   {
-        "liquid_hc":0.05,"organic":0.19,"acetylene":0.20,
-        "methane":0.01,"sai":0.01,"topo":0.03,"geodiv":0.00,"ocean":0.00}),
-    ("Hotei Regio",     "land",   {
-        "liquid_hc":0.01,"organic":0.16,"acetylene":0.63,
-        "methane":0.25,"sai":0.01,"topo":0.08,"geodiv":0.00,"ocean":0.00}),
-    ("Huygens Site",    "lander", {
-        "liquid_hc":0.05,"organic":0.20,"acetylene":0.48,
-        "methane":0.13,"sai":0.06,"topo":0.32,"geodiv":0.65,"ocean":0.13}),
-    ("Selk Crater",     "lander", {
-        "liquid_hc":0.050,"organic":0.168,"acetylene":0.454,
-        "methane":0.026,"sai":0.010,"topo":0.055,"geodiv":0.659,"ocean":0.070}),
-    ("Menrva Crater",   "land",   {
-        "liquid_hc":0.01,"organic":0.62,"acetylene":0.38,
-        "methane":0.17,"sai":0.19,"topo":0.50,"geodiv":0.00,"ocean":0.03}),
-    ("Xanadu Centre",   "land",   {
-        "liquid_hc":0.01,"organic":0.38,"acetylene":0.50,
-        "methane":0.07,"sai":0.02,"topo":0.11,"geodiv":0.37,"ocean":0.03}),
-    ("Mithrim Montes",  "land",   {
-        "liquid_hc":0.00,"organic":0.18,"acetylene":0.20,
-        "methane":0.08,"sai":0.12,"topo":0.70,"geodiv":0.22,"ocean":0.030}),
+# Short keys used internally (same order as FEATURE_NAMES)
+FEAT_KEYS = [
+    "liquid_hc", "organic", "acetylene",
+    "methane",   "sai",     "topo",
+    "geodiv",    "ocean",
+]
+
+WEIGHTS = dict(zip(FEAT_KEYS, [0.25, 0.20, 0.20, 0.15, 0.08, 0.06, 0.04, 0.02]))
+PRIOR_MEANS = dict(zip(FEAT_KEYS,
+    [0.020, 0.700, 0.350, 0.400, 0.350, 0.250, 0.300, 0.030]))
+
+# Sites: (display_name, site_type, lon_W_deg, lat_deg)
+# site_type: "lake" | "land" | "lander"
+SITES_DEF = [
+    ("Freeman Lacus",  "lake",   210.0,   83.0),
+    ("Oib Lacus",      "lake",   220.0,   82.0),
+    ("Koitere Lacus",  "lake",   154.0,   73.0),
+    ("Ontario Lacus",  "lake",   179.0,  -72.0),
+    ("Belet Dunes",    "land",   250.0,    5.0),
+    ("Hotei Regio",    "land",   137.0,  -26.0),
+    ("Huygens Site",   "lander", 192.3,  -10.6),
+    ("Selk Crater",    "lander", 199.0,    7.0),
+    ("Menrva Crater",  "land",   357.0,   19.0),
+    ("Xanadu Centre",  "land",   100.0,   -5.0),
+    ("Mithrim Montes", "land",   236.0,    0.0),
 ]
 
 TYPE_COLOURS = {"lake": "#0075a3", "land": "#8B5000", "lander": "#EC407A"}
 TYPE_LABELS  = {"lake": "Lake/sea shore", "land": "Land site",
                 "lander": "Mission lander"}
+
+
+def sample_tif(arr: np.ndarray, lon_W: float, lat: float,
+               radius: int = 2) -> float:
+    """
+    Sample a TIF array at (lon_W, lat) using a (2r+1)x(2r+1) neighbourhood mean.
+    Grid: equirectangular, full globe.
+    """
+    nrows, ncols = arr.shape
+    col = int(round(lon_W / 360.0 * ncols)) % ncols
+    row = int(round((90.0 - lat) / 180.0 * nrows))
+    row = max(0, min(nrows - 1, row))
+    r0, r1 = max(0, row - radius), min(nrows, row + radius + 1)
+    c0, c1 = max(0, col - radius), min(ncols, col + radius + 1)
+    patch = arr[r0:r1, c0:c1].astype(np.float64)
+    patch[~np.isfinite(patch)] = np.nan
+    v = float(np.nanmean(patch))
+    return float(np.clip(v, 0.0, 1.0))
+
+
+def load_tifs() -> dict[str, np.ndarray]:
+    """Load all 8 feature TIFs. Falls back to prior mean array if file missing."""
+    try:
+        import rasterio
+    except ImportError:
+        raise ImportError(
+            "rasterio is required to read feature TIFs.\n"
+            "Install with: pip install rasterio"
+        )
+
+    arrays: dict[str, np.ndarray] = {}
+    for feat_name, feat_key in zip(FEATURE_NAMES, FEAT_KEYS):
+        p = TIF_DIR / f"{feat_name}.tif"
+        if not p.exists():
+            raise FileNotFoundError(
+                f"TIF not found: {p}\n"
+                f"Run: python run_pipeline.py --temporal-mode present"
+            )
+        with rasterio.open(p) as src:
+            arr = src.read(1).astype(np.float32)
+            nd  = src.nodata
+            if nd is not None:
+                arr[arr == nd] = np.nan
+        arrays[feat_key] = arr
+        print(f"  Loaded {feat_key:<12} <- {p.name}")
+    return arrays
+
+
+def sample_sites(arrays: dict[str, np.ndarray]) -> list[tuple]:
+    """
+    Sample all feature TIFs at each site coordinate.
+    Returns list of (name, site_type, feature_dict).
+    """
+    results = []
+    for name, stype, lon_W, lat in SITES_DEF:
+        feats = {}
+        for feat_key, arr in arrays.items():
+            feats[feat_key] = sample_tif(arr, lon_W, lat)
+        results.append((name, stype, feats))
+        ws = sum(WEIGHTS[k] * feats[k] for k in WEIGHTS)
+        print(f"  {name:<18} lon={lon_W:6.1f} lat={lat:+6.1f}  ws={ws:.3f}")
+    return results
 
 
 def ph_hdi(features: dict, ci: float = 0.95) -> tuple[float, float, float]:
@@ -90,7 +151,7 @@ def ph_hdi(features: dict, ci: float = 0.95) -> tuple[float, float, float]:
     return a / (a + b), lo, hi
 
 
-def make_figure() -> plt.Figure:
+def make_figure(sites: list[tuple]) -> plt.Figure:
     dark_bg  = "white"
     grid_col = "#cccccc"
     txt_col  = "#222222"
@@ -99,8 +160,8 @@ def make_figure() -> plt.Figure:
     fig.patch.set_facecolor(dark_bg)
     ax.set_facecolor(dark_bg)
 
-    results = [(name, stype, *ph_hdi(feats)) for name, stype, feats in SITES]
-    results.sort(key=lambda r: r[2], reverse=True)
+    results = [(name, stype, *ph_hdi(feats)) for name, stype, feats in sites]
+    results.sort(key=lambda r: r[2])   # ascending so highest is at top
 
     y_pos = np.arange(len(results))
 
@@ -109,7 +170,6 @@ def make_figure() -> plt.Figure:
     p_min  = alpha0 / (KAPPA + LAMBDA)
     p_max  = (alpha0 + LAMBDA) / (KAPPA + LAMBDA)
 
-    # P_min shaded band
     ax.axvspan(p_min - 0.002, p_min + 0.010, color="#FF1744", alpha=0.20, zorder=1)
 
     legend_seen: set = set()
@@ -134,7 +194,6 @@ def make_figure() -> plt.Figure:
                label=f"Prior mean ({mu0:.3f})")
     ax.axvline(p_max, color="#666666", lw=0.7, ls=":", alpha=0.4)
 
-    # Annotations for P_min and P_max at TOP of plot (not clashing with data)
     ax.text(p_min, len(results) - 0.2,
             f"P_min={p_min:.3f}", color="#FF5252",
             fontsize=7.5, va="bottom", ha="center")
@@ -144,7 +203,6 @@ def make_figure() -> plt.Figure:
 
     ax.set_yticks(y_pos)
     ax.set_yticklabels([r[0] for r in results], color=txt_col, fontsize=9.5)
-    # Plain text - no LaTeX \% needed
     ax.set_xlabel("P(H | features) with 95% HDI", color=txt_col, fontsize=10)
     ax.set_xlim(0.04, 0.82)
     ax.set_ylim(-0.7, len(results) - 0.2)
@@ -154,8 +212,6 @@ def make_figure() -> plt.Figure:
     ax.set_axisbelow(True)
     ax.set_title("Present-Epoch Bayesian Posterior Means with 95% HDI",
                  color=txt_col, fontsize=11, fontweight="bold", pad=10)
-
-    # Legend placed in UPPER RIGHT, away from the data bars
     ax.legend(
         fontsize=8.5, framealpha=0.35, facecolor=dark_bg,
         edgecolor=grid_col, labelcolor=txt_col,
@@ -168,11 +224,28 @@ def make_figure() -> plt.Figure:
 
 if __name__ == "__main__":
     print("Titan Habitability Pipeline  Copyright (C) 2025/2026  Chris Meadows")
-    print("Generating HDI comparison figure...")
-    fig = make_figure()
+    print("Generating HDI comparison figure from TIF pipeline outputs...\n")
+
+    print("Loading feature TIFs...")
+    arrays = load_tifs()
+
+    print("\nSampling sites...")
+    sites = sample_sites(arrays)
+
+    print("\nComputing posteriors and rendering figure...")
+    fig = make_figure(sites)
+
     for ext in ("pdf", "png"):
         out = OUT_DIR / f"fig_hdi_comparison.{ext}"
         fig.savefig(out, dpi=150, bbox_inches="tight", facecolor="white")
         print(f"  Saved -> {out}")
     plt.close(fig)
-    print("Done.")
+
+    print("\nSite P(H) summary (from TIF-sampled features):")
+    results = []
+    for name, stype, feats in sites:
+        mean, lo, hi = ph_hdi(feats)
+        results.append((name, mean, lo, hi))
+    for name, mean, lo, hi in sorted(results, key=lambda x: -x[1]):
+        print(f"  {name:<20} P(H)={mean:.3f}  95%HDI=[{lo:.2f},{hi:.2f}]")
+    print("\nDone.")

@@ -3111,6 +3111,7 @@ def _run_animation_full_inference(
     using_synthetic: bool,
     anim_dir:        Path,
     poster_dir:      Path,
+    npy_dir:         Optional[Path] = None,
 ) -> None:
     """
     Render the FULL_INFERENCE animation.
@@ -3352,6 +3353,13 @@ def _run_animation_full_inference(
                        facecolor=fig_th.get_facecolor())
         plt.close(fig_th)
 
+        # Save full_inference posterior .npy (PCHIP-interpolated or modelled-
+        # rescaled, but always in the full_inference probability space) so that
+        # generate_temporal_trend.py reads the correct posteriors when invoked
+        # after a --inference-mode full_inference run.
+        if npy_dir is not None:
+            t_str_npy = f"{t:+.4f}".replace("+", "").replace("-", "m").replace(".", "_")
+            np.save(npy_dir / f"posterior_{t_str_npy}.npy", posterior.astype(np.float32))
 
         frame_paths.append(fpath)
 
@@ -3456,8 +3464,15 @@ def main(args: argparse.Namespace) -> None:
         # Cache for poster (6 key epochs)
         epoch_map_cache[t] = posterior
 
-        # Save per-epoch posterior .npy if requested
-        if npy_dir is not None:
+        # Save per-epoch posterior .npy if requested.
+        # In full_inference mode the main-loop posterior is the MODELLED scalar
+        # estimate, not the PCHIP-interpolated anchor posterior.  The correct
+        # full_inference posteriors are saved inside _run_animation_full_inference
+        # (below), so skip the save here to avoid silently writing the wrong data.
+        _fi_mode_active: bool = (
+            getattr(args, "inference_mode", "modelled") == "full_inference"
+        )
+        if npy_dir is not None and not _fi_mode_active:
             t_str_npy = f"{t:+.4f}".replace("+", "").replace("-", "m").replace(".", "_")
             np.save(npy_dir / f"posterior_{t_str_npy}.npy", posterior.astype(np.float32))
 
@@ -3533,7 +3548,7 @@ def main(args: argparse.Namespace) -> None:
 
         if inference_mode == "full_inference":
             _run_animation_full_inference(args, epochs, present, using_synthetic,
-                                          anim_dir, poster_dir)
+                                          anim_dir, poster_dir, npy_dir)
         else:
             _run_animation_modelled(args, epochs, present, using_synthetic,
                                     anim_dir, poster_dir, epoch_map_cache)
@@ -3693,8 +3708,10 @@ if __name__ == "__main__":
         "--save-posterior-npy",
         action="store_true",
         help=(
-            "Save each epoch's posterior probability map as a NumPy .npy file "
-            "in <output-dir>/animation/posteriors/posterior_<t>.npy. "
+            "Save each epoch's posterior probability map as a NumPy .npy file. "
+            "Path depends on --inference-mode: "
+            "modelled -> <output-dir>/animation/posteriors/posterior_<t>.npy; "
+            "full_inference -> <output-dir>/animation_full_inference/posteriors/posterior_<t>.npy. "
             "These files are used by scripts/generate_temporal_trend.py to "
             "produce the temporal habitability trend figure.  Not saved by "
             "default because 72 frames x 6.5M pixels x float32 = ~1.9 GB."

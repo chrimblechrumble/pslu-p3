@@ -14,6 +14,7 @@ Run:    python scripts/generate_feature_panel.py
 """
 from __future__ import annotations
 import sys
+import zlib
 from pathlib import Path
 import numpy as np
 import matplotlib
@@ -82,8 +83,11 @@ for ax_flat, (fname, cmap, wi, mu, src_desc, flabel) in zip(axes.flat, FEATURES)
         if nodata is not None:
             arr = np.where(arr == nodata, np.nan, arr)
     else:
-        # Synthetic fallback for testing without real data
-        arr = np.random.uniform(0, 1, _grid_shape).astype(np.float32)
+        # Synthetic fallback for testing without real data.  Seed per-feature
+        # (stable crc32 of the name) so the placeholder panels are deterministic
+        # and distinct, without touching the global numpy RNG.
+        _rng = np.random.default_rng(zlib.crc32(fname.encode()))
+        arr = _rng.uniform(0, 1, _grid_shape).astype(np.float32)
         arr[arr < 0.1] = np.nan
         if not HAS_RASTERIO:
             print(f"  [WARN] rasterio not available — synthetic data for {fname}")

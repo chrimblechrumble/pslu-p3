@@ -42,10 +42,10 @@ if future_post_path.exists():
     post = np.load(future_post_path).astype(np.float32)
 else:
     print("[WARN] Future posterior not found — using synthetic data")
-    np.random.seed(42)
     from configs.pipeline_config import PipelineConfig
     _shape = PipelineConfig().canonical_grid_shape
-    post = np.clip(0.65 + np.random.normal(0, 0.06, _shape), 0, 1).astype(np.float32)
+    _rng = np.random.default_rng(42)   # local Generator; no global RNG mutation
+    post = np.clip(0.65 + _rng.normal(0, 0.06, _shape), 0, 1).astype(np.float32)
 
 nrows, ncols = post.shape
 POLAR_EDGE   = 50.0   # degrees from pole

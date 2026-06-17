@@ -714,8 +714,10 @@ def _synthetic_features() -> Dict[str, np.ndarray]:
 
     # -- topographic_complexity ------------------------------------------------
     # Higher at poles (labyrinth), crater regions, mountain chains
-    np.random.seed(42)
-    topo_noise = np.random.uniform(0.0, 0.1, GRID_SHAPE).astype(np.float32)
+    # Local Generator (deterministic) -- avoids mutating the global numpy RNG
+    # state, which would otherwise leak into any later np.random call.
+    _rng = np.random.default_rng(42)
+    topo_noise = _rng.uniform(0.0, 0.1, GRID_SHAPE).astype(np.float32)
     selk  = np.exp(-((lon_W - 199.0)**2 + (lat - 7.0)**2) / 100.0) * 0.4
     menrva = np.exp(-((lon_W - 87.3)**2 + (lat - 19.0)**2) / 200.0) * 0.35
     topo = np.clip(0.15 + topo_noise + selk + menrva +

@@ -13,7 +13,11 @@ import sys, math
 from pathlib import Path
 import numpy as np
 
-NROWS, NCOLS = 1802, 3603
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from configs.pipeline_config import PipelineConfig
+from configs.site_catalogue import get_site, get_coords, sites_by_type
+
+NROWS, NCOLS = PipelineConfig().canonical_grid_shape
 DEG_PER_ROW  = 180.0 / NROWS
 DEG_PER_COL  = 360.0 / NCOLS
 MIN_CLUSTER_SEP_DEG = 8.0   # minimum separation between reported sites

@@ -9,6 +9,7 @@ Identifies which raw input TIFs have genuine data seams at the 0°W/360°W
 longitude boundary. This tells you whether the residual discontinuity
 visible in the maps (after filter-mode fixes) is in the source data itself.
 """
+import sys
 import numpy as np
 from pathlib import Path
 
@@ -17,6 +18,8 @@ try:
 except ImportError:
     raise SystemExit("rasterio not installed — run: pip install rasterio")
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from configs.pipeline_config import PipelineConfig as _PipelineConfig
 
 # ---------------------------------------------------------------------------
 # Configuration: where to look for TIFs
@@ -31,7 +34,7 @@ CANDIDATE_DIRS   = [
     Path("data/raw"),
 ]
 
-NCOLS_EXPECTED = 3603   # canonical grid width
+NCOLS_EXPECTED = _PipelineConfig().canonical_grid_shape[1]
 
 
 def find_tif(name_fragment: str) -> Path | None:

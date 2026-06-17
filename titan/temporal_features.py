@@ -61,6 +61,7 @@ import xarray as xr
 from titan.features import FeatureStack, FeatureExtractor, FEATURE_NAMES
 from titan.preprocessing import CanonicalGrid, normalise_to_0_1
 from configs.temporal_config import TemporalMode
+from configs.site_catalogue import IMPACT_MELT_CRATERS
 
 logger = logging.getLogger(__name__)
 
@@ -84,21 +85,6 @@ CRYOVOLCANIC_CANDIDATES = [
     (174.3, 37.5,  "Emakong Patera"),
     (219.0, 27.1,  "Hotei Regio candidate"),
     (162.0, 26.0,  "Tui Regio candidate"),
-]
-
-# Known large impact craters (fresh, with melt signatures) from
-#   Hedgepeth et al. (2020) Icarus 344:113664 -- Table 1 selected entries
-#   Neish et al. (2018) -- best-candidate craters for prebiotic chemistry
-# (lon_west_deg, lat_deg, diameter_km)
-IMPACT_MELT_CRATERS = [
-    (199.0,  5.0,  82.0,  "Selk"),      # Dragonfly target; fresh, melt signatures
-    (149.5, 11.6,  39.0,  "Ksa"),       # smallest confirmed with melt
-    ( 28.1, 11.7,  80.0,  "Sinlap"),    # fresh, bright floor
-    (183.2, -1.0, 110.0,  "Hano"),      # central uplift visible
-    (200.5, -1.4, 115.0,  "Afekan"),    # well-preserved
-    ( 35.6, 48.2, 425.0,  "Menrva"),    # largest; may have breached ocean interface
-    (254.5, -5.0,  78.0,  "Forseti"),   # large, degraded
-    (  0.0,  7.0,  28.0,  "Momoy"),     # small, fresh
 ]
 
 
@@ -479,26 +465,7 @@ def extract_organic_stockpile(
             ).astype(np.float32)
             iss_inv[~np.isfinite(iss_raw)] = np.nan
 
-            if vims_norm is not None:
-                overlap = np.isfinite(vims_norm) & np.isfinite(iss_inv)
-                n_ov = int(overlap.sum())
-                if n_ov > 1000:
-                    offset = float(np.median(vims_norm[overlap])) -                              float(np.median(iss_inv[overlap]))
-                    iss_adj = np.clip(iss_inv + offset, 0.0, 1.0)
-                    result: np.ndarray = np.where(
-                        np.isfinite(vims_norm), vims_norm, iss_adj
-                    ).astype(np.float32)
-                    logger.warning(
-                        "extract_organic_stockpile: geomorphology not found; "
-                        "using ISS gap-fill (offset=%.3f, overlap=%d px).",
-                        offset, n_ov,
-                    )
-                    return result
-            else:
-                return iss_inv
-
-    if vims_norm is not None:
-        return vims_norm
+            return iss_inv
 
     logger.warning(
         "extract_organic_stockpile: no VIMS, geomorphology, or ISS available; "

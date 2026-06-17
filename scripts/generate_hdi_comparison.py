@@ -5,7 +5,7 @@ scripts/generate_hdi_comparison.py
 Titan Habitability Pipeline - Compute P(Habitable | features) over Geologic Time
 Copyright (C) 2025/2026  Chris Meadows, cm10004@cam.ac.uk
 
-Generates Figure: 95% HDI comparison across representative Titan sites.
+Generates Figure: 95% CI comparison across representative Titan sites.
 
 All feature values are read at runtime from the canonical TIF files in
 outputs/present/features/tifs/ using the same pixel-sampling method as
@@ -18,6 +18,7 @@ Output:  outputs/diagnostics/fig_hdi_comparison.pdf / .png
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -26,24 +27,23 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from scipy.stats import beta as beta_dist
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from configs.temporal_config import TemporalMode, get_prior_set
+from configs.pipeline_config import BayesianPriorConfig
+from configs.site_catalogue import get_coords as _get_coords
+
 OUT_DIR  = Path("outputs/diagnostics")
 TIF_DIR  = Path("outputs/present/features/tifs")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-KAPPA  = 5.0
-LAMBDA = 6.0
+_bpc = BayesianPriorConfig()
+KAPPA  = _bpc.beta_concentration_default
+LAMBDA = _bpc.likelihood_sharpness
+
+_priors = get_prior_set(TemporalMode.PRESENT)
 
 # Feature names must match TIF filenames exactly (without .tif)
-FEATURE_NAMES = [
-    "liquid_hydrocarbon",
-    "organic_abundance",
-    "acetylene_energy",
-    "methane_cycle",
-    "surface_atm_interaction",
-    "topographic_complexity",
-    "geomorphologic_diversity",
-    "subsurface_ocean",
-]
+FEATURE_NAMES = list(_priors.feature_names)
 
 # Short keys used internally (same order as FEATURE_NAMES)
 FEAT_KEYS = [
@@ -52,24 +52,30 @@ FEAT_KEYS = [
     "geodiv",    "ocean",
 ]
 
-WEIGHTS = dict(zip(FEAT_KEYS, [0.25, 0.20, 0.20, 0.15, 0.08, 0.06, 0.04, 0.02]))
-PRIOR_MEANS = dict(zip(FEAT_KEYS,
-    [0.020, 0.700, 0.350, 0.400, 0.350, 0.250, 0.300, 0.030]))
+_w = list(_priors.weights)
+_m = list(_priors.prior_means)
+WEIGHTS = dict(zip(FEAT_KEYS, _w))
+PRIOR_MEANS = dict(zip(FEAT_KEYS, _m))
 
 # Sites: (display_name, site_type, lon_W_deg, lat_deg)
 # site_type: "lake" | "land" | "lander"
+# Coordinates from configs.site_catalogue.
+def _sdef(catalogue_name, display_name, site_type):
+    lon_W, lat = _get_coords(catalogue_name)
+    return (display_name, site_type, lon_W, lat)
+
 SITES_DEF = [
-    ("Freeman Lacus",  "lake",   210.0,   83.0),
-    ("Oib Lacus",      "lake",   220.0,   82.0),
-    ("Koitere Lacus",  "lake",   154.0,   73.0),
-    ("Ontario Lacus",  "lake",   179.0,  -72.0),
-    ("Belet Dunes",    "land",   250.0,    5.0),
-    ("Hotei Regio",    "land",   137.0,  -26.0),
-    ("Huygens Site",   "lander", 192.3,  -10.6),
-    ("Selk Crater",    "lander", 199.0,    7.0),
-    ("Menrva Crater",  "land",   357.0,   19.0),
-    ("Xanadu Centre",  "land",   100.0,   -5.0),
-    ("Mithrim Montes", "land",   236.0,    0.0),
+    _sdef("Towada",     "Towada Lacus",   "lake"),
+    _sdef("Muggel",     "Müggel Lacus",   "lake"),
+    _sdef("Koitere",    "Koitere Lacus",  "lake"),
+    _sdef("Ontario",    "Ontario Lacus",  "lake"),
+    _sdef("Belet",      "Belet Dunes",    "land"),
+    _sdef("Hotei",      "Hotei Regio",    "land"),
+    _sdef("Huygens",    "Huygens Site",   "lander"),
+    _sdef("Selk",       "Selk Crater",    "lander"),
+    _sdef("Menrva",     "Menrva Crater",  "land"),
+    _sdef("Xanadu",     "Xanadu Centre",  "land"),
+    _sdef("Mithrim",    "Mithrim Montes", "land"),
 ]
 
 TYPE_COLOURS = {"lake": "#0075a3", "land": "#8B5000", "lander": "#EC407A"}
@@ -203,14 +209,14 @@ def make_figure(sites: list[tuple]) -> plt.Figure:
 
     ax.set_yticks(y_pos)
     ax.set_yticklabels([r[0] for r in results], color=txt_col, fontsize=9.5)
-    ax.set_xlabel("P(H | features) with 95% HDI", color=txt_col, fontsize=10)
+    ax.set_xlabel("P(H | features) with 95% CI", color=txt_col, fontsize=10)
     ax.set_xlim(0.04, 0.82)
     ax.set_ylim(-0.7, len(results) - 0.2)
     ax.tick_params(colors=txt_col, labelsize=9)
     ax.spines[:].set_color(grid_col)
     ax.xaxis.grid(True, color=grid_col, alpha=0.5, lw=0.6, zorder=0)
     ax.set_axisbelow(True)
-    ax.set_title("Present-Epoch Bayesian Posterior Means with 95% HDI",
+    ax.set_title("Present-Epoch Bayesian Posterior Means with 95% CI",
                  color=txt_col, fontsize=11, fontweight="bold", pad=10)
     ax.legend(
         fontsize=8.5, framealpha=0.35, facecolor=dark_bg,
@@ -224,7 +230,7 @@ def make_figure(sites: list[tuple]) -> plt.Figure:
 
 if __name__ == "__main__":
     print("Titan Habitability Pipeline  Copyright (C) 2025/2026  Chris Meadows")
-    print("Generating HDI comparison figure from TIF pipeline outputs...\n")
+    print("Generating CI comparison figure from TIF pipeline outputs...\n")
 
     print("Loading feature TIFs...")
     arrays = load_tifs()
@@ -247,5 +253,5 @@ if __name__ == "__main__":
         mean, lo, hi = ph_hdi(feats)
         results.append((name, mean, lo, hi))
     for name, mean, lo, hi in sorted(results, key=lambda x: -x[1]):
-        print(f"  {name:<20} P(H)={mean:.3f}  95%HDI=[{lo:.2f},{hi:.2f}]")
+        print(f"  {name:<20} P(H)={mean:.3f}  95%CI=[{lo:.2f},{hi:.2f}]")
     print("\nDone.")

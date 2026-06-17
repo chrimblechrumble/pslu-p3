@@ -13,38 +13,45 @@ import json, sys
 from pathlib import Path
 import numpy as np
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from configs.temporal_config import TemporalMode, get_prior_set, PRESENT_FEATURES
+from configs.pipeline_config import BayesianPriorConfig, PipelineConfig
+from configs.site_catalogue import get_coords as _get_coords
+
 OUTPUTS   = Path("outputs")           # adjust if different
-NROWS, NCOLS = 1802, 3603
-PIX_M     = 4490.0                    # metres per pixel
 
-FEATURE_NAMES = [
-    "liquid_hydrocarbon", "organic_abundance", "acetylene_energy",
-    "methane_cycle", "surface_atm_interaction", "topographic_complexity",
-    "geomorphologic_diversity", "subsurface_ocean",
-]
+_cfg = PipelineConfig()
+NROWS, NCOLS = _cfg.canonical_grid_shape
+PIX_M     = _cfg.canonical_res_m
 
-WEIGHTS = dict(zip(FEATURE_NAMES,
-                   [0.25, 0.20, 0.20, 0.15, 0.08, 0.06, 0.04, 0.02]))
-PRIOR_MEANS = dict(zip(FEATURE_NAMES,
-                       [0.020, 0.700, 0.350, 0.400, 0.350, 0.250, 0.300, 0.030]))
-KAPPA, LAMBDA = 5.0, 6.0
+_priors = get_prior_set(TemporalMode.PRESENT)
+FEATURE_NAMES = list(_priors.feature_names)
+WEIGHTS = _priors.as_weight_dict()
+PRIOR_MEANS = _priors.as_mean_dict()
+KAPPA  = BayesianPriorConfig().beta_concentration_default
+LAMBDA = BayesianPriorConfig().likelihood_sharpness
 
 # Sites: (lon_W_deg, lat_deg, radius_km)
+# Coordinates from configs.site_catalogue; radii are script-specific sampling areas.
+def _site(name, radius):
+    lon_W, lat = _get_coords(name)
+    return (lon_W, lat, radius)
+
 SITES = {
-    "Selk":          (199.0,   7.0, 45),
-    "Kraken_S1":     (310.0,  72.0, 25),
-    "Kraken_S2":     (315.0,  71.0, 25),
-    "Kraken_S3":     (308.0,  73.5, 25),
-    "Ligeia_E1":     ( 80.0,  79.0, 25),
-    "Ligeia_E2":     ( 85.0,  78.0, 25),
-    "Huygens":       (192.3, -10.6, 45),
-    "Belet":         (250.0,   7.0, 45),
-    "Xanadu_centre": (120.0,   0.0, 45),
-    "Menrva":        ( 87.3,  19.0, 45),
-    "Sinlap":        ( 16.0,  11.3, 45),
-    "Ksa":           ( 65.6,  14.0, 25),
-    "Hano":          (349.0, -38.6, 25),
-    # Dragonfly traverse samples
+    "Selk":          _site("Selk",      45),
+    "Kraken_S1":     (*_get_coords("Kraken S"),  25),
+    "Kraken_S2":     (315.0,  71.0, 25),   # offset sub-sample, no catalogue entry
+    "Kraken_S3":     (308.0,  73.5, 25),   # offset sub-sample, no catalogue entry
+    "Ligeia_E1":     ( 80.0,  79.0, 25),   # offset sub-sample, no catalogue entry
+    "Ligeia_E2":     ( 85.0,  78.0, 25),   # offset sub-sample, no catalogue entry
+    "Huygens":       _site("Huygens",   45),
+    "Belet":         _site("Belet",     45),
+    "Xanadu_centre": (120.0,   0.0, 45),   # centre point, no catalogue entry
+    "Menrva":        _site("Menrva",    45),
+    "Sinlap":        _site("Sinlap",    45),
+    "Ksa":           _site("Ksa",       25),
+    "Hano":          _site("Hano",      25),
+    # Dragonfly traverse samples (fine-grained offsets, not in catalogue)
     "Belet_dune":    (249.0,   7.5, 15),
     "Selk_ejecta":   (199.5,   7.8, 20),
     "Selk_floor":    (199.0,   6.8, 15),
@@ -124,15 +131,15 @@ def bayesian_ph(w_sum):
     a = alpha0 + LAMBDA * w_sum
     b = beta0  + LAMBDA * (1 - w_sum)
     ph = a / (a + b)
-    # 94% HDI
+    # 95% equal-tailed credible interval
     try:
         from scipy import stats
-        lo = float(stats.beta.ppf(0.03, a, b))
-        hi = float(stats.beta.ppf(0.97, a, b))
+        lo = float(stats.beta.ppf(0.025, a, b))
+        hi = float(stats.beta.ppf(0.975, a, b))
     except ImportError:
         # Rough normal approximation
         sd = (a * b / ((a+b)**2 * (a+b+1)))**0.5
-        lo, hi = ph - 2.05*sd, ph + 2.05*sd
+        lo, hi = ph - 1.96*sd, ph + 1.96*sd
     std = (a * b / ((a+b)**2 * (a+b+1)))**0.5
     return round(ph, 3), round(float(std), 3), round(lo, 3), round(hi, 3)
 
@@ -164,7 +171,8 @@ if "present" in posts:
 
 if "past" in posts:
     arr = posts["past"]
-    med, _ = site_stats(arr, 199.0, 7.0, 45)
+    _selk_lon, _selk_lat = _get_coords("Selk")
+    med, _ = site_stats(arr, _selk_lon, _selk_lat, 45)
     pct = percentile_of(arr, med)
     data["site_posteriors"]["Selk_past"] = round(med, 3)
     data["site_posteriors"]["Selk_percentile_past"] = pct
@@ -184,34 +192,40 @@ if "present" in posts:
 print("\nLoading present-epoch features...")
 feats = load_features("present")
 if feats:
+    _selk_lon, _selk_lat = _get_coords("Selk")
     for fi, fname in enumerate(FEATURE_NAMES, 1):
         if fname in feats:
             arr = feats[fname]
-            med, _ = site_stats(arr, 199.0, 7.0, 45)
+            med, _ = site_stats(arr, _selk_lon, _selk_lat, 45)
             data["selk_features"][f"f{fi}"] = round(med, 3)
             glob_med = float(np.nanmedian(arr[np.isfinite(arr)]))
             data["selk_features_global_median"][f"f{fi}"] = round(glob_med, 3)
             print(f"  f{fi} {fname:<30}: Selk={med:.3f}  glob_med={glob_med:.3f}")
 
     # Bayesian posterior from features
+    n_missing = sum(1 for fi in range(1, len(FEATURE_NAMES) + 1)
+                    if f"f{fi}" not in data["selk_features"])
+    if n_missing > 0:
+        print(f"  [WARNING] {n_missing} feature(s) missing from Selk — "
+              "w_sum will be lower than expected", file=sys.stderr)
     w_sum = sum(data["selk_features"].get(f"f{fi}", 0) * WEIGHTS[fname]
                 for fi, fname in enumerate(FEATURE_NAMES, 1)
                 if f"f{fi}" in data["selk_features"])
     ph, std, lo, hi = bayesian_ph(w_sum)
-    data["selk_bayesian"] = {"PH": ph, "std": std, "hdi_lo": lo, "hdi_hi": hi,
+    data["selk_bayesian"] = {"PH": ph, "std": std, "ci_lo": lo, "ci_hi": hi,
                              "w_sum": round(w_sum, 4)}
-    print(f"\n  Selk Bayesian P(H) = {ph:.3f} ± {std:.3f}  HDI=[{lo:.3f}, {hi:.3f}]")
+    print(f"\n  Selk Bayesian P(H) = {ph:.3f} ± {std:.3f}  95%CI=[{lo:.3f}, {hi:.3f}]")
 else:
-    print("  [WARNING] Could not load features — Bayesian HDI will not be updated")
+    print("  [WARNING] Could not load features — Bayesian CI will not be updated")
 
 # --- Crater comparison table -------------------------------------------------
 print("\nCrater comparison table (past + present)...")
 crater_sites = {
-    "Menrva": (87.3,  19.0, 45),
-    "Sinlap": (16.0,  11.3, 45),
-    "Ksa":    (65.6,  14.0, 25),
-    "Selk":   (199.0,  7.0, 45),
-    "Hano":   (349.0,-38.6, 25),
+    "Menrva": (*_get_coords("Menrva"), 45),
+    "Sinlap": (*_get_coords("Sinlap"), 45),
+    "Ksa":    (*_get_coords("Ksa"),    25),
+    "Selk":   (*_get_coords("Selk"),   45),
+    "Hano":   (*_get_coords("Hano"),   25),
 }
 for name, (lon_W, lat, r_km) in crater_sites.items():
     row = {}

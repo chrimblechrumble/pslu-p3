@@ -8,15 +8,19 @@ and whether the rings are the real polar sea boundaries or artefacts.
 Run from project root:
     python diagnose_lake_coverage.py
 """
+import sys
 from pathlib import Path
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from configs.pipeline_config import PipelineConfig
 
 try:
     import rasterio
 except ImportError:
     print("ERROR: rasterio not installed"); raise
 
-NROWS = 1802
+NROWS, _ = PipelineConfig().canonical_grid_shape
 DEG_PER_ROW = 180.0 / NROWS
 
 def row_to_lat(r):

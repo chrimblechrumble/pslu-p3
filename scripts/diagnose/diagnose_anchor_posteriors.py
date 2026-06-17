@@ -17,16 +17,19 @@ import sys
 import numpy as np
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from configs.pipeline_config import PipelineConfig
+
 ANCHORS = [
     ("past",           "outputs/past/inference/posterior_mean.npy",           -3.5),
     ("lake_formation", "outputs/lake_formation/inference/posterior_mean.npy", -1.0),
     ("present",        "outputs/present/inference/posterior_mean.npy",         0.0),
     ("near_future",    "outputs/near_future/inference/posterior_mean.npy",    +0.25),
-    ("future",         "outputs/future/inference/posterior_mean.npy",         +6.0),
+    ("future",         "outputs/future/inference/posterior_mean.npy",         +5.9),
 ]
 
-VMIN, VMAX = 0.10, 0.65
-NROWS, NCOLS = 1802, 3603
+VMIN, VMAX = 0.10, 0.75
+NROWS, NCOLS = PipelineConfig().canonical_grid_shape
 
 # -- Load ----------------------------------------------------------------------
 print("=" * 80)
@@ -147,16 +150,23 @@ if "past" in loaded and "lake_formation" in loaded and "present" in loaded:
                 if n in loaded]
         if len(arrs) >= 2:
             stacked = np.stack(arrs, axis=0)
+            # PchipInterpolator rejects non-finite y, and every anchor has NaN
+            # at invalid (masked) pixels. Interpolate only over pixels that are
+            # finite across ALL anchors so the same pixel set is compared at
+            # every epoch.
+            valid_pix = np.all(np.isfinite(stacked), axis=0)
+            stacked   = stacked[:, valid_pix]
+            print(f"  Interpolating over {valid_pix.sum():,} pixels "
+                  f"finite across all {len(arrs)} anchors")
             interp  = PchipInterpolator(epochs[:len(arrs)], stacked, axis=0)
             test_ts = [-3.8, -3.5, -3.0, -2.0, -1.5, -1.0, -0.5, 0.0, 0.25]
             print(f"  {'t (Gya)':>10}  {'median':>8}  {'mean':>8}  {'% > VMAX':>10}")
             for t in test_ts:
                 if epochs[0] <= t <= epochs[len(arrs)-1]:
                     v = interp(t)
-                    valid = v[np.isfinite(v)]
-                    pct_sat = 100.0 * (valid > VMAX).mean()
-                    print(f"  {t:10.2f}  {np.median(valid):8.4f}  "
-                          f"{valid.mean():8.4f}  {pct_sat:10.1f}%")
+                    pct_sat = 100.0 * (v > VMAX).mean()
+                    print(f"  {t:10.2f}  {np.median(v):8.4f}  "
+                          f"{v.mean():8.4f}  {pct_sat:10.1f}%")
     except ImportError:
         print("  scipy not available — skipping PCHIP preview")
 

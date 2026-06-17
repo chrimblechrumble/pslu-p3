@@ -28,7 +28,7 @@ Output formats
 --------------
   Static (matplotlib, 300 dpi):
     - Fig 1: Global habitability posterior map (main result)
-    - Fig 2: Uncertainty map (HDI width or posterior std)
+    - Fig 2: Uncertainty map (CI width or posterior std)
     - Fig 3: Feature importance bar chart
     - Fig 4: Eight-panel feature map grid
     - Fig 5: Top-20 highest-probability sites
@@ -55,6 +55,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+
+from configs.site_catalogue import get_site
 
 logger = logging.getLogger(__name__)
 
@@ -92,20 +94,25 @@ HAB_VMAX = 0.75   # bright end of colour scale
 #:
 #: To customise which labels appear, pass a subset to
 #: :class:`TitanMapPlotter` via ``feature_categories`` or ``feature_names``.
+
+# Mapping: (display_name, catalogue_short_name, display_category)
+# Coordinates are drawn from configs.site_catalogue (authoritative);
+# display names and display categories are kept for visualisation compatibility.
+_VIS_SITES = [
+    ("Kraken Mare",   "Kraken S",    "sea"),
+    ("Ligeia Mare",   "Ligeia",      "sea"),
+    ("Punga Mare",    "Punga",       "sea"),
+    ("Ontario Lacus", "Ontario",     "lake"),
+    ("Xanadu",        "Xanadu",      "terrain"),
+    ("Shangri-La",    "Shangri-La",  "terrain"),
+    ("Belet",         "Belet",       "terrain"),
+    ("Huygens",       "Huygens",     "mission"),
+    ("Selk (DFly)",   "Selk",        "mission"),
+]
+
 TITAN_FEATURES: Dict[str, Tuple[float, float, str]] = {
-    # -- Hydrocarbon seas (maria) ---------------------------------------------
-    "Kraken Mare":   (310.0,  68.0, "sea"),    # largest, ~400,000 km^2
-    "Ligeia Mare":   ( 78.0,  79.0, "sea"),    # second largest, liquid methane-rich
-    "Punga Mare":    ( 17.0,  85.0, "sea"),    # northernmost major sea
-    # -- Hydrocarbon lakes (lacus) --------------------------------------------
-    "Ontario Lacus": (180.0, -72.0, "lake"),   # largest southern hemisphere lake
-    # -- Terrain regions ------------------------------------------------------
-    "Xanadu":        (100.0,  -5.0, "terrain"),  # bright radar/IR region, water-ice
-    "Shangri-La":    (160.0,  -5.0, "terrain"),  # large equatorial dune sea
-    "Belet":         (250.0,   5.0, "terrain"),  # equatorial dune sea
-    # -- Mission sites --------------------------------------------------------
-    "Huygens":       (192.0, -10.2, "mission"),  # ESA probe landing site, Jan 2005
-    "Selk (DFly)":   (199.0,   5.0, "mission"),  # NASA Dragonfly target, ~80 km crater
+    display: (get_site(cat_name).lon_W, get_site(cat_name).lat, display_cat)
+    for display, cat_name, display_cat in _VIS_SITES
 }
 
 #: Default colours and markers per feature category.
@@ -368,7 +375,7 @@ class TitanMapPlotter:
 
         if ncols == 2:
             _base_map(axes[1], hdi_width, cmap="plasma_r",
-                      cbar_label="94% HDI width",
+                      cbar_label="95% CI width",
                       title="Uncertainty", annotate=self.annotate,
                       feature_names=self.feature_names,
                       feature_categories=self.feature_categories,

@@ -27,10 +27,16 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from scipy.stats import beta as beta_dist
 
-# -- Bayesian parameters (must match temporal_config.py PRESENT epoch) ----------
-MU0    = 0.331   # prior mean = sum(w_i * mu_i)
-KAPPA  = 5.0     # prior concentration
-LAMBDA = 6.0     # likelihood sharpness
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from configs.temporal_config import TemporalMode, get_prior_set
+from configs.pipeline_config import BayesianPriorConfig
+
+# -- Bayesian parameters (derived from config) ---------------------------------
+_bpc = BayesianPriorConfig()
+_priors = get_prior_set(TemporalMode.PRESENT)
+KAPPA  = _bpc.beta_concentration_default
+LAMBDA = _bpc.likelihood_sharpness
+MU0    = sum(w * m for w, m in zip(_priors.weights, _priors.prior_means))
 
 ALPHA0 = MU0   * KAPPA
 BETA0  = (1 - MU0) * KAPPA
@@ -39,8 +45,8 @@ BETA0  = (1 - MU0) * KAPPA
 # w_sum = sum(w_i * f_i)  from Table tab:selk_features / site feature profiles
 SITES = [
     {
-        "name":    "Freeman\nLacus",
-        "w_sum":   0.769,
+        "name":    "Towada\nLacus",
+        "w_sum":   0.775,
         "colour":  "#007a73",   # cyan (lake)
         "marker":  "▲",
         "type":    "lake",
@@ -141,7 +147,7 @@ def main() -> None:
         handle = Line2D([0], [0], color=s["colour"], lw=2.2,
                         label=f"{s['marker']} {s['name'].replace(chr(10), ' ')}\n"
                               f"$P(H)={ph_mean:.3f}$\n"
-                              f"95% HDI: [{lo:.2f}, {hi:.2f}]")
+                              f"95% CI: [{lo:.2f}, {hi:.2f}]")
         legend_handles.insert(0, handle)
 
     ax.set_xlabel("Posterior mean  $P(H \\mid \\mathbf{f})$", color="black", fontsize=11)

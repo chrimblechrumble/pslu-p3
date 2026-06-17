@@ -24,6 +24,9 @@ from pathlib import Path
 
 import numpy as np
 
+from configs.pipeline_config import PipelineConfig
+from configs.site_catalogue import RANKING_SITES, SITE_DICT
+
 # ---------------------------------------------------------------------------
 # Anchor posterior paths
 # ---------------------------------------------------------------------------
@@ -47,7 +50,7 @@ EPOCH_LABELS = {
     "future":         "FUTURE (+5.9 Gya)",
 }
 
-GRID_SHAPE = (1802, 3603)  # canonical posterior grid (nrows, ncols)
+GRID_SHAPE = PipelineConfig().canonical_grid_shape  # canonical posterior grid (nrows, ncols)
 
 # ---------------------------------------------------------------------------
 # All sites to sample
@@ -56,30 +59,27 @@ GRID_SHAPE = (1802, 3603)  # canonical posterior grid (nrows, ncols)
 # site_type: "lake"   -- appears in ranked table
 #            "lander" -- appears below midrule (Dragonfly targets)
 #            "other"  -- informational only
+#
+# The catalogue uses broader type labels; map them to the three display
+# categories used by this script:
+#   catalogue "crater"  -> "lander"  (Selk is the Dragonfly target crater)
+#   catalogue "land"    -> "other"   (equatorial terrain regions)
+#   catalogue "lander"  -> "lander"  (Huygens)
+#   catalogue "lake"    -> "lake"
+
+_SITE_TYPE_MAP: dict[str, str] = {
+    "lake":   "lake",
+    "sea":    "lake",
+    "crater": "lander",
+    "lander": "lander",
+    "land":   "other",
+}
 
 SITES: list[tuple[str, str, float, float, str]] = [
-    # --- Top-tier lake/lacus sites (all epochs) ---
-    ("Freeman",    "Freeman Lacus",    210.0,  83.0,  "lake"),
-    ("Oib",        "Oib Lacus",        220.0,  82.0,  "lake"),
-    ("Koitere",    "Koitere Lacus",    154.0,  73.0,  "lake"),
-    ("Ontario",    "Ontario Lacus",    179.0, -72.0,  "lake"),
-    ("Hammar",     "Hammar Lacus",      93.5,  70.7,  "lake"),
-    ("Mackay",     "Mackay Lacus",     262.8,  77.5,  "lake"),
-    ("Paxsi",      "Paxsi Lacus",      243.0,  72.0,  "lake"),
-    ("Neagh",      "Neagh Lacus",      327.0,  72.0,  "lake"),
-    ("Bolsena",    "Bolsena Lacus",     12.3,  75.4,  "lake"),
-    ("Logtak",     "Logtak Lacus",     197.5,  74.0,  "lake"),
-    ("Cardiel",    "Cardiel Lacus",    128.0,  78.0,  "lake"),
-    ("Uvs",        "Uvs Lacus",        262.0,  74.5,  "lake"),
-    ("Waikare",    "Waikare Lacus",    185.0,  75.0,  "lake"),
-    ("Ligeia E",   "Ligeia E shore",    82.0,  79.0,  "lake"),
-    # --- Dragonfly landing targets (below midrule in thesis tables) ---
-    ("Selk",       "Selk crater",      199.0,   7.0,  "lander"),
-    ("Huygens",    "Huygens site",     192.3, -10.6,  "lander"),
-    # --- Additional comparison sites ---
-    ("Belet",      "Belet dunes",      250.0,   5.0,  "other"),
-    ("Shangri-La", "Shangri-La dunes", 155.0,  -5.0,  "other"),
-    ("Xanadu",     "Xanadu",           100.0,  -5.0,  "other"),
+    (s.short_name, s.full_name, s.lon_W, s.lat,
+     _SITE_TYPE_MAP.get(s.site_type, "other"))
+    for name in RANKING_SITES
+    for s in [SITE_DICT[name]]
 ]
 
 
@@ -158,7 +158,7 @@ def write_rankings_md(
         "# Source : run_pipeline.py --all-temporal-modes",
         "#          -> posterior_analytical.npy sampled at site coordinates",
         "# Script : scripts/generate_rankings.py",
-        "# Grid   : 1802 x 3603  (equirectangular, 5x5 pixel neighbourhood mean)",
+        f"# Grid   : {GRID_SHAPE[0]} x {GRID_SHAPE[1]}  (equirectangular, 5x5 pixel neighbourhood mean)",
         "# DO NOT EDIT BY HAND.  Re-run the script to update.",
         "",
     ]

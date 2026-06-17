@@ -18,13 +18,16 @@ import sys
 from pathlib import Path
 import numpy as np
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from configs.pipeline_config import PipelineConfig
+
 try:
     import rasterio
 except ImportError:
     print("ERROR: rasterio not installed.  Run: pip install rasterio")
     sys.exit(1)
 
-NROWS = 1802
+NROWS, _ = PipelineConfig().canonical_grid_shape
 DEG_PER_ROW = 180.0 / NROWS
 
 def row_to_lat(r):

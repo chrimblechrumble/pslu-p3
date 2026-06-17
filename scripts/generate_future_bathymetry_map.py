@@ -13,9 +13,12 @@ Output: outputs/diagnostics/future_epoch_bathymetry.pdf
 Run:    python scripts/generate_future_bathymetry_map.py
 """
 from __future__ import annotations
+import sys
 from pathlib import Path
 import numpy as np
 import matplotlib
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -40,7 +43,9 @@ if future_post_path.exists():
 else:
     print("[WARN] Future posterior not found — using synthetic data")
     np.random.seed(42)
-    post = np.clip(0.65 + np.random.normal(0, 0.06, (1802, 3603)), 0, 1).astype(np.float32)
+    from configs.pipeline_config import PipelineConfig
+    _shape = PipelineConfig().canonical_grid_shape
+    post = np.clip(0.65 + np.random.normal(0, 0.06, _shape), 0, 1).astype(np.float32)
 
 nrows, ncols = post.shape
 POLAR_EDGE   = 50.0   # degrees from pole

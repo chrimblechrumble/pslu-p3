@@ -24,13 +24,16 @@ try:
 except ImportError:
     sys.exit("rasterio not installed — run: pip install rasterio")
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from configs.pipeline_config import PipelineConfig as _PipelineConfig
+
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 PROCESSED_DIR   = Path("outputs/preprocessed")  # adjust if different
 FEATURE_TIF_DIR = Path("outputs/present/features/tifs")
 
-EXPECTED_SHAPE = (1802, 3603)
+EXPECTED_SHAPE = _PipelineConfig().canonical_grid_shape
 
 # Expected ranges for sanity checking [min_plausible, max_plausible]
 VALUE_RANGES = {

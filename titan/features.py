@@ -66,6 +66,7 @@ from titan.preprocessing import (
     compute_terrain_diversity,
     normalise_to_0_1,
 )
+from configs.temporal_config import PRESENT_FEATURES
 
 logger = logging.getLogger(__name__)
 
@@ -73,16 +74,7 @@ logger = logging.getLogger(__name__)
 # Feature stack container
 # ---------------------------------------------------------------------------
 
-FEATURE_NAMES: List[str] = [
-    "liquid_hydrocarbon",
-    "organic_abundance",
-    "acetylene_energy",
-    "methane_cycle",
-    "surface_atm_interaction",
-    "topographic_complexity",
-    "geomorphologic_diversity",
-    "subsurface_ocean",
-]
+FEATURE_NAMES: List[str] = PRESENT_FEATURES
 
 # ---------------------------------------------------------------------------
 # Terrain-class organic abundance lookup table
@@ -450,6 +442,8 @@ def _fill_organic_nan(result: np.ndarray) -> np.ndarray:
     if global_valid.size > 0:
         global_median = float(np.median(global_valid))
         out[~np.isfinite(out)] = global_median
+    else:
+        logger.warning("_fill_organic_nan: input is entirely NaN — returning all-NaN")
 
     return out.astype(np.float32)
 
@@ -2060,7 +2054,8 @@ class FeatureExtractor:
             # Annular signal: pixel is brighter than outer neighbourhood
             # but the outer neighbourhood is darker than the global median.
             # This captures "bright rim around a relatively dark interior."
-            global_median = float(np.nanmedian(sar_norm[np.isfinite(sar_norm)]))
+            _finite_sar = sar_norm[np.isfinite(sar_norm)]
+            global_median = float(np.nanmedian(_finite_sar)) if _finite_sar.size > 0 else 0.0
             annular_signal = np.clip(
                 (inner_mean - outer_mean)         # bright rim vs surroundings
                 * (global_median - outer_mean),   # surroundings darker than median

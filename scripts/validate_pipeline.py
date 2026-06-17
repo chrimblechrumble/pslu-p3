@@ -45,9 +45,12 @@ from typing import Dict, List, Optional, Tuple
 # Constants
 # ---------------------------------------------------------------------------
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from configs.pipeline_config import PipelineConfig
+
 MODES = ["present", "past", "lake_formation", "near_future", "future"]
 
-GRID_SHAPE = (1802, 3603)
+GRID_SHAPE = PipelineConfig().canonical_grid_shape
 GRID_PIXELS = GRID_SHAPE[0] * GRID_SHAPE[1]   # 6,492,606
 
 OUTPUTS_DIR = Path("outputs")

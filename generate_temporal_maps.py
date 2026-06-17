@@ -117,15 +117,26 @@ except ImportError:
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-# --- Physical constants -------------------------------------------------------
+from configs.pipeline_config import (          # canonical physical constants
+    TITAN_RADIUS_M,
+    CANONICAL_CRS_PROJ4,
+    BayesianPriorConfig as _BayesianPriorConfig,
+    PipelineConfig as _PipelineConfig,
+)
+from configs.temporal_config import (
+    TemporalMode as _TemporalMode,
+    get_prior_set as _get_prior_set,
+)
+from configs.site_catalogue import get_coords as _get_coords
 
-TITAN_RADIUS_M:   float = 2_575_000.0
-CANONICAL_RES_M:  float = 4_490.0
+# --- Physical constants (imported from configs.pipeline_config) ---------------
+
+_pipeline_cfg = _PipelineConfig()
+CANONICAL_RES_M: float = _pipeline_cfg.canonical_res_m
+GRID_SHAPE: Tuple[int, int] = _pipeline_cfg.canonical_grid_shape
+
 EUTECTIC_K:       float = 176.0    # water-ammonia eutectic melting point (K)
 T_SURFACE_K:      float = 93.65    # present-day Titan surface temperature (K)
-
-#: Canonical grid size (nrows, ncols)
-GRID_SHAPE: Tuple[int, int] = (1802, 3603)
 
 # --- Polar visualisation parameters -----------------------------------------
 
@@ -342,7 +353,7 @@ GS_BOTTOM: float = 0.500
 #: Feature weights for the MODELLED animation (Bayesian formula).
 #: These differ from temporal_config.py PRESENT_FEATURES weights by -0.02 per feature
 #: because ``impact_melt_bonus`` (weight 0.09) is an animation-only feature that
-#: requires redistribution from the pipeline weights.  The resulting mu0 is 0.281
+#: requires redistribution from the pipeline weights.  The resulting mu0 is 0.299
 #: vs pipeline 0.331 — intentional; checked in diagnose_full_inference.py.
 #:
 #: Animation organic_abundance prior: 0.70 (Malaska 2025; matched to pipeline v5).
@@ -360,21 +371,15 @@ WEIGHTS: Dict[str, float] = {
     "impact_melt_bonus":        0.09,  # SYNTHESISED -- no TIF; zero at PRESENT epoch
 }
 
-#: Bayesian inference parameters
-KAPPA:   float = 5.0    # prior concentration
-LAMBDA:  float = 6.0    # likelihood sharpness
+#: Bayesian inference parameters (from configs.pipeline_config.BayesianPriorConfig)
+_bayesian_cfg = _BayesianPriorConfig()
+KAPPA:   float = _bayesian_cfg.beta_concentration       # prior concentration
+LAMBDA:  float = _bayesian_cfg.likelihood_sharpness      # likelihood sharpness
 
-#: Prior means (present-epoch).
+#: Prior means (present-epoch, from configs.temporal_config PRESENT mode).
 #: ``impact_melt_bonus`` prior is 0.0 because no active impact melts exist today.
 PRIOR_MEANS: Dict[str, float] = {
-    "liquid_hydrocarbon":       0.020,
-    "organic_abundance":        0.700,  # revised: Malaska (2025) + Cable (2012); matched to pipeline v5
-    "acetylene_energy":         0.350,
-    "methane_cycle":            0.400,
-    "surface_atm_interaction":  0.350,
-    "topographic_complexity":   0.250,
-    "geomorphologic_diversity": 0.300,
-    "subsurface_ocean":         0.030,
+    **_get_prior_set(_TemporalMode.PRESENT).as_mean_dict(),
     "impact_melt_bonus":        0.000,  # SYNTHESISED; 0 at present by design
 }
 
@@ -389,7 +394,7 @@ VMIN, VMAX = 0.10, 0.75
 
 def make_epoch_axis(n_limit: Optional[int] = None) -> np.ndarray:
     """
-    Build the 72-point epoch axis, denser near key geological transitions.
+    Build the 74-point epoch axis, denser near key geological transitions.
 
     Segments are denser near:
       - LHB peak (-3.8 Gya)
@@ -412,9 +417,12 @@ def make_epoch_axis(n_limit: Optional[int] = None) -> np.ndarray:
     """
     segs = [
         np.linspace(-3.80, -3.00,  5),   # LHB -> early decline
+        np.array([-3.500]),              # Past anchor (exact)
         np.linspace(-3.00, -1.50,  8),   # early Titan
+        np.array([-1.000]),              # Lake-formation anchor (exact)
         np.linspace(-1.50, -0.40, 12),   # lake formation -- dense
         np.linspace(-0.40,  0.10,  8),   # near-present -- very dense
+        np.array([0.000]),               # Present anchor (exact)
         np.array([0.250]),               # D2 near-future anchor (exact)
         np.linspace( 0.10,  2.00,  8),   # near future
         np.linspace( 2.00,  3.80,  6),   # mid future
@@ -443,7 +451,7 @@ TRANSITION_EVENTS: List[Tuple[float, float, str]] = [
     (-0.50, 2.5,
      "POLAR LAKES ESTABLISHED  (-0.5 Gya)  |  Kraken, Ligeia and Punga Mare fully formed\n"
      "Methane cycle penalty lifts. Lake-margin vesicle formation clock starts (Mayer & Nixon 2025).\n"
-     "North polar shores (#1 Freeman, #2 Oib) now score highest on Titan."),
+     "North polar shores (#1 Towada, #2 Müggel) now score highest on Titan."),
 
     ( 0.00, 3.5,
      "PRESENT EPOCH  (Cassini 2004–2017)  |  Calibration anchor\n"
@@ -944,10 +952,7 @@ def bayesian_posterior_map(
 
 # --- GeoTIFF writer ----------------------------------------------------------
 
-TITAN_CRS_PROJ4: str = (
-    "+proj=eqc +a=2575000 +b=2575000 +units=m +no_defs "
-    "+lon_0=0 +lat_ts=0"
-)
+TITAN_CRS_PROJ4: str = CANONICAL_CRS_PROJ4
 
 def canonical_transform() -> "rasterio.transform.Affine":
     """
@@ -1160,7 +1165,7 @@ CANDIDATE_SITES: List[Dict] = [
      "f": {"liquid_hydrocarbon":1.00,"organic_abundance":0.05,"acetylene_energy":0.20,
            "methane_cycle":0.70,"surface_atm_interaction":0.65,"topographic_complexity":0.60,
            "geomorphologic_diversity":0.76,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W":  78.0, "lat":  79.0, "label": "Ligeia E",    "type": "lake",
+    {"lon_W":  82.0, "lat":  79.0, "label": "Ligeia E",    "type": "lake",
      "f": {"liquid_hydrocarbon":1.00,"organic_abundance":0.05,"acetylene_energy":0.20,
            "methane_cycle":0.70,"surface_atm_interaction":0.62,"topographic_complexity":0.55,
            "geomorphologic_diversity":0.76,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
@@ -1176,12 +1181,12 @@ CANDIDATE_SITES: List[Dict] = [
      "f": {"liquid_hydrocarbon":0.85,"organic_abundance":0.08,"acetylene_energy":0.22,
            "methane_cycle":0.45,"surface_atm_interaction":0.48,"topographic_complexity":0.42,
            "geomorphologic_diversity":0.60,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W": 336.3, "lat":  73.0, "label": "Jingpo",      "type": "lake",
+    {"lon_W": 336.00, "lat":  73.00, "label": "Jingpo",      "type": "lake",
      "f": {"liquid_hydrocarbon":0.88,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.62,"surface_atm_interaction":0.52,"topographic_complexity":0.40,
            "geomorphologic_diversity":0.60,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
     # -- Equatorial dune / organic land sites (low sensitivity) ------------
-    {"lon_W": 250.0, "lat":   7.0, "label": "Belet",       "type": "land",
+    {"lon_W": 250.0, "lat":   5.0, "label": "Belet",       "type": "land",
      "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.82,"acetylene_energy":0.45,
            "methane_cycle":0.09,"surface_atm_interaction":0.09,"topographic_complexity":0.55,
            "geomorphologic_diversity":0.09,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
@@ -1211,11 +1216,11 @@ CANDIDATE_SITES: List[Dict] = [
      "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.30,"acetylene_energy":0.38,
            "methane_cycle":0.08,"surface_atm_interaction":0.08,"topographic_complexity":0.18,
            "geomorphologic_diversity":0.55,"subsurface_ocean":0.22,"impact_melt_bonus":1.00}},
-    {"lon_W": 349.0, "lat": -38.6, "label": "Hano",        "type": "land",
+    {"lon_W": 345.0, "lat":  40.5, "label": "Hano",        "type": "land",
      "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.42,"acetylene_energy":0.35,
            "methane_cycle":0.08,"surface_atm_interaction":0.10,"topographic_complexity":0.16,
            "geomorphologic_diversity":0.40,"subsurface_ocean":0.08,"impact_melt_bonus":0.65}},
-    {"lon_W": 200.5, "lat":  -1.4, "label": "Afekan",      "type": "land",
+    {"lon_W": 200.3, "lat":  26.0, "label": "Afekan",      "type": "land",
      "f": {"liquid_hydrocarbon":0.02,"organic_abundance":0.35,"acetylene_energy":0.36,
            "methane_cycle":0.08,"surface_atm_interaction":0.08,"topographic_complexity":0.15,
            "geomorphologic_diversity":0.38,"subsurface_ocean":0.09,"impact_melt_bonus":0.70}},
@@ -1231,83 +1236,83 @@ CANDIDATE_SITES: List[Dict] = [
     #    main mares but confirmed by Cassini RADAR/VIMS).  Feature profiles
     #    reflect smaller liquid area (f1 0.65-0.80), moderate shoreline
     #    geodiversity, and standard north-polar methane cycle. --------------
-    {"lon_W": 154.0, "lat":  73.0, "label": "Koitere",     "type": "lake",
+    {"lon_W":  36.14, "lat":  79.40, "label": "Koitere",     "type": "lake",
      "f": {"liquid_hydrocarbon":0.72,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.58,"surface_atm_interaction":0.48,"topographic_complexity":0.38,
            "geomorphologic_diversity":0.55,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W":  93.5, "lat":  70.7, "label": "Hammar",      "type": "lake",
+    {"lon_W": 105.20, "lat":  71.50, "label": "Rwegura",     "type": "lake",
      "f": {"liquid_hydrocarbon":0.68,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.56,"surface_atm_interaction":0.46,"topographic_complexity":0.36,
            "geomorphologic_diversity":0.52,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W": 327.0, "lat":  72.0, "label": "Neagh",       "type": "lake",
+    {"lon_W":  32.16, "lat":  81.11, "label": "Neagh",       "type": "lake",
      "f": {"liquid_hydrocarbon":0.70,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.58,"surface_atm_interaction":0.50,"topographic_complexity":0.40,
            "geomorphologic_diversity":0.54,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W": 262.8, "lat":  77.5, "label": "Mackay",      "type": "lake",
+    {"lon_W":  97.53, "lat":  78.32, "label": "Mackay",      "type": "lake",
      "f": {"liquid_hydrocarbon":0.80,"organic_abundance":0.05,"acetylene_energy":0.18,
            "methane_cycle":0.60,"surface_atm_interaction":0.52,"topographic_complexity":0.42,
            "geomorphologic_diversity":0.58,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W": 262.0, "lat":  74.5, "label": "Uvs",         "type": "lake",
+    {"lon_W": 245.70, "lat":  69.60, "label": "Uvs",         "type": "lake",
      "f": {"liquid_hydrocarbon":0.65,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.55,"surface_atm_interaction":0.44,"topographic_complexity":0.35,
            "geomorphologic_diversity":0.50,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W":  12.3, "lat":  75.4, "label": "Bolsena",     "type": "lake",
+    {"lon_W":  10.28, "lat":  75.75, "label": "Bolsena",     "type": "lake",
      "f": {"liquid_hydrocarbon":0.68,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.57,"surface_atm_interaction":0.46,"topographic_complexity":0.37,
            "geomorphologic_diversity":0.52,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W": 254.0, "lat":  65.5, "label": "Kivu",        "type": "lake",
+    {"lon_W": 121.0, "lat":  87.0, "label": "Kivu",        "type": "lake",
      "f": {"liquid_hydrocarbon":0.60,"organic_abundance":0.07,"acetylene_energy":0.20,
            "methane_cycle":0.48,"surface_atm_interaction":0.40,"topographic_complexity":0.35,
            "geomorphologic_diversity":0.48,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
 
     # -- Additional named lacus (completing the IAU catalog) -----------------
-    # Freeman, Oib: north of Ligeia Mare (~210-220W, 82-83N)
-    {"lon_W": 210.0, "lat":  83.0, "label": "Freeman",    "type": "lake",
+    # Freeman, Muggel: north polar lacus (IAU positions)
+    {"lon_W": 211.10, "lat":  73.60, "label": "Freeman",    "type": "lake",
      "f": {"liquid_hydrocarbon":0.80,"organic_abundance":0.05,"acetylene_energy":0.18,
            "methane_cycle":0.62,"surface_atm_interaction":0.52,"topographic_complexity":0.42,
            "geomorphologic_diversity":0.60,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W": 220.0, "lat":  82.0, "label": "Oib",         "type": "lake",
+    {"lon_W": 203.50, "lat":  84.44, "label": "Muggel",      "type": "lake",
      "f": {"liquid_hydrocarbon":0.65,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.58,"surface_atm_interaction":0.46,"topographic_complexity":0.36,
            "geomorphologic_diversity":0.52,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    # Cardiel, Towada: east of Ligeia (~118-128W, 77-78N)
-    {"lon_W": 128.0, "lat":  78.0, "label": "Cardiel",     "type": "lake",
+    # Arala, Towada: north polar lacus (IAU positions)
+    {"lon_W": 124.90, "lat":  78.10, "label": "Arala",       "type": "lake",
      "f": {"liquid_hydrocarbon":0.78,"organic_abundance":0.05,"acetylene_energy":0.18,
            "methane_cycle":0.60,"surface_atm_interaction":0.50,"topographic_complexity":0.40,
            "geomorphologic_diversity":0.58,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W": 118.0, "lat":  77.5, "label": "Towada",      "type": "lake",
+    {"lon_W": 244.2, "lat":  71.4, "label": "Towada",      "type": "lake",
      "f": {"liquid_hydrocarbon":0.65,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.57,"surface_atm_interaction":0.46,"topographic_complexity":0.36,
            "geomorphologic_diversity":0.52,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
     # Waikare, Logtak: west/southwest of Ligeia (~185-198W, 74-75N)
-    {"lon_W": 185.0, "lat":  75.0, "label": "Waikare",     "type": "lake",
+    {"lon_W": 126.00, "lat":  81.60, "label": "Waikare",     "type": "lake",
      "f": {"liquid_hydrocarbon":0.70,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.56,"surface_atm_interaction":0.46,"topographic_complexity":0.36,
            "geomorphologic_diversity":0.52,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W": 197.5, "lat":  74.0, "label": "Logtak",      "type": "lake",
+    {"lon_W": 226.10, "lat":  70.80, "label": "Logtak",      "type": "lake",
      "f": {"liquid_hydrocarbon":0.65,"organic_abundance":0.06,"acetylene_energy":0.18,
            "methane_cycle":0.55,"surface_atm_interaction":0.44,"topographic_complexity":0.35,
            "geomorphologic_diversity":0.50,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    # Paxsi, Romo: western north polar small lacus
-    {"lon_W": 243.0, "lat":  72.0, "label": "Paxsi",       "type": "lake",
+    # Enriquillo, Atitlan: western north polar small lacus (IAU positions)
+    {"lon_W": 237.59, "lat":  71.40, "label": "Enriquillo",  "type": "lake",
      "f": {"liquid_hydrocarbon":0.60,"organic_abundance":0.07,"acetylene_energy":0.18,
            "methane_cycle":0.52,"surface_atm_interaction":0.42,"topographic_complexity":0.33,
            "geomorphologic_diversity":0.48,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
-    {"lon_W": 265.0, "lat":  70.0, "label": "Romo",        "type": "lake",
+    {"lon_W": 238.80, "lat":  69.30, "label": "Atitlan",     "type": "lake",
      "f": {"liquid_hydrocarbon":0.55,"organic_abundance":0.07,"acetylene_energy":0.20,
            "methane_cycle":0.50,"surface_atm_interaction":0.40,"topographic_complexity":0.32,
            "geomorphologic_diversity":0.46,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
     # Crveno: southern hemisphere, near Ontario (~177W, 70.5S)
-    {"lon_W": 177.0, "lat": -70.5, "label": "Crveno",      "type": "lake",
+    {"lon_W": 184.91, "lat": -79.55, "label": "Crveno",      "type": "lake",
      "f": {"liquid_hydrocarbon":0.55,"organic_abundance":0.08,"acetylene_energy":0.22,
            "methane_cycle":0.38,"surface_atm_interaction":0.40,"topographic_complexity":0.32,
            "geomorphologic_diversity":0.45,"subsurface_ocean":0.04,"impact_melt_bonus":0.30}},
     # Urmia, Sionascaig: southern temperate lacus (small, low methane cycle)
-    {"lon_W": 186.0, "lat": -52.0, "label": "Urmia",       "type": "lake",
+    {"lon_W": 276.55, "lat": -39.27, "label": "Urmia",       "type": "lake",
      "f": {"liquid_hydrocarbon":0.45,"organic_abundance":0.12,"acetylene_energy":0.30,
            "methane_cycle":0.22,"surface_atm_interaction":0.32,"topographic_complexity":0.28,
            "geomorphologic_diversity":0.38,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
-    {"lon_W": 278.1, "lat": -41.5, "label": "Sionascaig",  "type": "lake",
+    {"lon_W": 278.12, "lat": -41.52, "label": "Sionascaig",  "type": "lake",
      "f": {"liquid_hydrocarbon":0.40,"organic_abundance":0.14,"acetylene_energy":0.32,
            "methane_cycle":0.18,"surface_atm_interaction":0.28,"topographic_complexity":0.26,
            "geomorphologic_diversity":0.35,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
@@ -1322,6 +1327,26 @@ CANDIDATE_SITES: List[Dict] = [
            "methane_cycle":0.09,"surface_atm_interaction":0.08,"topographic_complexity":0.14,
            "geomorphologic_diversity":0.20,"subsurface_ocean":0.03,"impact_melt_bonus":0.30}},
 ]
+
+# --- Validate CANDIDATE_SITES coordinates against configs.site_catalogue ------
+# Coordinates in CANDIDATE_SITES were originally chosen to match the catalogue.
+# This block warns at import time if any site drifts beyond 1 deg tolerance,
+# without restructuring the complex per-site feature dicts.
+import warnings as _warnings
+for _site in CANDIDATE_SITES:
+    _label = _site["label"]
+    try:
+        _cat_lon, _cat_lat = _get_coords(_label)
+        if abs(_site["lon_W"] - _cat_lon) > 1.0 or abs(_site["lat"] - _cat_lat) > 1.0:
+            _warnings.warn(
+                f"CANDIDATE_SITES coordinate mismatch for '{_label}': "
+                f"local ({_site['lon_W']}, {_site['lat']}), "
+                f"catalogue ({_cat_lon}, {_cat_lat})",
+                stacklevel=1,
+            )
+    except KeyError:
+        pass  # site not in catalogue (e.g. Kivu, Towada, Romo) -- skip
+del _site, _label, _warnings  # clean up module namespace
 
 
 def _site_ph(site: Dict, t: float) -> float:
@@ -3045,6 +3070,14 @@ def _run_animation_modelled(
     import matplotlib.pyplot as plt
 
     print(f"Rendering MODELLED animation ({len(epochs)} frames)...")
+    print(
+        "  *** NOTE: MODELLED mode does NOT match the thesis posteriors. ***\n"
+        f"  It uses animation-only weights (mu0={sum(PRIOR_MEANS[k]*WEIGHTS[k] for k in WEIGHTS):.3f}) "
+        "with a synthesised 'impact_melt_bonus' feature (w=0.09);\n"
+        "  each standard weight is reduced ~0.02 from the pipeline values, so the\n"
+        "  global prior mean differs from the thesis mu0=0.331. For thesis-\n"
+        "  consistent output use --inference-mode full_inference (the default)."
+    )
     if using_synthetic:
         print("  *** WARNING: SYNTHETIC DATA IN USE ***  see log above.")
 
@@ -3569,13 +3602,14 @@ def main(args: argparse.Namespace) -> None:
     print("=" * 72)
     print("  QGIS-LTR IMPORT GUIDE")
     print("=" * 72)
-    print("""
+    _r = f"{TITAN_RADIUS_M:.0f}"
+    print(f"""
   +- SET PROJECT CRS -------------------------------------------------------+
   | 1. Project -> Properties -> CRS                                         |
   | 2. Search: 'titan'  -- if not found, click '+ Add'                      |
   | 3. Paste this PROJ4 string as the custom CRS:                           |
   |                                                                         |
-  |    +proj=eqc +a=2575000 +b=2575000 +units=m +no_defs +lon_0=0           |
+  |    +proj=eqc +a={_r} +b={_r} +units=m +no_defs +lon_0=0           |
   |                                                                         |
   | 4. Name it "Titan_2000_Equirectangular" and save.                       |
   +-------------------------------------------------------------------------+
@@ -3597,7 +3631,7 @@ def main(args: argparse.Namespace) -> None:
   |                                                                         |
   | Method B -- Orthographic projection:                                    |
   |   Project -> Properties -> CRS -> search "ortho"                        |
-  |   Custom CRS: +proj=ortho +a=2575000 +b=2575000 +lat_0=30 +lon_0=180    |
+  |   Custom CRS: +proj=ortho +a={_r} +b={_r} +lat_0=30 +lon_0=180    |
   |   Adjust lat_0 and lon_0 to set the centre of the globe view.           |
   |   The raster layer must be loaded first; QGIS will reproject on-the-fly.|
   +-------------------------------------------------------------------------+
@@ -3606,10 +3640,10 @@ def main(args: argparse.Namespace) -> None:
   | 1. Project -> Properties -> CRS -> Custom CRS                           |
   |                                                                         |
   |   North polar:                                                          |
-  |   +proj=stere +a=2575000 +b=2575000 +lat_0=90 +lon_0=0 +k=1 +units=m    |
+  |   +proj=stere +a={_r} +b={_r} +lat_0=90 +lon_0=0 +k=1 +units=m    |
   |                                                                         |
   |   South polar:                                                          |
-  |   +proj=stere +a=2575000 +b=2575000 +lat_0=-90 +lon_0=0 +k=1 +units=m   |
+  |   +proj=stere +a={_r} +b={_r} +lat_0=-90 +lon_0=0 +k=1 +units=m   |
   |                                                                         |
   | 2. QGIS will reproject the equirectangular raster on-the-fly.           |
   | 3. Zoom to extent of the layer to see the polar cap.                    |
@@ -3675,11 +3709,13 @@ if __name__ == "__main__":
                    help="Animation frame DPI (default: 120)")
     p.add_argument(
         "--inference-mode",
-        default="modelled",
+        default="full_inference",
         choices=["modelled", "full_inference"],
         help=(
-            "Video generation mode (default: modelled).\n"
-            "  modelled       -- current behaviour: scalar-scaling of present-epoch\n"
+            "Video generation mode (default: full_inference -- matches the thesis\n"
+            "Beta-conjugate posteriors; falls back to modelled automatically if the\n"
+            "run_pipeline anchor posteriors are not found).\n"
+            "  modelled       -- standalone: scalar-scaling of present-epoch\n"
             "                    feature TIFs propagates across all epochs.\n"
             "                    Produces outputs/temporal_maps/animation/.\n"
             "  full_inference -- five pipeline-anchor posteriors (past, lake_formation,\n"

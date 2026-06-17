@@ -100,8 +100,10 @@ sys.path.insert(0, '.')
 # Constants
 # ---------------------------------------------------------------------------
 
-TITAN_RADIUS_M       = 2_575_000.0
-GRID_SHAPE           = (1802, 3603)       # canonical posterior grid (h, w)
+from configs.pipeline_config import PipelineConfig, TITAN_RADIUS_M
+from configs.site_catalogue import get_coords as _get_coords
+
+GRID_SHAPE           = PipelineConfig().canonical_grid_shape
 WATER_AMMONIA_EUTECTIC_K = 176.0          # K -- 32% NH3 solution melting point
 T_SURFACE_PRESENT_K  = 93.65
 
@@ -125,20 +127,24 @@ ANCHOR_EPOCH_LIST: list[float] = [v[0] for v in ANCHOR_CONFIGS.values()]
 # Locations
 # ---------------------------------------------------------------------------
 
+def _loc(catalogue_name, display_name, short_label):
+    lon_W, lat = _get_coords(catalogue_name)
+    return (display_name, lon_W, lat, short_label)
+
 LOCATIONS: list[tuple[str, float, float, str]] = [
     # (name, lon_W_deg, lat_deg, short_label)
-    # Top 5 from definitive VIMS-blended rankings
-    ("Freeman Lacus",    210.0,  83.0,  "Freeman"),
-    ("Oib Lacus",        220.0,  82.0,  "Oib"),
-    ("Koitere Lacus",    154.0,  73.0,  "Koitere"),
-    ("Ontario Lacus",    179.0, -72.0,  "Ontario"),
-    ("Ligeia E shore",    82.0,  79.0,  "Ligeia E"),
+    # Top 5 from definitive VIMS-blended rankings (post lake-registration fix)
+    _loc("Towada",     "Towada Lacus",     "Towada"),
+    _loc("Muggel",     "Müggel Lacus",     "Müggel"),
+    _loc("Logtak",     "Logtak Lacus",     "Logtak"),
+    _loc("Rwegura",    "Rwegura Lacus",    "Rwegura"),
+    _loc("Uvs",        "Uvs Lacus",        "Uvs"),
     # Key comparison sites
-    ("Selk crater",      199.0,   7.0,  "Selk"),
-    ("Huygens site",     192.3, -10.6,  "Huygens"),
-    ("Belet dunes",      250.0,   5.0,  "Belet"),
-    ("Shangri-La dunes", 155.0,  -5.0,  "Shangri-La"),
-    ("Xanadu",           100.0,  -5.0,  "Xanadu"),
+    _loc("Selk",       "Selk crater",      "Selk"),
+    _loc("Huygens",    "Huygens site",     "Huygens"),
+    _loc("Belet",      "Belet dunes",      "Belet"),
+    _loc("Shangri-La", "Shangri-La dunes", "Shangri-La"),
+    _loc("Xanadu",     "Xanadu",           "Xanadu"),
 ]
 
 # ---------------------------------------------------------------------------
@@ -293,7 +299,13 @@ def build_site_pchip(
             [anchor_values[n][name] for n in anchor_names_ordered],
             dtype=np.float64
         )
-        interps[name] = PchipInterpolator(t_anchors, y_anchors, extrapolate=False)
+        valid = np.isfinite(y_anchors)
+        if valid.sum() < 2:
+            interps[name] = None
+            continue
+        interps[name] = PchipInterpolator(
+            t_anchors[valid], y_anchors[valid], extrapolate=False
+        )
 
     return interps
 
@@ -373,7 +385,9 @@ def compute_all_epochs(
         fut_val     = future_anchor_vals[name]   # P(H) at +5.9 Gya
 
         for i, t in enumerate(EPOCHS):
-            if t_lo <= t <= t_hi:
+            if pchip is None:
+                means[i, j] = np.nan
+            elif t_lo <= t <= t_hi:
                 # PCHIP interpolation between the five anchor posteriors.
                 # At the five exact anchor epochs this returns the sampled
                 # value directly (PCHIP passes through its knots).

@@ -7,7 +7,7 @@
 \section{Overview of the Analytical Approach}
 \label{sec:overview}
 
-The framework proceeds in four stages: (1) extraction of eight habitability-proxy features from the Cassini observational archive (Section~\ref{sec:features}); (2) Bayesian conjugate updating to produce a posterior habitability probability map at each epoch (Section~\ref{sec:bayes}); (3) temporal scaling of features across five anchor epochs and 72 intermediate geological epochs from $-3.8\gya$ to $+6.5\gya$ (Sections~\ref{sec:temporal_configs}--\ref{sec:multi_epoch}); and (4) ranking of named surface sites by posterior probability.  The posterior is evaluated at every pixel of the canonical equirectangular grid, producing global maps at each epoch from which habitable-zone boundaries, site rankings, and temporal trajectories can be extracted.  Acronyms, notation, and the full data-source catalogue are defined in Appendix~\ref{app:notation}.
+The framework proceeds in four stages: (1) extraction of eight habitability-proxy features from the Cassini observational archive (Section~\ref{sec:features}); (2) Bayesian conjugate updating to produce a posterior habitability probability map at each epoch (Section~\ref{sec:bayes}); (3) temporal scaling of features across five anchor epochs and 74 intermediate geological epochs from $-3.8\gya$ to $+6.5\gya$ (Sections~\ref{sec:temporal_configs}--\ref{sec:multi_epoch}); and (4) ranking of named surface sites by posterior probability.  The posterior is evaluated at every pixel of the canonical equirectangular grid, producing global maps at each epoch from which habitable-zone boundaries, site rankings, and temporal trajectories can be extracted.  Acronyms, notation, and the full data-source catalogue are defined in Appendix~\ref{app:notation}.
 
 The analysis is applied at \SI{4490}{\metre\per\text{px}} resolution on a
 canonical equirectangular grid covering the full globe (1802 pixels in
@@ -251,7 +251,7 @@ The likelihood sharpness $\lambda = 6$ sets the total weight of data relative to
     site's weighted feature sum $\sum_i w_i f_i$ departs from the prior
     mean.  Polar lake shores (cyan) shift markedly right; the equatorial
     crater (red) shifts left; the dune sea (amber) remains near the prior.
-    95\% HDI values are given in the legend.}
+    95\% CI values are given in the legend.}
   \label{fig:bayes_update}
 \end{figure}
 
@@ -279,33 +279,35 @@ The full posterior probability density over $h \in [0,1]$ at pixel $(x, y)$ is t
 \end{equation}
 Since $\alpha_\text{post} + \beta_\text{post} = 11$ is constant, the leading factor simplifies to $\Gamma(11) = 10! = 3{,}628{,}800$ divided by the product of two gamma functions that vary per pixel.  The posterior is a more concentrated (narrower) Beta distribution than the prior, shifted left or right depending on whether the weighted feature sum $\sum_i w_i f_i(x,y)$ falls below or above the prior mean.  The prior density (Eq.~\ref{eq:prior_pdf}) and the posterior density (Eq.~\ref{eq:posterior_pdf}) have the same functional form --- both are Beta distributions --- differing only in their shape parameters.  This is the defining property of conjugacy: the prior and posterior belong to the same distributional family, and the update reduces to adding pseudo-counts to the shape parameters.
 
-As a worked example, at Freeman Lacus $(x, y) = (210.0\text{\textdegree{}W},\,83.0\text{\textdegree{}N})$, the weighted feature sum is $\sum_i w_i f_i = 0.754$.  The posterior shape parameters are:
+As a worked example, at Towada Lacus $(x, y) = (244.2\text{\textdegree{}W},\,71.4\text{\textdegree{}N})$, the site-averaged weighted feature sum is $\sum_i w_i f_i = 0.775$ (averaged over a $3\times3$ pixel neighbourhood, matching the site-scoring convention used in Chapter~\ref{ch:results}).  The posterior shape parameters are:
 \begin{align*}
-  \alpha_\text{post} &= 1.653 + 6 \times 0.754 = 6.174 \\
-  \beta_\text{post}  &= 3.347 + 6 \times (1 - 0.754) = 4.826
+  \alpha_\text{post} &= 1.653 + 6 \times 0.775 = 6.303 \\
+  \beta_\text{post}  &= 3.347 + 6 \times (1 - 0.775) = 4.697
 \end{align*}
-and the full posterior density at this pixel is:
+and the full posterior density at this site is:
 \begin{equation}
-  p(h \mid \featurevec_\text{Freeman})
-  = \frac{3{,}628{,}800}{\Gamma(6.174)\;\Gamma(4.826)}\;
-    h^{\,5.174}\,(1 - h)^{\,3.826}
-  \label{eq:posterior_freeman}
+  p(h \mid \featurevec_\text{Towada})
+  = \frac{3{,}628{,}800}{\Gamma(6.303)\;\Gamma(4.697)}\;
+    h^{\,5.303}\,(1 - h)^{\,3.697}
+  \label{eq:posterior_towada}
 \end{equation}
-with posterior mean $P(H) = 6.174/11 = 0.561$ and 95\% HDI $[0.28,\,0.82]$.
+with posterior mean $P(H) = 6.303/11 = 0.573$ and 95\% CI $[0.29,\,0.83]$.
 
 The posterior mean --- the primary habitability score reported at each pixel --- is:
 \begin{equation}
   P\bigl(H \mid \featurevec(x,y)\bigr)
   = \frac{\alpha_\text{post}(x,y)}{\alpha_\text{post}(x,y) + \beta_\text{post}(x,y)}
-  = \frac{1.655 + 6{\displaystyle\sum_i} w_i f_i(x,y)}{11}
+  = \frac{\kappa\mu_0 + \lambda{\displaystyle\sum_i} w_i f_i(x,y)}{\kappa + \lambda}
+  = \frac{5\mu_0 + 6{\displaystyle\sum_i} w_i f_i(x,y)}{11}
   \label{eq:posterior_mean}
 \end{equation}
-This is a convex combination of the prior mean $\mu_0$ (weight $5/11$) and the data-driven score $\sum_i w_i f_i$ (weight $6/11$).  A 95\% highest-density interval (HDI) is computed at each pixel from the posterior Beta distribution, providing a credible interval that encompasses the central 95\% of posterior probability mass in the narrowest possible range.  Because the Beta distribution is fully characterised by its two shape parameters, which are simple sums of prior and data contributions, the HDI can be computed analytically without sampling.  Since $\alpha_\text{post} + \beta_\text{post} = \kappa + \lambda = 11$ is constant regardless of the data (reflecting the fixed total number of virtual observations), the posterior mean satisfies hard bounds determined solely by the model parameters.  When all features are zero ($\featurevec = \mathbf{0}$, the minimum possible data), the posterior reverts to the prior floor; when all are unity ($\featurevec = \mathbf{1}$, the maximum possible), the posterior reaches the ceiling:
+This is a convex combination of the prior mean $\mu_0$ (weight $5/11$) and the data-driven score $\sum_i w_i f_i$ (weight $6/11$).  For the Present epoch, $\mu_0 = 0.331$, giving a numerator contribution of $5 \times 0.331 = 1.655$; other epochs use their own $\mu_0$ (Section~\ref{sec:temporal_configs}).  A 95\% equal-tailed credible interval (CI) is computed at each pixel from the posterior Beta distribution, providing the interval between the 2.5th and 97.5th percentiles of the posterior density.  Because the Beta distribution is fully characterised by its two shape parameters, which are simple sums of prior and data contributions, the CI can be computed analytically without sampling.  Since $\alpha_\text{post} + \beta_\text{post} = \kappa + \lambda = 11$ is constant regardless of the data (reflecting the fixed total number of virtual observations), the posterior mean satisfies hard bounds determined solely by the model parameters.  When all features are zero ($\featurevec = \mathbf{0}$, the minimum possible data), the posterior reverts to the prior floor; when all are unity ($\featurevec = \mathbf{1}$, the maximum possible), the posterior reaches the ceiling:
 \begin{equation}
-  P_\text{min} = \frac{\alpha_0}{11} \approx 0.150, \qquad
-  P_\text{max} = \frac{\alpha_0 + \lambda}{11} \approx 0.696
+  P_\text{min} = \frac{\kappa\mu_0}{\kappa + \lambda}, \qquad
+  P_\text{max} = \frac{\kappa\mu_0 + \lambda}{\kappa + \lambda}
   \label{eq:bounds}
 \end{equation}
+For the Present epoch ($\mu_0 = 0.331$), these evaluate to $P_\text{min} \approx 0.150$ and $P_\text{max} \approx 0.696$.  The Future epoch ($\mu_0 = 0.695$) yields $P_\text{min} \approx 0.316$ and $P_\text{max} \approx 0.861$, reflecting the stronger prior expectation of habitability in an ocean world.
 
 \begin{figure}[H]
   \centering
@@ -313,8 +315,9 @@ This is a convex combination of the prior mean $\mu_0$ (weight $5/11$) and the d
   \caption{Beta prior-to-posterior update for three representative sites.
     Each curve shows the Beta distribution after
     incorporating successive features, from the prior (dashed) through to
-    the 8-feature posterior (solid).  Shaded region = 95\% HDI of the final
-    posterior.}
+    the full posterior (solid); shown here for the Present epoch's 8 features.
+    Past and Lake Formation epochs use 9 features.  Shaded region = 95\% CI of
+    the final posterior.}
   \label{fig:beta_update}
 \end{figure}
 
@@ -338,7 +341,7 @@ To assess which features provide the strongest geographic discrimination in the 
 \subsection{Design Philosophy}
 \label{sec:temporal_design}
 
-The habitability framework is applied at five distinct temporal configurations, each representing a qualitatively different physical state of \titan{}.  At each anchor epoch, the eight features are given physically motivated epoch-specific scale functions (Table~\ref{tab:scale_funcs}).
+The habitability framework is applied at five distinct temporal configurations, each representing a qualitatively different physical state of \titan{}.  The \textit{Present} and \textit{Near Future} epochs use the eight features described above.  The \textit{Past} and \textit{Lake Formation} epochs add two features --- impact-melt proximity and cryovolcanic flux --- giving nine features with adjusted weights and prior means reflecting the different physical conditions.  The \textit{Future} epoch uses a transformed 8-feature set in which hydrocarbon-specific features are replaced by water--ammonia analogs (e.g.\ water--ammonia solvent availability replaces liquid hydrocarbon), with a substantially higher prior mean ($\mu_0 = 0.695$) reflecting the physically motivated expectation that a warm global ocean represents a more habitable state.  At each anchor epoch, the features are given physically motivated epoch-specific scale functions for the temporal reconstruction (Table~\ref{tab:scale_funcs}).
 
 The specific epoch dates are determined by physical events:
 
@@ -355,7 +358,7 @@ All features at directly measured Cassini values; no temporal scaling applied.  
 Solar luminosity rises from $+1.4\%$ to $\sim+6\%$ above present across this window \citep{Bahcall2001}, corresponding to surface temperature increases of $\sim$1--5\,K --- entirely absorbed by the model and producing no spatially structured change in any feature.  The representative animation frame is drawn from $+1.19\,\gya$ within the plateau; this epoch and all intermediate epochs within the window are functionally equivalent for habitability purposes.  The spatial correlation between any two epochs in this range exceeds $r = 0.999$; all rankings are preserved.  This demonstrates that \titan{}'s lake--organic habitability system is robust to main-sequence solar evolution over at least $\sim$1\,Gyr.
 
 \paragraph{\textit{Future} ($+5.9\gya$).}
-Red-giant ocean peak at $T_s\approx466$\,K, well above the water--ammonia eutectic at all latitudes.  Both $f_1$ (liquid availability) and $f_8$ (subsurface ocean proximity) are overridden to 1.0 globally, reflecting the global ocean.  Organic accumulation reaches $2.5\times$ present after $\sim$10\,Gyr of UV photolysis.  The methane cycle ($f_4$) is suppressed (the hydrocarbon is replaced by a water cycle) and acetylene photochemistry ($f_3$) is reduced under the water--ammonia atmosphere because UV penetration is inhibited.  The ocean window spans $+5.1$ to $+6.0\gya$ ($\sim$0.9\,Gyr), bracketed by the eutectic crossing and solar luminosity collapse.
+Red-giant ocean peak at $T_s\approx466$\,K, well above the water--ammonia eutectic at all latitudes.  The transformed feature set replaces liquid hydrocarbon with water--ammonia solvent availability ($w=0.30$), organic abundance with organic stockpile ($w=0.20$), acetylene energy with dissolved chemical energy ($w=0.15$), methane cycle with water--ammonia cycle ($w=0.10$), and subsurface ocean with global ocean habitability ($w=0.05$); the remaining three features (surface--atmosphere, topographic complexity, geomorphological diversity) are retained with adjusted weights.  The resulting prior mean $\mu_0 = 0.695$ gives posterior bounds $[0.316,\,0.861]$, reflecting the strong prior expectation that a warm global water--ammonia ocean is substantially more habitable than the present cryogenic hydrocarbon system.  Organic accumulation reaches its maximum after $\sim$10\,Gyr of UV photolysis.  The ocean window spans $+5.1$ to $+6.0\gya$ ($\sim$0.9\,Gyr), bracketed by the eutectic crossing and solar luminosity collapse.
 
 \section{Multi-Epoch Habitability Reconstruction}
 \label{sec:multi_epoch}
@@ -363,12 +366,12 @@ Red-giant ocean peak at $T_s\approx466$\,K, well above the water--ammonia eutect
 \subsection{Temporal Scaling of Features}
 \label{sec:epoch_scaling}
 
-The multi-epoch reconstruction applies epoch-specific scale functions to the present-epoch feature maps:
+The multi-epoch reconstruction uses two complementary models.  At the five anchor epochs (Past, Lake Formation, Present, Near Future, Future), the pipeline computes posteriors directly using epoch-specific feature sets, weights, and prior means (Section~\ref{sec:temporal_configs}).  Between anchor epochs, the reconstruction applies continuous scale functions to the present-epoch feature maps to generate intermediate frames:
 \begin{equation}
   f_i(t) = \text{clip}\bigl[\,s_i(t)\cdot f_i(0),\;0,\;1\bigr]
   \label{eq:temporal_scale}
 \end{equation}
-where $s_i(t)$ is the scale multiplier for feature $i$ at epoch $t$ (Table~\ref{tab:scale_funcs}).  Two time constants appear in the scale functions: $t_\odot = 4.57\gya$, the current age of the Sun \citep{Bahcall2001}, which governs UV-dependent features ($s_3$, $s_1$ at red-giant epochs); and $t_\text{atm} = 4.0\,\text{Gyr}$, the estimated duration of active tholin photochemistry in \titan{}'s atmosphere, which governs organic accumulation ($s_2$).  The posterior is evaluated at each pixel using the scaled features across 72 epochs from $-3.8\gya$ to $+6.5\gya$, with PCHIP interpolation providing smooth transitions.
+where $s_i(t)$ is the scale multiplier for feature $i$ at epoch $t$ (Table~\ref{tab:scale_funcs}).  Two time constants appear in the scale functions: $t_\odot = 4.57\gya$, the current age of the Sun \citep{Bahcall2001}, which governs UV-dependent features ($s_3$, $s_1$ at red-giant epochs); and $t_\text{atm} = 4.0\,\text{Gyr}$, the estimated duration of active tholin photochemistry in \titan{}'s atmosphere, which governs organic accumulation ($s_2$).  The full temporal reconstruction spans 74 epochs from $-3.8\gya$ to $+6.5\gya$.  Within the anchor range ($-3.5$ to $+5.9\gya$), PCHIP (piecewise cubic Hermite) interpolation of the five anchor posteriors ensures that the reported habitability values at anchor epochs are exactly the pipeline outputs rather than scale-function approximations; outside the anchor range (the two pre-LHB frames and five post-ocean refreezing frames), the scale-function model provides physically motivated extrapolation.
 
 \begin{table}[H]
 \centering
@@ -470,7 +473,7 @@ At $+5.1\gya$ surface temperature crosses the water--ammonia eutectic (176\,K; \
 \subsection{Validation}
 \label{sec:validation}
 
-The reconstruction is validated against three criteria: (i)~each anchor epoch's scaled posterior is within 0.02 of the corresponding static-pipeline posterior at the 95th percentile, confirming that the scale functions faithfully reproduce the anchor-epoch feature values; (ii)~the global mean rises monotonically through the lake-formation transition ($-1.0$ to $-0.5\gya$), consistent with the physical expectation that the establishment of the polar sea system represents a genuine increase in surface habitability potential; and (iii)~the N-polar/equatorial ratio follows the expected pattern: $\sim$1.45 at the LHB (moderate polar enhancement from VIMS organic abundance, no polar seas), rising to $\sim$1.53 at the present epoch (organic + lake dominance), and declining to $\sim$1.39 at the global ocean (uniform liquid coverage reduces but does not eliminate spatial differentiation, because the organic accumulation advantage of the polar basins persists).  All three criteria are satisfied.  The reconstruction also reproduces the known qualitative transitions: the impact-crater signal fading between $-3.0$ and $-2.0\gya$, the cryovolcanic signal persisting through the mid-Titan epoch, and the abrupt onset of the global ocean at the eutectic crossing.
+The reconstruction is validated against three criteria: (i)~at each anchor epoch the PCHIP interpolation reproduces the pipeline posterior exactly (by construction, since the anchor posteriors are the interpolation knots), and between anchors the scale-function model provides physically continuous transitions whose spatial structure is consistent with the bounding anchor maps; (ii)~the global mean rises monotonically through the lake-formation transition ($-1.0$ to $-0.5\gya$), consistent with the physical expectation that the establishment of the polar sea system represents a genuine increase in surface habitability potential; and (iii)~the N-polar/equatorial ratio follows the expected pattern: $\sim$1.42 at the LHB (moderate polar enhancement from VIMS organic abundance, no polar seas), rising to $\sim$1.51 at the present epoch (organic + lake dominance), and declining to $\sim$1.40 at the global ocean (uniform liquid coverage reduces but does not eliminate spatial differentiation, because the organic accumulation advantage of the polar basins persists).  All three criteria are satisfied.  The reconstruction also reproduces the known qualitative transitions: the impact-crater signal fading between $-3.0$ and $-2.0\gya$, the cryovolcanic signal persisting through the mid-Titan epoch, and the abrupt onset of the global ocean at the eutectic crossing.
 
 \section{Scope of This Thesis}
 \label{sec:scope_thesis}

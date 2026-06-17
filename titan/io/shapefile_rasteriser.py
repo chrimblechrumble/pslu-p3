@@ -875,6 +875,16 @@ class PolarLakeRasteriser:
         # Longitude west-positive: Y-axis points to 0°W, X-axis to 90°W.
         lon_W = np.degrees(np.arctan2(x_arr, y_arr)) % 360.0
 
+        # North/south polar-stereographic projections have OPPOSITE longitude
+        # handedness: the Birch SOUTH shapefiles match atan2(x, y) directly, but
+        # the NORTH shapefiles are point-reflected (x and y both negated),
+        # requiring a 180 deg longitude shift.  Without this, north-polar lakes
+        # were rasterised 180 deg off in longitude (Mugel appeared at 23W instead
+        # of 203W, etc.).  Validated against the IAU Gazetteer: the 8 largest
+        # north lakes align to a median <2 km only after this correction.
+        if is_north:
+            lon_W = (lon_W + 180.0) % 360.0
+
         x_can = lon_W  * deg_to_m
         y_can = lat_deg * deg_to_m
         return x_can, y_can

@@ -550,23 +550,42 @@ def run_single_mode(
             / (ab_sum[valid_a]**2 * (ab_sum[valid_a] + 1))
         ).astype(np.float32)
 
-        a_hdi_lo = np.full((nrows_a, ncols_a), np.nan, dtype=np.float32)
-        a_hdi_hi = np.full((nrows_a, ncols_a), np.nan, dtype=np.float32)
-        a_hdi_lo[valid_a] = beta_dist.ppf(
+        # 95% equal-tailed credible interval (2.5th and 97.5th percentiles)
+        a_ci_lo = np.full((nrows_a, ncols_a), np.nan, dtype=np.float32)
+        a_ci_hi = np.full((nrows_a, ncols_a), np.nan, dtype=np.float32)
+        a_ci_lo[valid_a] = beta_dist.ppf(
             0.025, alpha_p[valid_a], beta_p[valid_a]).astype(np.float32)
-        a_hdi_hi[valid_a] = beta_dist.ppf(
+        a_ci_hi[valid_a] = beta_dist.ppf(
             0.975, alpha_p[valid_a], beta_p[valid_a]).astype(np.float32)
 
         np.save(inf_dir / "posterior_analytical.npy", a_post)
-        log.info("  Analytical posterior: P(H) range [%.3f, %.3f]",
-                 np.nanmin(a_post), np.nanmax(a_post))
+        # Single source of truth: the analytical Beta-conjugate posterior
+        # (Eq. posterior_mean in methods.tex) is THE habitability model. Overwrite
+        # the sklearn/GNB arrays that result.save() wrote above so that every
+        # downstream consumer -- thesis_data.json, the temporal-trend figure, the
+        # diagnostics, and --only-visualise reloads -- reports the analytical
+        # posterior, not the GNB classifier output. The GNB result is retained in
+        # feature_importances.json (saved by result.save) as a validation
+        # diagnostic only; its raster output is not a calibrated P(H) and must not
+        # be reported (it is unbounded and violates the model's [P_min, P_max]).
+        np.save(inf_dir / "posterior_mean.npy", a_post)
+        np.save(inf_dir / "posterior_std.npy", a_std)
+        np.save(inf_dir / "hdi_low.npy",  a_ci_lo)
+        np.save(inf_dir / "hdi_high.npy", a_ci_hi)
+        n_valid = int(np.isfinite(a_post).sum())
+        if n_valid == 0:
+            log.warning("  Analytical posterior: ALL pixels are NaN — no valid features")
+        else:
+            log.info("  Analytical posterior: P(H) range [%.3f, %.3f], %d valid pixels",
+                     np.nanmin(a_post), np.nanmax(a_post), n_valid)
+            log.info("  Analytical std + 95%% CI saved (posterior_std/hdi_low/hdi_high.npy)")
 
         # Replace sklearn posterior with analytical for all visualisation.
         # Feature importances are retained from sklearn (validation diagnostic).
         result.posterior_mean = a_post
         result.posterior_std  = a_std
-        result.hdi_low        = a_hdi_lo
-        result.hdi_high       = a_hdi_hi
+        result.hdi_low        = a_ci_lo
+        result.hdi_high       = a_ci_hi
     else:
         log.info("[%s] Stage 4 -- loading inference from %s", mode_str.upper(), inf_dir)
         from titan.bayesian.inference import HabitabilityResult

@@ -32,7 +32,7 @@ The current posterior-probability maps for the five anchor epochs, plus red gian
 
 ![Key epochs poster](./key_epochs_poster.png)
 
-The full temporal animation (72 frames, −3.8 to +6.5 Gya). Click to download the MP4:
+The full temporal animation (74 frames, −3.8 to +6.5 Gya). Click to download the MP4:
 
 [![Watch the video](./titan_habitability_animation_full_inference.gif)](./titan_habitability_animation_full_inference.mp4)
 
@@ -141,7 +141,7 @@ Each run produces:
 python generate_temporal_maps.py --inference-mode full_inference --save-posterior-npy
 ```
 
-Produces 72-frame animation interpolating between the 5 anchor posteriors using PCHIP monotone cubic interpolation.
+Produces 74-frame animation interpolating between the 5 anchor posteriors using PCHIP monotone cubic interpolation.
 
 ### 4. Generate thesis figures
 

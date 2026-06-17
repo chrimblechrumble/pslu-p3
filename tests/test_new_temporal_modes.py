@@ -291,17 +291,18 @@ class TestEpochAxis:
         assert any(abs(t - 0.250) < 1e-6 for t in epochs), (
             "Epoch axis must contain +0.250 Gya exact (D2 near_future anchor)")
 
-    def test_72_frames(self) -> None:
+    def test_74_frames(self) -> None:
+        # methods.tex: "74 intermediate epochs from -3.8 to +6.5 Gya".
         from generate_temporal_maps import make_epoch_axis
         epochs = make_epoch_axis()
-        assert len(epochs) == 72
+        assert len(epochs) == 74
 
-    def test_near_future_anchor_at_frame_30(self) -> None:
+    def test_near_future_anchor_at_frame_32(self) -> None:
         from generate_temporal_maps import make_epoch_axis
         epochs = list(make_epoch_axis())
         idx = next(i for i, t in enumerate(epochs) if abs(t - 0.250) < 1e-6)
-        assert idx == 30, (
-            f"Near-future anchor should be at frame 30, found at {idx}")
+        assert idx == 32, (
+            f"Near-future anchor should be at frame 32, found at {idx}")
 
 
 # ---------------------------------------------------------------------------

@@ -3730,7 +3730,7 @@ if __name__ == "__main__":
             "full_inference -> <output-dir>/animation_full_inference/posteriors/posterior_<t>.npy. "
             "These files are used by scripts/generate_temporal_trend.py to "
             "produce the temporal habitability trend figure.  Not saved by "
-            "default because 72 frames x 6.5M pixels x float32 = ~1.9 GB."
+            "default because 74 frames x 6.5M pixels x float32 = ~1.9 GB."
         ),
     )
     args = p.parse_args()

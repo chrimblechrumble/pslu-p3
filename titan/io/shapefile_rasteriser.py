@@ -961,8 +961,10 @@ class PolarLakeRasteriser:
                     clipped = shifted.intersection(cb)
                     if clipped is not None and not clipped.is_empty:
                         parts.append(clipped)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.warning(
+                        "Antimeridian unwrap: dropped a polygon part at "
+                        "offset %+.0f m (intersection failed: %s)", offset, exc)
             return parts
 
         if hasattr(geom, "geoms"):
@@ -1020,7 +1022,10 @@ class PolarLakeRasteriser:
                     if any(abs(v) > 360.0 for v in b):
                         return True
                     return False
-                except Exception:
+                except Exception as exc:
+                    logger.warning(
+                        "CRS probe could not read %s (%s); trying next shapefile",
+                        shp, exc)
                     continue
             return False
 

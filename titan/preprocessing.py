@@ -1509,7 +1509,9 @@ def normalise_to_0_1(
     vmin = float(np.percentile(finite, percentile_lo))
     vmax = float(np.percentile(finite, percentile_hi))
     if abs(vmax - vmin) < 1e-12:
-        return np.zeros_like(arr, dtype=np.float32)
+        # Degenerate (near-constant) feature: map valid pixels to 0 but
+        # PRESERVE the NaN/missing mask -- do not turn gaps into 0.
+        return np.where(np.isfinite(arr), 0.0, np.nan).astype(np.float32)
     # Compute in float64 to avoid overflow when arr contains large values
     # (e.g. GTIE missing constant ~-3.4e38 or elevation extremes)
     out = (arr.astype(np.float64) - vmin) / (vmax - vmin)

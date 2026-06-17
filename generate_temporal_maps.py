@@ -1399,8 +1399,11 @@ def compute_epoch_top10(
         nrows, ncols = posterior.shape
         def _sample_ph(site):
             lon_w, lat = site["lon_W"], site["lat"]
-            col = int(round(lon_w / 360.0 * (ncols - 1)))
-            row = int(round((90.0 - lat) / 180.0 * (nrows - 1)))
+            # Match the canonical convention used everywhere else (col = lon/360*ncols,
+            # row = (90-lat)/180*nrows); previously used (ncols-1)/(nrows-1), a ~1px
+            # off-by-one vs generate_rankings and the other samplers.
+            col = int(round(lon_w / 360.0 * ncols)) % ncols
+            row = int(round((90.0 - lat) / 180.0 * nrows))
             row = max(0, min(nrows - 1, row))
             col = max(0, min(ncols - 1, col))
             # 3×3 patch for stability

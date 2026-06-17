@@ -3221,27 +3221,12 @@ def _run_animation_full_inference(
         return
 
     # -- Anchor epoch -> posterior map -----------------------------------------
-    # PCHIP covers only the well-constrained interval where Cassini feature
-    # maps are valid: lake_formation (-1.0 Gya) to near_future (+0.25 Gya).
-    #
-    # The past anchor (-3.5 Gya) is intentionally EXCLUDED from PCHIP because
-    # the past temporal mode still uses Cassini-era feature maps (organic_abundance,
-    # surface_atm_interaction, topographic_complexity) which encode north polar
-    # lake signatures even though no lakes existed at -3.5 Gya.  This makes the
-    # past posterior artificially bright at the poles (N.polar median ≈ 0.70).
-    #
-    # Instead, pre-lake-formation frames (t < -1.0 Gya) use the MODELLED scalar
-    # approach with a rescaling factor to match the sklearn probability range.
-    # The modelled approach correctly attenuates polar contributions through the
-    # feature scale functions (liquid_hydrocarbon → 0.10, etc.).
-    #
-    # Intervals:
-    #   t < -0.5 Gya        MODELLED_RESCALED (Bayesian formula + _rescale_bayesian)
-    #   -0.5 → 0.0 Gya      TRANSITION_BLEND (Bayesian → present sklearn anchor)
-    #   0.0 → +0.25 Gya     PCHIP (present, near_future only)
-    #   +0.25 → +5.0 Gya    CLAMPED_NEAR_FUTURE
-    #   +5.0 → +6.0 Gya     EUTECTIC_BLEND (near_future → future)
-    #   +6.0 → +6.5 Gya     REFREEZE_BLEND (future → past)
+    # All five anchors use the ANALYTICAL Beta posteriors (methods.tex
+    # Eq. posterior_mean), so PCHIP runs over the full anchor range -3.5 -> +5.9
+    # Gya.  Two physics-based synthetic knots (+4.0, +5.0 Gya) are added below to
+    # restore the transient solvent-free minimum in the otherwise-unconstrained
+    # near_future -> future gap.  Frames outside the anchor range use the
+    # scale-function reconstruction (MODELLED_RESCALED).
 
     PCHIP_ANCHOR_EPOCHS: List[float] = []
     PCHIP_ANCHOR_POSTS:  List[np.ndarray] = []
@@ -3266,6 +3251,28 @@ def _run_animation_full_inference(
         else:
             print(f"  WARNING: anchor '{name}' missing; interpolation may be coarser.")
 
+    # -- Physics-based synthetic knots in the near_future -> future gap --------
+    # There is no Cassini anchor between near_future (+0.25 Gya) and future
+    # (+5.9 Gya), a 5.65 Gyr span.  PCHIP across that gap alone is MONOTONE and
+    # therefore cannot represent the transient solvent-free minimum the scale
+    # functions encode (liquid_hydrocarbon -> 0 by +5.0 Gya, methane_cycle -> 0
+    # by +5.0 Gya) before the eutectic ocean onset.  Insert two physics-based
+    # knots -- the +4.0 Gya plateau end and the +5.0 Gya solvent-free minimum --
+    # built from the present feature maps via the scale-function reconstruction
+    # (the same path used for out-of-range frames), so the interpolated
+    # trajectory dips at +5.0 (results.tex transient minimum) before rising to
+    # the red-giant ocean peak.  The five real anchors stay exact; the synthetic
+    # knots only shape the otherwise-unconstrained gap.
+    if "near_future" in anchors and "future" in anchors:
+        for _t_syn in (4.0, 5.0):
+            _scaled = scale_features_to_epoch(present, _t_syn)
+            _syn = _rescale_bayesian(bayesian_posterior_map(_scaled)).reshape(GRID_SHAPE)
+            PCHIP_ANCHOR_EPOCHS.append(_t_syn)
+            PCHIP_ANCHOR_POSTS.append(_syn)
+        _order = list(np.argsort(PCHIP_ANCHOR_EPOCHS))
+        PCHIP_ANCHOR_EPOCHS = [PCHIP_ANCHOR_EPOCHS[i] for i in _order]
+        PCHIP_ANCHOR_POSTS  = [PCHIP_ANCHOR_POSTS[i] for i in _order]
+
     # Need at least 2 points to interpolate
     can_interpolate: bool = len(PCHIP_ANCHOR_EPOCHS) >= 2
 
@@ -3281,48 +3288,16 @@ def _run_animation_full_inference(
         pchip = None
         t_interp_lo = t_interp_hi = 0.0
 
-    # The near_future -> future gap uses LINEAR BLENDING between the two
-    # sklearn anchor posteriors.  Previously used MODELLED_SCALAR (the
-    # animation's Bayesian formula) but that has a hard max of 0.673 while
-    # sklearn posteriors reach 0.85, causing a visible step change in colour
-    # at the PCHIP/scalar boundary.  Linear blending stays entirely in
-    # sklearn probability space, eliminating the discontinuity.
-    #
-    # Linear blending is used rather than PCHIP for this interval because
-    # the trajectory is non-monotonic (lake evaporation → dry → ocean), so
-    # PCHIP would require intermediate anchor points that don't exist.  The
-    # visual impression of a smooth cross-fade is scientifically reasonable:
-    # it represents gradual surface change without claiming to model the
-    # precise intermediate state.
-    # Expose PCHIP for the rendering loop
+    # Frame sourcing in the rendering loop:
+    #   t in [t_min, t_max] (the anchor range, -3.5 -> +5.9 Gya, including the
+    #       +4.0 / +5.0 synthetic solvent-free knots inserted above):
+    #       ANCHOR_PCHIP -- per-pixel monotone-cubic interpolation of the knots.
+    #   t outside that range (two pre-LHB frames, post-ocean refreezing frames):
+    #       MODELLED_RESCALED -- scale-function reconstruction of the present
+    #       feature maps (methods.tex Eq. for s_i(t)), rescaled to anchor space.
     _anchor_pchip = pchip if can_interpolate else None
     _t_min = t_interp_lo
     _t_max = t_interp_hi
-
-    near_future_post: Optional[np.ndarray] = anchors.get("near_future")
-    future_post:      Optional[np.ndarray] = anchors.get("future")
-    past_post:        Optional[np.ndarray] = anchors.get("past")
-    T_BLEND_LO:   float = +4.0    # start blend at "solar warming ramp" (+4.0 Gya)
-    T_FUT:        float = +5.9    # future anchor: last ocean epoch (T=466K @ +5.9 Gya)
-    T_REFREEZE:   float = +6.5    # refreezing complete
-
-    # Blending strategy for t > +0.25 Gya:
-    #
-    #   +0.25 → +5.0 Gya  CLAMP to near_future anchor
-    #     The polar-lake spatial pattern is essentially unchanged for 4.75 Gyr:
-    #     lakes persist, equatorial remains dark, solar warming is modest.
-    #     Linear-blending over this whole window made the equatorial region
-    #     progressively orange even though it should stay dark until the lakes
-    #     actually evaporate (~+4.0 Gya).  Clamping avoids that artefact.
-    #
-    #   +5.0 → +6.0 Gya  LINEAR BLEND near_future → future
-    #     Rapid transition: lakes fully evaporated (+5.0), surface dry (+5.0–5.1),
-    #     eutectic crossing (+5.13), global water-ammonia ocean peak (+5.5–6.0).
-    #     The short blend window matches the physical timescale.
-    #
-    #   +6.0 → +6.5 Gya  REFREEZE BLEND future → past
-    #     Sun exits red-giant; L collapses 600× → 0.8×; ocean refreezes < 1 Myr.
-    #     Blend toward past anchor as a proxy for the cold, no-liquid state.
 
     fi_anim_dir       = anim_dir.parent / "animation_full_inference"
     frames_dir        = fi_anim_dir / "frames"

@@ -33,13 +33,16 @@ features = list(_priors.feature_names)
 weights = list(_priors.weights)
 h, w = post.shape
 
-def sample(arr, lon_w, lat, r=1):
+def sample(arr, lon_w, lat, r=10):
+    # 45-km-radius median (4490 m/px -> r=10 px), matching Table 3.6's
+    # documented "median within 45 km" site-sampling convention.  (Previously
+    # r=1 mean, which did not reproduce the thesis table.)
     col = int(round(lon_w / 360.0 * w)) % w
     row = int(round((90.0 - lat) / 180.0 * h))
     row = max(0, min(h-1, row))
     r0, r1 = max(0, row-r), min(h, row+r+1)
     c0, c1 = max(0, col-r), min(w, col+r+1)
-    return np.nanmean(arr[r0:r1, c0:c1])
+    return np.nanmedian(arr[r0:r1, c0:c1])
 
 # ============================================================
 # 1. SELK TABLE (Table 3.6) — paste these into thesis if changed

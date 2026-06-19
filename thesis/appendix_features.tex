@@ -6,7 +6,7 @@
 The eight habitability-proxy features are extracted from the Cassini data
 sources described in Appendix~\ref{app:notation}.  Each subsection gives the
 scientific basis, prior mean justification, implementation procedure, and
-missing-data backfill strategy.  Features derived from SAR backscatter ($f_1$, $f_3$, $f_5$, $f_7$, $f_8$) are affected by the $\sim$35\% coverage gap of the Cassini RADAR SAR imaging mode (which images $\sim$65\% of the globe); in unmapped regions, the pipeline assigns physically motivated floor values rather than interpolated estimates.  No published method exists for interpolating SAR backscatter intensity on Titan: unlike topography, which varies smoothly and can be splined from sparse profiles \citep{Lorenz2013,Corlies2017Titan}, backscatter depends on local roughness, composition, and viewing geometry and lacks the spatial autocorrelation needed for meaningful gap-filling.
+missing-data backfill strategy.  Features derived from SAR backscatter ($f_1$, $f_3$, $f_5$, $f_7$, $f_8$) are affected by the $\sim$35\% areal coverage of the Cassini RADAR SAR imaging mode; in unmapped regions, the pipeline assigns physically motivated floor values rather than interpolated estimates.  No published method exists for interpolating SAR backscatter intensity on Titan: unlike topography, which varies smoothly and can be splined from sparse profiles \citep{Lorenz2013,Corlies2017Titan}, backscatter depends on local roughness, composition, and viewing geometry and lacks the spatial autocorrelation needed for meaningful gap-filling.
 
 Figure~\ref{fig:feature_panel} shows all eight feature maps at the present
 epoch, illustrating their distinct spatial patterns.  Figure~\ref{fig:epoch_timeline}
@@ -40,12 +40,13 @@ Bayesian missing-data imputation procedure described in Section~\ref{sec:nan}.
     latitude-dependent methane cycle signal ($f_4$), amongst others.  The
     combined posterior is derived from all eight simultaneously via the
     Bayesian update described in Section~\ref{sec:bayes}.  Prior weight $w_i$
-    and prior mean $\mu_i$ are shown for each panel.  Blank (white) regions
-    indicate pixels where the feature data is unavailable due to Cassini
-    coverage gaps (primarily in SAR-dependent features $f_1$, $f_3$, $f_5$,
-    $f_7$, $f_8$); these pixels are imputed with the feature prior mean
-    $\mu_i$ during the Bayesian update (Section~\ref{sec:nan}), contributing
-    no evidence rather than incorrect evidence.  The vertical discontinuity
+    and prior mean $\mu_i$ are shown for each panel.  In the Cassini SAR
+    coverage gaps ($\sim$35\% of the globe), the SAR-primary features
+    ($f_1$, $f_3$, $f_8$) lose direct coverage; there the pipeline substitutes
+    the geomorphological ($f_7$) and topographic ($f_6$) proxies, or assigns
+    the feature prior mean $\mu_i$ where no proxy is available
+    (Section~\ref{sec:nan}).  Such substituted pixels contribute no evidence
+    rather than incorrect evidence, so no panel is left blank.  The vertical discontinuity
     visible in $f_3$ at 180\textdegree{}W is an assembly seam in the USGS
     SAR mosaic (\texttt{clon180} product), where flyby swaths from opposite
     hemispheres were stitched at the mosaic's central meridian; this artefact

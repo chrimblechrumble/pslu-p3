@@ -12,8 +12,8 @@ in Section~\ref{sec:bayes}.
 \section{The Latent Variable}
 \label{sec:latent_variable}
 
-In this framework, habitability $H$ is treated as a \textit{latent variable}
---- a quantity that cannot be directly observed by any Cassini instrument but
+In this framework, habitability $H$ is treated as a \textit{latent variable}:
+a quantity that cannot be directly observed by any Cassini instrument but
 whose value is inferred from the combination of observational proxies
 $\featurevec = (f_1, \ldots, f_8)$.  A latent variable (from the Latin
 \textit{latere}: to be hidden) influences observable outcomes but is not
@@ -45,9 +45,9 @@ habitability probability $H$.
 \section{Bernoulli Trials and the Binomial Likelihood}
 \label{sec:bernoulli}
 
-A \textit{Bernoulli trial} is an experiment with exactly two possible outcomes --- conventionally called ``success'' and ``failure'' --- each occurring with fixed probabilities $p$ and $1-p$ respectively \citep[ch.~2]{DeGroot2012}.  A coin flip is the prototypical example: heads (success, probability $p$) or tails (failure, probability $1-p$).  The \textit{Binomial distribution} counts the total number of successes $k$ in $n$ independent Bernoulli trials; it is the natural likelihood function for data arising from repeated binary observations.
+A \textit{Bernoulli trial} is an experiment with exactly two possible outcomes (conventionally called ``success'' and ``failure'') each occurring with fixed probabilities $p$ and $1-p$ respectively \citep[ch.~2]{DeGroot2012}.  A coin flip is the prototypical example: heads (success, probability $p$) or tails (failure, probability $1-p$).  The \textit{Binomial distribution} counts the total number of successes $k$ in $n$ independent Bernoulli trials; it is the natural likelihood function for data arising from repeated binary observations.
 
-In the habitability model, no actual coin flips occur.  Instead, the prior and data contributions are expressed as \textit{virtual} (or \textit{pseudo}) Bernoulli trials --- a mathematical device for encoding strength of belief in the same currency as observational data.  The prior contributes $\kappa = 5$ virtual trials, of which $\alpha_0 = 1.655$ are ``successes'' (prior evidence for habitability) and $\beta_0 = 3.345$ are ``failures'' (prior evidence against).  Each observed feature $f_i$ then contributes $\lambda w_i$ additional virtual trials, of which a fraction $f_i$ are successes and $(1-f_i)$ are failures.  This pseudo-count interpretation is the standard Bayesian device for placing prior beliefs on the same mathematical footing as observed data \citep[ch.~2]{Gelman2013}, and is the mechanism by which conjugacy yields a closed-form posterior (Section~\ref{sec:conjugacy_explained}).
+In the habitability model, no actual coin flips occur.  Instead, the prior and data contributions are expressed as \textit{virtual} (or \textit{pseudo}) Bernoulli trials: a mathematical device for encoding strength of belief in the same currency as observational data.  The prior contributes $\kappa = 5$ virtual trials, of which $\alpha_0 = 1.655$ are ``successes'' (prior evidence for habitability) and $\beta_0 = 3.345$ are ``failures'' (prior evidence against).  Each observed feature $f_i$ then contributes $\lambda w_i$ additional virtual trials, of which a fraction $f_i$ are successes and $(1-f_i)$ are failures.  This pseudo-count interpretation is the standard Bayesian device for placing prior beliefs on the same mathematical footing as observed data \citep[ch.~2]{Gelman2013}, and is the mechanism by which conjugacy yields a closed-form posterior (Section~\ref{sec:conjugacy_explained}).
 
 \section{Conjugacy}
 \label{sec:conjugacy_explained}
@@ -65,7 +65,7 @@ $k = \lambda\sum_i w_i f_i$ and $n - k = \lambda\sum_i w_i(1-f_i)$ are
 derived from the weighted feature values.  The resulting posterior PDF
 (Eq.~\ref{eq:posterior_pdf}) has the same gamma-function structure as
 the prior PDF (Eq.~\ref{eq:prior_pdf}), with only the shape parameters
-changed --- no new functional form is introduced.
+changed: no new functional form is introduced.
 This analytical tractability makes the update feasible at 6.49 million
 pixels simultaneously with no numerical integration required.
 
@@ -82,7 +82,7 @@ observations and the data from all eight features contribute a further
 $\lambda \sum_i w_i = \lambda$ observations.
 
 Figure~\ref{fig:beta_update} visualises the updating process for three
-representative sites (Freeman Lacus, Belet dune field, Selk crater),
+representative sites (Towada Lacus, Belet dune field, Selk crater),
 showing how each successive feature narrows and displaces the Beta
 distribution from the prior to the final posterior.  The figure also
 shows the 95\%~CI for eight key present-epoch sites.
@@ -92,7 +92,7 @@ representative sites.  The left panel shows the prior
 $\mathrm{Beta}(\alpha_0, \beta_0)$, which is weakly informative
 ($\sigma \approx 0.19$) and centred at $\mu_0 = 0.331$.  The right panel
 shows the posteriors after incorporating the respective Cassini feature
-values: Freeman Lacus shifts strongly rightward
+values: Towada Lacus shifts strongly rightward
 (highest VIMS organic abundance combined with high liquid and methane-cycle scores), while the Belet dune
 sea shifts only modestly (moderate organic but no liquid) and Selk crater shifts
 leftward (below-average methane cycle and surface--atmosphere scores despite

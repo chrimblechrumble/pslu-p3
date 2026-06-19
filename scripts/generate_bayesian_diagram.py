@@ -101,7 +101,7 @@ def main() -> None:
     ax.fill_between(x, prior_pdf, alpha=0.20, color="#2255aa")
     ax.axvline(MU0, color="#2255aa", ls="--", lw=1.2, alpha=0.7)
     ax.text(MU0 + 0.01, max(prior_pdf) * 1.1,
-            rf"$\mu_0 = {MU0}$", color="#2255aa", fontsize=9)
+            rf"$\mu_0 = {MU0:.3f}$", color="#2255aa", fontsize=9)
     # Mark P_min and P_max
     p_min = ALPHA0 / (KAPPA + LAMBDA)
     p_max = (ALPHA0 + LAMBDA) / (KAPPA + LAMBDA)

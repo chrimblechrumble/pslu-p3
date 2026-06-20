@@ -1375,6 +1375,30 @@ def _site_ph(site: Dict, t: float) -> float:
     return (alpha0 + LAMBDA * w_sum) / (KAPPA + LAMBDA)
 
 
+# ---------------------------------------------------------------------------
+# Catalogue-derived ranking set for full_inference frames.  Ranking these -- the
+# same configs.site_catalogue.RANKING_SITES that generate_rankings.py and the
+# thesis tables rank -- with the identical posterior-sampling convention used
+# below makes the map's top-10 labels and ranks match RANKINGS.csv at the anchor
+# epochs.  CANDIDATE_SITES (with hardcoded feature profiles) is retained only for
+# the modelled-mode animation, which has no per-pixel posterior to sample.
+# ---------------------------------------------------------------------------
+from configs.site_catalogue import (RANKING_SITES as _RANKING_SITE_NAMES,
+                                     SITE_DICT as _SITE_DICT_MAP)
+
+def _disp_label(full_name: str) -> str:
+    for _suf in (" Lacus", " Mare", " shore", " crater", " dunes", " site"):
+        if full_name.endswith(_suf):
+            return full_name[: -len(_suf)]
+    return full_name
+
+RANKING_SITES_MAP: List[Dict] = [
+    {"lon_W": _SITE_DICT_MAP[_n].lon_W, "lat": _SITE_DICT_MAP[_n].lat,
+     "label": _disp_label(_SITE_DICT_MAP[_n].full_name)}
+    for _n in _RANKING_SITE_NAMES
+]
+
+
 def compute_epoch_top10(
     t: float,
     posterior: np.ndarray = None,
@@ -1413,7 +1437,7 @@ def compute_epoch_top10(
             c0, c1 = max(0, col - 1), min(ncols, col + 2)
             patch = posterior[r0:r1, c0:c1]
             return float(np.nanmean(patch))
-        scored = [(s, _sample_ph(s)) for s in CANDIDATE_SITES]
+        scored = [(s, _sample_ph(s)) for s in RANKING_SITES_MAP]
     else:
         scored = [(s, _site_ph(s, t)) for s in CANDIDATE_SITES]
     scored.sort(key=lambda x: x[1], reverse=True)

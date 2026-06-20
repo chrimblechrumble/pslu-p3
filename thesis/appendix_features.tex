@@ -6,11 +6,8 @@
 The eight habitability-proxy features are extracted from the Cassini data
 sources described in Appendix~\ref{app:notation}.  Each subsection gives the
 scientific basis, prior mean justification, implementation procedure, and
-missing-data backfill strategy.  Features derived from SAR backscatter ($f_1$, $f_3$, $f_5$, $f_7$, $f_8$) are affected by the $\sim$35\% areal coverage of the Cassini RADAR SAR imaging mode; in unmapped regions, the pipeline assigns physically motivated floor values rather than interpolated estimates.  No published method exists for interpolating SAR backscatter intensity on Titan: unlike topography, which varies smoothly and can be splined from sparse profiles \citep{Lorenz2013,Corlies2017Titan}, backscatter depends on local roughness, composition, and viewing geometry and lacks the spatial autocorrelation needed for meaningful gap-filling.
+missing-data backfill strategy.  Features derived from SAR backscatter ($f_1$, $f_3$, $f_5$, $f_7$, $f_8$) are affected by the $\sim$35\% coverage gap of the Cassini RADAR SAR imaging mode (which images $\sim$65\% of the globe); in unmapped regions, the pipeline assigns physically motivated floor values rather than interpolated estimates.  No published method exists for interpolating SAR backscatter intensity on Titan: unlike topography, which varies smoothly and can be splined from sparse profiles \citep{Lorenz2013,Corlies2017Titan}, backscatter depends on local roughness, composition, and viewing geometry and lacks the spatial autocorrelation needed for meaningful gap-filling.
 
-
-
-Eight habitability-proxy features are extracted from the above data sources.
 Figure~\ref{fig:feature_panel} shows all eight feature maps at the present
 epoch, illustrating their distinct spatial patterns.  Figure~\ref{fig:epoch_timeline}
 shows how the relative activity of each feature is modulated across geological
@@ -43,12 +40,13 @@ Bayesian missing-data imputation procedure described in Section~\ref{sec:nan}.
     latitude-dependent methane cycle signal ($f_4$), amongst others.  The
     combined posterior is derived from all eight simultaneously via the
     Bayesian update described in Section~\ref{sec:bayes}.  Prior weight $w_i$
-    and prior mean $\mu_i$ are shown for each panel.  Blank (white) regions
-    indicate pixels where the feature data is unavailable due to Cassini
-    coverage gaps (primarily in SAR-dependent features $f_1$, $f_3$, $f_5$,
-    $f_6$, $f_8$); these pixels are imputed with the feature prior mean
-    $\mu_i$ during the Bayesian update (Section~\ref{sec:nan}), contributing
-    no evidence rather than incorrect evidence.  The vertical discontinuity
+    and prior mean $\mu_i$ are shown for each panel.  In the Cassini SAR
+    coverage gaps ($\sim$35\% of the globe), the SAR-primary features
+    ($f_1$, $f_3$, $f_8$) lose direct coverage; there the pipeline substitutes
+    the geomorphological ($f_7$) and topographic ($f_6$) proxies, or assigns
+    the feature prior mean $\mu_i$ where no proxy is available
+    (Section~\ref{sec:nan}).  Such substituted pixels contribute no evidence
+    rather than incorrect evidence, so no panel is left blank.  The vertical discontinuity
     visible in $f_3$ at 180\textdegree{}W is an assembly seam in the USGS
     SAR mosaic (\texttt{clon180} product), where flyby swaths from opposite
     hemispheres were stitched at the mosaic's central meridian; this artefact
@@ -101,10 +99,10 @@ this feature; its habitability impact is strongly localised to the polar
 regions.
 
 \paragraph{Implementation.}
-The primary source is the Lopes et al.\ (2019) lake polygon class (terrain
+The primary source is the \citet{Lopes2019} lake polygon class (terrain
 class 7), rasterised to the canonical grid as a binary lake mask.  A secondary
 contribution comes from SAR backscatter dark anomalies not otherwise attributed
-to organic material.  Confirmed empty lake basins from the Birch et al.\ (2017)
+to organic material.  Confirmed empty lake basins from the \citet{BirchHayesSAR}
 analysis are explicitly assigned $f_1 = 0$ to reflect the absence of
 present-day liquid even within geomorphologically defined basins.  In the
 absence of SAR coverage, ISS 938\,nm albedo imagery provides a proxy, with
@@ -121,15 +119,15 @@ imputed at the prior mean during inference.
 \label{sec:feat_organic}
 
 \paragraph{Scientific basis.}
-Tholins --- the complex refractory macromolecular organic compounds produced
+Tholins (the complex refractory macromolecular organic compounds produced
 continuously by ultraviolet photolysis of the \ce{N2}/\ce{CH4} mixture in the
-upper atmosphere --- are the dominant surface material across most of \titan{}.
-Their astrobiological significance is multifaceted.  Laboratory hydrolysis of
+upper atmosphere) are the dominant surface material across most of \titan{}.
+Laboratory hydrolysis of
 tholins in liquid water at biologically relevant temperatures (273--373\,K)
 produces amino acids, nucleobase analogues, and sugar-like polyols at yields
-of $\sim$0.1\% by mass \citep{Neish2018}, directly confirming that tholins
+of $\sim$0.1\% by mass \citep{Neish2010}, directly confirming that tholins
 can serve as a chemical feedstock for prebiotic synthesis when liquid water
-is available --- either from impact melts at past epochs or from the red-giant
+is available: either from impact melts at past epochs or from the red-giant
 ocean in the far future.  \citet{MeyerDombard2025} characterise the tholin
 layer as the primary chemical substrate for any surface habitability scenario
 on \titan{}.  The feature weight ($w_2 = 0.20$) is second only to liquid
@@ -279,10 +277,10 @@ where $\hat{s}$ is the normalised topographic slope $|\nabla z|$ from the
 GTDE DEM (high slopes drive physical transport and mixing); $\hat{m}$ is a
 binary lake-margin mask extended to $\sim$45\,km from the nearest confirmed
 lake shore; and $\hat{c}$ is the Gaussian-smoothed ($\sigma = 3$ pixels)
-channel density from the Miller et al.\ (2021) dataset, normalised at the
+channel density from the \citet{Miller2021channels} dataset, normalised at the
 2nd--98th percentile range.  The lake-margin component receives the highest
 within-feature weight (40\%) because shorelines concentrate all three relevant
-processes --- liquid contact, organic delivery, and thermal/chemical cycling.
+processes: liquid contact, organic delivery, and thermal/chemical cycling.
 
 \section[Feature 6: Topographic Complexity
   ($w_6 = 0.06$, $\mu_6 = 0.25$)]{Feature 6: Topographic Complexity \\
@@ -293,8 +291,8 @@ processes --- liquid contact, organic delivery, and thermal/chemical cycling.
 Local topographic roughness at $\sim$20\,km scale correlates with the
 dissected terrain types that most frequently expose water-ice-bearing crustal
 material \citep{Lopes2019}.  On Earth, topographic heterogeneity at ecologically
-relevant scales creates micro-environmental diversity --- variations in
-drainage, aspect, moisture, and chemical exposure --- that underpins elevated
+relevant scales creates micro-environmental diversity (variations in
+drainage, aspect, moisture, and chemical exposure) that underpins elevated
 species richness at landscape boundaries.  On \titan{}, the analogous principle
 is that varied topography produces diverse chemical micro-environments with
 potentially richer reactive diversity.
@@ -303,7 +301,7 @@ potentially richer reactive diversity.
 Local standard deviation of GTDE elevation computed in a $5\times5$ pixel
 ($\sim$22\,km) sliding window, normalised to $[0,1]$ at the 2nd--98th
 percentile range.  South polar gaps in the primary GTDE are filled with the
-Corlies et al.\ (2017) globally interpolated DEM prior to roughness computation.
+\citet{Corlies2017Titan} globally interpolated DEM prior to roughness computation.
 
 \section[Feature 7: Geomorphological Diversity
   ($w_7 = 0.04$, $\mu_7 = 0.30$)]{Feature 7: Geomorphological Diversity \\
@@ -313,8 +311,8 @@ Corlies et al.\ (2017) globally interpolated DEM prior to roughness computation.
 \paragraph{Scientific basis.}
 Astrobiologically relevant chemistry is disproportionately likely to occur
 at interfaces between geochemically distinct terrain types.  The reasoning
-is thermodynamic: chemical gradients --- differences in redox potential,
-organic content, water-ice availability, or pH --- drive reactions that would
+is thermodynamic: chemical gradients (differences in redox potential,
+organic content, water-ice availability, or pH) drive reactions that would
 not proceed in chemically uniform settings \citep{Shock2007}.  On \titan{},
 the most important geochemical interfaces identified from Cassini data are:
 
@@ -344,8 +342,8 @@ quantifies the degree of terrain-type mixing at each pixel.  A pixel
 surrounded by a single terrain class (entropy = 0) sits in a geochemically
 homogeneous environment.  A pixel at the intersection of four terrain
 classes (entropy approaching $H_\text{max}$) sits at a multi-way geochemical
-interface.  This feature receives the lowest weight of the present-epoch set
-($w_7 = 0.04$) because it is an indirect and geometrical proxy for chemical
+interface.  This feature receives the second-lowest weight of the present-epoch set
+($w_7 = 0.04$, above only subsurface-ocean proximity) because it is an indirect and geometrical proxy for chemical
 gradients rather than a direct measurement.
 
 \paragraph{Implementation.}
@@ -362,7 +360,7 @@ where $p_k(r,c)$ is the fraction of window pixels classified as terrain
 class $k$, and $N_c$ is the number of distinct classes present in the window.
 Shannon entropy is the standard information-theoretic measure of diversity
 \citep{Shannon1948} and has been applied to quantify geomorphological and
-ecological diversity in planetary and terrestrial settings \citep{Lorenz2014}.
+ecological diversity in planetary and terrestrial settings \citep{NowosadStepinski2019}.
 The normalisation by $H_\text{max} = \ln N_c$ maps the maximum possible
 entropy (uniform distribution across all present classes) to 1.0, ensuring
 the feature is comparable across pixels with different numbers of terrain
@@ -374,24 +372,26 @@ classes.
 \label{sec:feat_ocean}
 
 \paragraph{Scientific basis.}
-\titan{}'s confirmed subsurface water--ammonia ocean \citep{Iess2012} is
+\titan{}'s subsurface water--ammonia layer, inferred from the tidal Love
+number \citep{Iess2012} and debated between a continuous ocean and a slushy
+high-pressure ice layer with isolated liquid pockets \citep{Petricca2025}, is
 potentially habitable by conventional criteria \citep{Affholder2025}, and
-there is indirect evidence that material from this ocean has reached the
+there is indirect evidence that material from this layer has reached the
 surface at specific locations.  SAR-bright annular features surrounding
 several impact craters are most consistently interpreted as ancient
 impact-melt or cryolava fronts where liquid spread outward from basin centres,
-potentially establishing chemical contact between the subsurface ocean and
+potentially establishing chemical contact between the subsurface water and
 the organic surface inventory \citep{Wood2010}.  The prior mean is set at
-$\mu_8 = 0.03$ (revised downward from 0.10 following \citealt{Neish2024}),
+$\mu_8 = 0.03$ (revised downward from 0.10 following \citet{Neish2024b}),
 reflecting the genuine uncertainty in the surface expression of the
-subsurface ocean at the present epoch.
+subsurface water at the present epoch.
 
 \paragraph{Implementation.}
 The feature is constructed in two parts.  First, a global floor value of
 $p_\text{floor} = 0.03$ is applied uniformly to all pixels, reflecting the
-global presence of the subsurface ocean as confirmed by the tidal Love number
-$k_2$ \citep{Iess2012}.  This floor captures the fact that the ocean is a
-global structure and that the possibility of ocean--surface exchange cannot
+global presence of subsurface water inferred from the tidal Love number
+$k_2$ \citep{Iess2012}.  This floor captures the fact that the subsurface
+water is a global structure and that the possibility of subsurface--surface exchange cannot
 be excluded at any location, even if no surface expression is visible.
 
 Second, localised enhancements above the floor are applied at SAR-bright

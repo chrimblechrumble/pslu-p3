@@ -903,12 +903,11 @@ class BayesianPriorConfig:
 
     # -- Prior means (Beta distribution: alpha = mean x kappa) ---------------------
     prior_mean_liquid_hydrocarbon:      float = 0.02
-    # NOTE: These default prior_means are superseded at runtime by
-    # configs/temporal_config.py which provides epoch-specific values.
-    # The PRESENT epoch runtime values are: organic=0.70, acetylene=0.35
-    # (giving mu_0=0.331 matching the thesis). The defaults here are stale.
-    prior_mean_organic_abundance:       float = 0.60
-    prior_mean_acetylene_energy:        float = 0.30
+    # NOTE: These defaults match the PRESENT epoch values in
+    # configs/temporal_config.py (mu_0 = 0.331, thesis Table 2.1).
+    # At runtime, temporal_config.py provides epoch-specific values.
+    prior_mean_organic_abundance:       float = 0.70
+    prior_mean_acetylene_energy:        float = 0.35
     prior_mean_methane_cycle:           float = 0.40
     prior_mean_surface_atm_interaction: float = 0.35
     prior_mean_topographic_complexity:  float = 0.25
@@ -967,7 +966,7 @@ class BayesianPriorConfig:
         }
 
     def validate(self) -> None:
-        """Raise ValueError if weights do not sum to 1.0 +/- 0.01."""
+        """Raise ValueError if weights/priors are invalid."""
         total = sum(self.feature_weights().values())
         if abs(total - 1.0) > 0.01:
             raise ValueError(
@@ -977,6 +976,9 @@ class BayesianPriorConfig:
         for name, w in self.feature_weights().items():
             if not (0.0 <= w <= 1.0):
                 raise ValueError(f"Weight '{name}' = {w} is outside [0, 1].")
+        for name, m in self.prior_means().items():
+            if not (0.0 <= m <= 1.0):
+                raise ValueError(f"Prior mean '{name}' = {m} is outside [0, 1].")
 
     # -- Convenience vector accessors (used by bayesian backends) --------------
     # These return ordered lists matching feature_weights() / prior_means() order.
@@ -1096,8 +1098,11 @@ class HabitabilityWindowConfig:
         """
         if not self.assume_uniform_warming:
             return 0.0
+        width = self.future_window_width_myr()
+        if width <= 0.0:
+            return 0.0
         # Normalise: 1 Gyr reference window -> weight 1.0
-        return 1000.0 / self.future_window_width_myr()
+        return 1000.0 / width
 
     def validate(self) -> None:
         """Raise ValueError on inconsistent temporal parameters."""

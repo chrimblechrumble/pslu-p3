@@ -29,6 +29,7 @@ Fully reproducible: no pipeline outputs required.
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -39,29 +40,28 @@ import matplotlib.gridspec as gridspec
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from configs.temporal_config import TemporalMode, get_prior_set
+from configs.pipeline_config import BayesianPriorConfig
+
 OUT_DIR = Path("outputs/diagnostics")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-KAPPA_NOM  = 5.0
-LAMBDA_NOM = 6.0
+_bpc = BayesianPriorConfig()
+KAPPA_NOM  = _bpc.beta_concentration_default
+LAMBDA_NOM = _bpc.likelihood_sharpness
 
-BASELINE_WEIGHTS = {
-    "liquid_hc": 0.25, "organic":   0.20, "acetylene": 0.20,
-    "methane":   0.15, "sai":       0.08, "topo":      0.06,
-    "geodiv":    0.04, "ocean":     0.02,
-}
-PRIOR_MEANS = {
-    "liquid_hc": 0.020, "organic":   0.700, "acetylene": 0.350,
-    "methane":   0.400, "sai":       0.350, "topo":      0.250,
-    "geodiv":    0.300, "ocean":     0.030,
-}
+_priors = get_prior_set(TemporalMode.PRESENT)
+_feat_keys = ["liquid_hc", "organic", "acetylene", "methane", "sai", "topo", "geodiv", "ocean"]
+BASELINE_WEIGHTS = dict(zip(_feat_keys, _priors.weights))
+PRIOR_MEANS = dict(zip(_feat_keys, _priors.prior_means))
 
 SITES = {
-    "Freeman Lacus": {
+    "Towada Lacus": {
         "features": {
-            "liquid_hc": 1.000, "organic": 1.000, "acetylene": 0.648,
-            "methane":   0.720, "sai":     0.250, "topo":      1.000,
-            "geodiv":    0.000, "ocean":   0.177,
+            "liquid_hc": 0.894, "organic": 0.915, "acetylene": 0.892,
+            "methane":   0.689, "sai":     0.176, "topo":      0.834,
+            "geodiv":    0.564, "ocean":   0.030,
         },
         "colour": "#2196F3",
     },

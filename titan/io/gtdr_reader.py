@@ -108,6 +108,8 @@ from typing import Optional, Tuple
 
 import numpy as np
 
+from configs.pipeline_config import TITAN_RADIUS_KM
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -129,8 +131,8 @@ GTDR_MISSING_CONSTANT: float = struct.unpack(
 #: Spatial resolution: 2.0 pixels per degree.
 GTDR_PPD: float = 2.0
 
-#: Titan sphere radius in km (from label A_AXIS_RADIUS).
-GTDR_TITAN_RADIUS_KM: float = 2575.0
+#: Titan sphere radius in km (from pipeline_config canonical value).
+GTDR_TITAN_RADIUS_KM: float = TITAN_RADIUS_KM
 
 
 # ---------------------------------------------------------------------------
@@ -317,15 +319,16 @@ def read_gtdr_img(
                 f"available={available}, expected={expected_bytes}."
             )
         if actual_lines < lines:
-            at_8ppd = 90.0 - actual_lines / 8.0   # southernmost lat if 8 ppd
+            ppd = meta.get("map_resolution", GTDR_PPD)
+            south_lat = 90.0 - actual_lines / ppd
             logger.warning(
                 "%s: label says %d lines but only %d rows available "
-                "(%d bytes short). Reading %d lines (covers to ~%.1fS at 8ppd). "
+                "(%d bytes short). Reading %d lines (covers to ~%.1fS at %.0fppd). "
                 "This is a known Cornell distribution characteristic -- "
                 "re-downloading gives the same result.  Corlies 2017 CUB "
                 "gap-filler will cover latitudes south of this limit.",
                 img_path.name, lines, actual_lines,
-                expected_bytes - available, actual_lines, abs(at_8ppd),
+                expected_bytes - available, actual_lines, abs(south_lat), ppd,
             )
             lines = actual_lines
             expected_bytes = lines * line_samples * 4

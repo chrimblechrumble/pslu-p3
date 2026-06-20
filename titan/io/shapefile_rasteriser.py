@@ -875,6 +875,16 @@ class PolarLakeRasteriser:
         # Longitude west-positive: Y-axis points to 0°W, X-axis to 90°W.
         lon_W = np.degrees(np.arctan2(x_arr, y_arr)) % 360.0
 
+        # North/south polar-stereographic projections have OPPOSITE longitude
+        # handedness: the Birch SOUTH shapefiles match atan2(x, y) directly, but
+        # the NORTH shapefiles are point-reflected (x and y both negated),
+        # requiring a 180 deg longitude shift.  Without this, north-polar lakes
+        # were rasterised 180 deg off in longitude (Mugel appeared at 23W instead
+        # of 203W, etc.).  Validated against the IAU Gazetteer: the 8 largest
+        # north lakes align to a median <2 km only after this correction.
+        if is_north:
+            lon_W = (lon_W + 180.0) % 360.0
+
         x_can = lon_W  * deg_to_m
         y_can = lat_deg * deg_to_m
         return x_can, y_can
@@ -951,8 +961,10 @@ class PolarLakeRasteriser:
                     clipped = shifted.intersection(cb)
                     if clipped is not None and not clipped.is_empty:
                         parts.append(clipped)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.warning(
+                        "Antimeridian unwrap: dropped a polygon part at "
+                        "offset %+.0f m (intersection failed: %s)", offset, exc)
             return parts
 
         if hasattr(geom, "geoms"):
@@ -1010,7 +1022,10 @@ class PolarLakeRasteriser:
                     if any(abs(v) > 360.0 for v in b):
                         return True
                     return False
-                except Exception:
+                except Exception as exc:
+                    logger.warning(
+                        "CRS probe could not read %s (%s); trying next shapefile",
+                        shp, exc)
                     continue
             return False
 

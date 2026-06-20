@@ -16,14 +16,14 @@ The thesis document is not included in this repository. Please contact the autho
 
 This pipeline produces global posterior-probability habitability maps of Titan at 4,490 m/px resolution (1802 × 3603 pixels, 6.49 million pixels per epoch) across five anchor epochs spanning −3.8 to +6.5 Gya — from the Late Heavy Bombardment through the present Cassini era to a future red-giant ocean phase.
 
-Eight habitability-proxy features are extracted from Cassini SAR, VIMS, CIRS, altimetry, geomorphological classification, fluvial channel mapping, gravity, and crater catalogue data. A Beta-conjugate Bayesian framework combines these features into a posterior habitability probability $P(H \mid \mathbf{f})$ at every pixel, with closed-form 95% highest-density intervals (HDIs).
+Eight habitability-proxy features are extracted from Cassini SAR, VIMS, CIRS, altimetry, geomorphological classification, fluvial channel mapping, gravity, and crater catalogue data. A Beta-conjugate Bayesian framework combines these features into a posterior habitability probability $P(H \mid \mathbf{f})$ at every pixel, with closed-form 95% credible intervals.
 
 ### Key findings
 
-- **Freeman Lacus** (210°W, 83°N) ranks #1 at all five epochs, driven by the highest VIMS-resolved organic abundance of any polar lake
+- **Towada Lacus** (244°W, 71°N) ranks #1 at four of five epochs (Uvs Lacus leads in the Future), among a cluster of north-polar lacus with the highest VIMS-resolved organic abundance
 - All top-10 sites are **lake or lacus margins** at every epoch
 - The present-day habitability structure is a **plateau extending ≥250 Myr** into the future
-- The Future red-giant ocean epoch (+5.9 Gya) produces the highest scores ($P(H)$ up to 0.82)
+- The Future red-giant ocean epoch (+5.9 Gya) produces the highest scores ($P(H)$ up to 0.71)
 - **Selk crater** (the Dragonfly landing site) scores $P(H) = 0.21$ — below the prior mean but with the highest geomorphological diversity ($f_7 = 0.66$, 7.2× global median), consistent with Dragonfly targeting past water–organic chemistry rather than present-day solvent habitability
 
 ### Visualisations
@@ -32,7 +32,7 @@ The current posterior-probability maps for the five anchor epochs, plus red gian
 
 ![Key epochs poster](./key_epochs_poster.png)
 
-The full temporal animation (72 frames, −3.8 to +6.5 Gya). Click to download the MP4:
+The full temporal animation (74 frames, −3.8 to +6.5 Gya). Click to download the MP4:
 
 [![Watch the video](./titan_habitability_animation_full_inference.gif)](./titan_habitability_animation_full_inference.mp4)
 
@@ -74,7 +74,7 @@ titan_pipeline/
 │   ├── generate_sensitivity_analysis.py  # Prior-parameter sensitivity (Fig. 4.1)
 │   ├── generate_bayesian_diagram.py      # Bayesian update schematic (Fig. 2.3)
 │   ├── generate_beta_update_figure.py    # Feature-by-feature update (Fig. B.1)
-│   ├── generate_hdi_comparison.py        # HDI comparison chart (Fig. 2.4)
+│   ├── generate_hdi_comparison.py        # CI comparison chart (Fig. 2.4)
 │   ├── generate_feature_panel.py         # 8-panel feature map (Fig. A.1)
 │   ├── generate_temporal_trend.py        # Median P(H) vs time (Fig. 3.7)
 │   ├── generate_epoch_timeline.py        # Feature scale factors (Fig. 2.6)
@@ -141,7 +141,7 @@ Each run produces:
 python generate_temporal_maps.py --inference-mode full_inference --save-posterior-npy
 ```
 
-Produces 72-frame animation interpolating between the 5 anchor posteriors using PCHIP monotone cubic interpolation.
+Produces 74-frame animation interpolating between the 5 anchor posteriors using PCHIP monotone cubic interpolation.
 
 ### 4. Generate thesis figures
 
@@ -188,7 +188,7 @@ All input data are derived from the Cassini–Huygens mission (2004–2017). The
 | 2. Preprocessing | Reproject all rasters to canonical 4490 m/px equirectangular grid | `titan/preprocessing.py` |
 | 3. Feature extraction | Compute 8 habitability-proxy features ($f_1$–$f_8$) | `titan/features.py` |
 | 4. Bayesian inference | Beta-conjugate posterior update at 6.49M pixels | `titan/bayesian/` |
-| 5. Visualisation | Posterior maps, HDI charts, feature panels | `titan/visualisation.py` |
+| 5. Visualisation | Posterior maps, CI charts, feature panels | `titan/visualisation.py` |
 
 ---
 
@@ -204,7 +204,7 @@ where:
 - $\mu_0 = \sum_i w_i \mu_i = 0.331$ (global prior mean)
 - $w_i$ = feature weights (sum to 1.0), $f_i$ = normalised feature values
 
-The posterior at each pixel is a full Beta distribution with closed-form 95% HDIs, not just a point estimate.
+The posterior at each pixel is a full Beta distribution with closed-form 95% credible intervals, not just a point estimate.
 
 ---
 

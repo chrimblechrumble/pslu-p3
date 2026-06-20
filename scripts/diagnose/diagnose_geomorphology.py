@@ -128,21 +128,30 @@ R("=" * 60)
 shp_dir = Path('data/raw/geomorphology_shapefiles')
 dunes_shp = shp_dir / 'Dunes.shp'
 
+def _exterior_coords(geom):
+    """Yield exterior-ring coords for Polygon or MultiPolygon geometries."""
+    if geom is None or geom.is_empty:
+        return
+    # MultiPolygon (and other collections) expose parts via .geoms;
+    # only single Polygons have a direct .exterior attribute.
+    parts = getattr(geom, "geoms", None)
+    if parts is not None:
+        for part in parts:
+            yield from _exterior_coords(part)
+    elif hasattr(geom, "exterior"):
+        yield from geom.exterior.coords
+
 if dunes_shp.exists():
     try:
         import geopandas as gpd
         gdf = gpd.read_file(dunes_shp)
-        geom = gdf.geometry.iloc[0]
-        coords = list(geom.exterior.coords)[:5]
+        first_coords = list(_exterior_coords(gdf.geometry.iloc[0]))[:5]
         R(f"Dunes.shp first polygon, first 5 vertices:")
-        for lon, lat, *_ in coords:
+        for lon, lat, *_ in first_coords:
             R(f"  ({lon:.4f}, {lat:.4f})")
         all_lons = []
         for geom in gdf.geometry:
-            if geom is not None and not geom.is_empty:
-                try:
-                    all_lons.extend([c[0] for c in geom.exterior.coords])
-                except: pass
+            all_lons.extend(c[0] for c in _exterior_coords(geom))
         if all_lons:
             R(f"\nDunes.shp longitude range: {min(all_lons):.2f} to {max(all_lons):.2f}")
             if min(all_lons) < -90:
@@ -193,7 +202,6 @@ ax.set_xlabel('Lon (°W)'); ax.set_ylabel('Lat (°)')
 
 # Longitude histogram of dunes
 ax = axes[1, 0]
-dune_pixels = geo[np.abs(lat_centres[:, None]) < 30] == 2
 dune_lons_all = []
 for r, row in enumerate(geo):
     if abs(lat_centres[r]) < 30:

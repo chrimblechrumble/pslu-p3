@@ -45,10 +45,15 @@ from __future__ import annotations
 
 import argparse
 import math
+import sys
 from pathlib import Path
 from typing import Iterable
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from configs.pipeline_config import PipelineConfig as _PipelineConfig
+from configs.site_catalogue import get_coords as _get_coords
 
 try:
     from PIL import Image, ImageDraw, ImageFont
@@ -57,7 +62,7 @@ except ImportError:
     _PIL_OK = False
 
 # --- Canonical grid ------------------------------------------------------------
-NROWS, NCOLS = 1802, 3603   # must match pipeline canonical grid
+NROWS, NCOLS = _PipelineConfig().canonical_grid_shape
 
 # --- Site catalogue ------------------------------------------------------------
 # Each entry: (short_label, lon_W_deg, lat_deg, site_type, [top10_epochs])
@@ -69,44 +74,45 @@ NROWS, NCOLS = 1802, 3603   # must match pipeline canonical grid
 # Source: Bayesian posterior formula applied to Cassini-derived feature values
 # (see thesis §Results, Table top10_past – top10_future)
 #
-# Coordinates from: Lopes et al. (2019) Nature Astronomy geomorphological map;
-# Lorenz et al. (2021) PSJ Dragonfly landing site; Lebreton et al. (2005) Nature Huygens.
+# Coordinates sourced from configs.site_catalogue (canonical single source of truth).
+
+def _s(name, stype, epochs):
+    lon_W, lat = _get_coords(name)
+    return (name, lon_W, lat, stype, epochs)
 
 SITES: list[tuple] = [
     # -- Polar lakes / seas ---------------------------------------------------
-    ("Kraken S",     310.0,  72.0,  "lake",
-     ["PAST","LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
-    ("Ligeia E",      82.0,  79.0,  "lake",
-     ["PAST","LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
-    ("Kraken N",     348.0,  80.0,  "lake",
-     ["LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
-    ("Punga",        339.0,  85.0,  "lake",
-     ["LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
-    ("Ontario",      179.0, -72.0,  "lake",
-     ["LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
-    ("Ligeia open",   79.0,  79.0,  "lake",
-     ["LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
+    _s("Kraken S",  "lake",
+       ["PAST","LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
+    _s("Ligeia E",  "lake",
+       ["PAST","LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
+    _s("Kraken N",  "lake",
+       ["LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
+    _s("Punga",     "lake",
+       ["LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
+    _s("Ontario",   "lake",
+       ["LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
     # -- Impact craters (top-10 at PAST epoch) ---------------------------------
-    ("Menrva",        87.3,  19.0,  "land",   ["PAST","FUTURE"]),
-    ("Selk",         199.0,   7.0,  "land",   ["PAST","PRESENT","NEAR_FUTURE","FUTURE"]),
-    ("Hano",         349.0, -38.6,  "land",   ["PAST"]),
-    ("Sinlap",        16.0,  11.3,  "land",   ["PAST"]),
-    ("Ksa",           65.6,  14.0,  "land",   ["PAST"]),
-    ("Afekan",       200.5,  -1.4,  "land",   ["PAST"]),
+    _s("Menrva",    "land",   ["PAST","FUTURE"]),
+    _s("Selk",      "land",   ["PAST","PRESENT","NEAR_FUTURE","FUTURE"]),
+    _s("Hano",      "land",   ["PAST"]),
+    _s("Sinlap",    "land",   ["PAST"]),
+    _s("Ksa",       "land",   ["PAST"]),
+    _s("Afekan",    "land",   ["PAST"]),
     # -- Cryovolcanic candidates (top-10 at PAST epoch) ------------------------
-    ("Hotei Regio",   75.0, -26.0,  "land",   ["PAST","PRESENT","NEAR_FUTURE"]),
-    ("Sotra Facula", 144.5,   9.8,  "land",   ["PAST"]),
+    _s("Hotei",     "land",   ["PAST","PRESENT","NEAR_FUTURE"]),
+    _s("Sotra",     "land",   ["PAST"]),
     # -- Equatorial dune seas (top-10 at PRESENT / FUTURE) ---------------------
-    ("Belet",        250.0,   7.0,  "land",   ["PRESENT","NEAR_FUTURE","FUTURE"]),
-    ("Shangri-La",   155.0,  -5.0,  "land",   ["PRESENT","NEAR_FUTURE","FUTURE"]),
-    ("Fensal",        20.0,  15.0,  "land",   ["PRESENT","NEAR_FUTURE","FUTURE"]),
-    ("Aztlan",       100.0,  10.0,  "land",   ["FUTURE"]),
+    _s("Belet",     "land",   ["PRESENT","NEAR_FUTURE","FUTURE"]),
+    _s("Shangri-La","land",   ["PRESENT","NEAR_FUTURE","FUTURE"]),
+    _s("Fensal",    "land",   ["PRESENT","NEAR_FUTURE","FUTURE"]),
+    _s("Aztlan",    "land",   ["FUTURE"]),
     # -- Mission landers (always shown) ----------------------------------------
     # Huygens: Lebreton et al. (2005); Dragonfly: Lorenz et al. (2021)
-    ("Huygens",      192.3, -10.6,  "lander",
-     ["PAST","LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
-    ("Dragonfly",    199.0,   7.0,  "lander",
-     ["PAST","LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
+    _s("Huygens",   "lander",
+       ["PAST","LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
+    _s("Dragonfly", "lander",
+       ["PAST","LAKE_FORMATION","PRESENT","NEAR_FUTURE","FUTURE"]),
 ]
 
 # --- Visual constants ----------------------------------------------------------

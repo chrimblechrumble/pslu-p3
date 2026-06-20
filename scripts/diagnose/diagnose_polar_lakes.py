@@ -9,6 +9,7 @@ and the Birch shapefiles.
 
 Exit code 0 = plausible data, 1 = problem detected.
 """
+import math
 import sys
 from pathlib import Path
 import numpy as np
@@ -76,6 +77,25 @@ print()
 print("=" * 60)
 print("3. Birch shapefile properties (CRS and bounds)")
 print("=" * 60)
+print("  NOTE: the Birch+2017 Cornell shapefiles have NO embedded CRS and use")
+print("  a polar-stereographic projection (metres) centred on the pole. This")
+print("  is the EXPECTED convention; titan/io/shapefile_rasteriser.py inverts")
+print("  it in _stereo_to_canonical. Projected metres + CRS=None is correct,")
+print("  not a defect -- so we validate the implied latitude coverage instead.")
+
+TITAN_R_M = 2_575_000.0          # Titan sphere radius (matches rasteriser)
+# The Birch polar mapping covers the polar terrains down to ~50 deg latitude.
+# A radial extent reaching below this lowest latitude signals a corrupt or
+# inside-out polygon spanning the whole projection plane.
+MIN_POLAR_COVERAGE_LAT = 30.0    # lowest |lat| we still consider "polar"
+
+def stereo_lowest_lat(bounds):
+    """Lowest |latitude| covered, from the farthest bbox corner (metres)."""
+    rho = max(math.hypot(x, y)
+              for x in (bounds[0], bounds[2])
+              for y in (bounds[1], bounds[3]))
+    colat_deg = math.degrees(2.0 * math.atan2(rho, 2.0 * TITAN_R_M))
+    return 90.0 - colat_deg, rho
 
 try:
     import geopandas as gpd
@@ -93,33 +113,40 @@ try:
                 print(f"    Bounds:    xmin={bounds[0]:.4f}  ymin={bounds[1]:.4f}")
                 print(f"               xmax={bounds[2]:.4f}  ymax={bounds[3]:.4f}")
                 # Detect coordinate system from bounds
-                if abs(bounds[0]) <= 360 and abs(bounds[2]) <= 360 and abs(bounds[1]) <= 90:
-                    if bounds[0] >= 0 and bounds[2] <= 360:
-                        print("    Coord type: likely GEOGRAPHIC 0-360 E or 0-360 W degrees")
-                    elif bounds[0] >= -180:
-                        print("    Coord type: likely GEOGRAPHIC -180 to +180 E degrees")
+                is_projected = (abs(bounds[0]) > 360 or abs(bounds[2]) > 360
+                                or abs(bounds[1]) > 90 or abs(bounds[3]) > 90)
+                if not is_projected:
+                    # Unexpected for Birch files: the rasteriser assumes metres.
+                    print("    Coord type: GEOGRAPHIC degrees -- UNEXPECTED for Birch "
+                          "polar files (rasteriser expects stereographic metres)")
+                    problems.append(
+                        f"{shp.name} is in geographic degrees, but the polar-lake "
+                        "rasteriser (_stereo_to_canonical) expects stereographic metres"
+                    )
+                else:
+                    lowest_lat, rho = stereo_lowest_lat(bounds)
+                    print("    Coord type: polar-stereographic metres, CRS=None "
+                          "(EXPECTED Birch+2017 convention)")
+                    print(f"    Implied coverage: down to ~{lowest_lat:.1f} deg latitude "
+                          f"(max rho={rho:.0f} m)")
+                    if lowest_lat < MIN_POLAR_COVERAGE_LAT:
+                        print(f"    *** coverage extends below {MIN_POLAR_COVERAGE_LAT:.0f} "
+                              "deg -- possible inside-out/corrupt polygon")
+                        problems.append(
+                            f"{shp.name} radial extent reaches ~{lowest_lat:.0f} deg "
+                            f"latitude (below {MIN_POLAR_COVERAGE_LAT:.0f} deg) -- "
+                            "possible inside-out polygon"
+                        )
                     else:
-                        print("    Coord type: UNKNOWN degree-range")
-                elif abs(bounds[0]) > 360 or abs(bounds[2]) > 360:
-                    print("    Coord type: likely PROJECTED (metres or km) -- NOT geographic degrees!")
-                    problems.append(
-                        f"{shp.name} appears to be in a projected CRS "
-                        f"(xmin={bounds[0]:.0f}, xmax={bounds[2]:.0f}) -- "
-                        "the _to_canonical transform expects geographic degrees"
-                    )
-                # Geometry area stats
+                        print("    Coverage is polar [OK]")
+                # Geometry area stats. In stereographic metres these are m^2 and
+                # legitimately large (paleo-seas span tens of km); report in km^2
+                # for readability without flagging size as a defect.
                 areas = gdf.geometry.area
-                print(f"    Area stats: min={areas.min():.4f}  max={areas.max():.4f}  "
-                      f"sum={areas.sum():.4f}")
-                # Very large features (area > 10 deg^2 = very suspicious for a lake)
-                huge = gdf[areas > 1000]
-                if not huge.empty:
-                    print(f"    *** {len(huge)} features with area > 1000 sq-units -- "
-                          "these may be continent-sized polygons")
-                    problems.append(
-                        f"{shp.name} has {len(huge)} huge polygon(s) "
-                        f"(max area {areas.max():.0f}) -- possible inside-out polygon"
-                    )
+                scale = 1e6 if is_projected else 1.0
+                unit  = "km^2" if is_projected else "deg^2"
+                print(f"    Area stats ({unit}): min={areas.min()/scale:.4f}  "
+                      f"max={areas.max()/scale:.4f}  sum={areas.sum()/scale:.4f}")
             except Exception as e:
                 print(f"    [ERROR] {e}")
 except ImportError:

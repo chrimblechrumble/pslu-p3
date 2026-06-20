@@ -16,6 +16,7 @@ Output:  outputs/diagnostics/beta_update_figure.pdf / .png
 from __future__ import annotations
 
 import math
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -25,22 +26,21 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from scipy.stats import beta as beta_dist
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from configs.temporal_config import TemporalMode, get_prior_set
+from configs.pipeline_config import BayesianPriorConfig
+
 OUT_DIR = Path("outputs/diagnostics")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-KAPPA  = 5.0
-LAMBDA = 6.0
+_bpc = BayesianPriorConfig()
+KAPPA  = _bpc.beta_concentration_default
+LAMBDA = _bpc.likelihood_sharpness
 
-WEIGHTS = {
-    "liquid_hc":  0.25, "organic":   0.20, "acetylene": 0.20,
-    "methane":    0.15, "sai":       0.08, "topo":      0.06,
-    "geodiv":     0.04, "ocean":     0.02,
-}
-PRIOR_MEANS = {
-    "liquid_hc":  0.020, "organic":   0.700, "acetylene": 0.350,
-    "methane":    0.400, "sai":       0.350, "topo":      0.250,
-    "geodiv":     0.300, "ocean":     0.030,
-}
+_priors = get_prior_set(TemporalMode.PRESENT)
+_feat_keys = ["liquid_hc", "organic", "acetylene", "methane", "sai", "topo", "geodiv", "ocean"]
+WEIGHTS = dict(zip(_feat_keys, _priors.weights))
+PRIOR_MEANS = dict(zip(_feat_keys, _priors.prior_means))
 FEATURE_LABELS = {
     "liquid_hc":  "$f_1$ liquid HC",
     "organic":    "$f_2$ organic",
@@ -53,12 +53,12 @@ FEATURE_LABELS = {
 }
 
 SITES = {
-    "Freeman Lacus": {
+    "Towada Lacus": {
         "colour": "#1565C0",
         "features": {
-            "liquid_hc": 1.000, "organic":   1.000, "acetylene": 0.648,
-            "methane":   0.720, "sai":       0.250, "topo":      1.000,
-            "geodiv":    0.000, "ocean":     0.177,
+            "liquid_hc": 0.894, "organic":   0.915, "acetylene": 0.892,
+            "methane":   0.689, "sai":       0.176, "topo":      0.834,
+            "geodiv":    0.564, "ocean":     0.030,
         },
     },
     "Belet Dunes": {
@@ -127,7 +127,7 @@ def make_figure() -> plt.Figure:
     fig.text(
         0.5, 0.930,
         (r"Curves show Beta($\alpha$, $\beta$) after adding each successive feature.  "
-         "Shaded region = 95% HDI of final posterior.  "
+         "Shaded region = 95% CI of final posterior.  "
          "Note: probability density can exceed 1.0 for concentrated distributions."),
         ha="center", va="top", color=txt_col, fontsize=11,
     )
@@ -165,7 +165,7 @@ def make_figure() -> plt.Figure:
             ax.plot(x, pdf, color=colours[step], lw=lw, ls=ls,
                     alpha=alpha_line, label=lbl)
 
-        # Shade final HDI
+        # Shade final 95% CI
         a_f, b_f = posterior_params(site["features"], 8)
         lo = beta_dist.ppf(0.025, a_f, b_f)
         hi = beta_dist.ppf(0.975, a_f, b_f)
@@ -188,7 +188,7 @@ def make_figure() -> plt.Figure:
         )
         ax.grid(True, color=grid_col, alpha=0.4, lw=0.5)
 
-    # ── Bottom panel: HDI comparison ──────────────────────────────────────────
+    # ── Bottom panel: CI comparison ───────────────────────────────────────────
     # ax_bot = fig.add_subplot(gs_bot[0, 0])
     # ax_bot.set_facecolor(dark_bg)
     # ax_bot.tick_params(colors=txt_col, labelsize=9)
@@ -237,8 +237,8 @@ def make_figure() -> plt.Figure:
     # ax_bot.set_yticks(y_pos)
     # ax_bot.set_yticklabels(names, color=txt_col, fontsize=9)
     # # Plain % - no LaTeX
-    # ax_bot.set_xlabel("P(H | features) with 95% HDI", color=txt_col, fontsize=11)
-    # ax_bot.set_title("95% Highest Density Intervals at Key Present-Epoch Sites",
+    # ax_bot.set_xlabel("P(H | features) with 95% CI", color=txt_col, fontsize=11)
+    # ax_bot.set_title("95% Credible Intervals at Key Present-Epoch Sites",
     #                  color=txt_col, fontsize=11, pad=4)
     # ax_bot.axvline(0.331, color="#888888", lw=1.2, ls=":", alpha=0.7,
     #                label="Prior mean (0.331)")

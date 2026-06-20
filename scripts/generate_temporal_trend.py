@@ -2,7 +2,7 @@
 """
 scripts/generate_temporal_trend.py
 =====================================
-Generate the 72-epoch temporal habitability trend (Figure R3).
+Generate the 74-epoch temporal habitability trend (Figure R3).
 
 Reads per-frame posterior .npy files saved by generate_temporal_maps.py
 when run with --save-posterior-npy.
@@ -31,11 +31,48 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from configs.pipeline_config import PipelineConfig, BayesianPriorConfig
+from configs.temporal_config import TemporalMode, get_prior_set
+from configs.site_catalogue import IMPACT_MELT_CRATERS
+
+# -- Bayesian parameters (single source of truth: configs) --------------------
+# Used only by the fully-standalone fallback below, so that its representative
+# curves obey the SAME Beta-conjugate formula and bounds as the pipeline
+# (Eq. posterior_mean in methods.tex) rather than an ad-hoc linear map.
+_BPC      = BayesianPriorConfig()
+KAPPA     = _BPC.beta_concentration           # prior concentration (5)
+LAMBDA    = _BPC.likelihood_sharpness         # likelihood sharpness (6)
+_PS_PRES  = get_prior_set(TemporalMode.PRESENT)
+_PS_FUT   = get_prior_set(TemporalMode.FUTURE)
+WEIGHTS   = dict(zip(_PS_PRES.feature_names, _PS_PRES.weights))
+MU0_PRES  = sum(w * m for w, m in zip(_PS_PRES.weights, _PS_PRES.prior_means))  # 0.331
+MU0_FUT   = sum(w * m for w, m in zip(_PS_FUT.weights,  _PS_FUT.prior_means))   # 0.695
+
+#: Per-anchor global prior mean mu0 = sum_i w_i mu_i, taken directly from each
+#: epoch's configs.temporal_config prior set (no hardcoded values).
+_ANCHOR_MU0 = {
+    t: sum(w * m for w, m in zip(ps.weights, ps.prior_means))
+    for t, ps in [
+        (-3.5, get_prior_set(TemporalMode.PAST)),
+        (-1.0, get_prior_set(TemporalMode.LAKE_FORMATION)),
+        ( 0.0, _PS_PRES),
+        ( 0.25, get_prior_set(TemporalMode.NEAR_FUTURE)),
+    ]
+}
+
+
+def _beta_posterior_mean(w_sum: float, mu0: float) -> float:
+    """Exact Beta-conjugate posterior mean (Eq. posterior_mean, methods.tex).
+
+    P(H) = (kappa*mu0 + lambda*w_sum) / (kappa + lambda).
+    Naturally bounded to [kappa*mu0, kappa*mu0+lambda]/(kappa+lambda); no clamp.
+    """
+    return (KAPPA * mu0 + LAMBDA * w_sum) / (KAPPA + LAMBDA)
 
 OUT_DIR = Path("outputs/diagnostics")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-GRID_SHAPE = (1802, 3603)
+GRID_SHAPE = PipelineConfig().canonical_grid_shape
 NROWS, NCOLS = GRID_SHAPE
 
 # Latitude grid (row 0 = 90N)
@@ -72,7 +109,7 @@ try:
         raise FileNotFoundError
 except Exception:
     # Approximate crater mask: known large craters
-    crater_sites = [(87.3, 19.0), (199.0, 7.0), (16.0, 11.3)]  # lon_W, lat
+    crater_sites = [(lon_W, lat) for lon_W, lat, _, _ in IMPACT_MELT_CRATERS[:3]]
     crater_mask = np.zeros(GRID_SHAPE, dtype=bool)
     for lon_w, lat in crater_sites:
         r = int((90 - lat) / 180 * NROWS)
@@ -141,28 +178,65 @@ else:
             if age <= 0: return 2.5
             return min(2.5, (4.57 / age) ** 0.5)
 
-        def global_median(t):
-            s1 = _liquid_scale(t)
-            s2 = _organic_scale(t)
-            s3 = _acetylene_scale(t)
-            # Weighted sum at a representative "average" site
-            w = 0.25*s1*0.20 + 0.20*s2*0.60 + 0.20*s3*0.35 + 0.15*0.40
-            return min(0.88, max(0.10, 0.331 + 0.55 * (w - 0.25)))
-        def npolar_median(t):
-            s1 = _liquid_scale(t)
-            # North polar: liquid-dominated; rises sharply with lake formation
-            w = 0.25*s1*0.85 + 0.20*_organic_scale(t)*0.05 + 0.15*0.65
-            return min(0.88, max(0.10, 0.331 + 0.65 * (w - 0.20)))
-        def equat_median(t):
-            s2 = _organic_scale(t)
-            s3 = _acetylene_scale(t)
-            w = 0.20*s2*0.82 + 0.20*s3*0.45 + 0.15*0.09
-            return min(0.88, max(0.10, 0.331 + 0.55 * (w - 0.28)))
-        def crater_median(t):
-            s8 = min(1.0, 2.5 * max(0.3, 1.0 - abs(t + 3.8) / 3.0)) * 0.22
-            s3 = _acetylene_scale(t)
-            w = 0.20*s3*0.38 + 0.02*s8 + 0.15*0.08
-            return min(0.88, max(0.10, 0.331 + 0.50 * (w - 0.12)))
+        # Representative present-epoch feature values per region (informed by
+        # the thesis site/median tables).  The four dynamic features
+        # (liquid, organic, acetylene, methane) are modulated over time by the
+        # scale functions above and clipped to [0,1]; the static features stay
+        # at their representative present values.  P(H) is then the EXACT
+        # config Beta formula -- no ad-hoc constants, and bounds follow from
+        # [kappa*mu0, kappa*mu0+lambda]/(kappa+lambda).
+        #   region: (liq_max, organic, acetylene, methane_max,
+        #            sai, topo, geomorph, subsurface)
+        _REGION_BASE = {
+            "Global":   (0.10, 0.51, 0.42, 0.45, 0.10, 0.15, 0.10, 0.03),
+            "N. Polar": (0.45, 0.62, 0.45, 0.65, 0.22, 0.16, 0.10, 0.03),
+            "Equator":  (0.02, 0.55, 0.38, 0.12, 0.05, 0.12, 0.15, 0.03),
+            "Crater":   (0.02, 0.28, 0.30, 0.06, 0.02, 0.08, 0.55, 0.03),
+        }
+
+        _knots = sorted(_ANCHOR_MU0.items())   # [(-3.5,..),(-1.0,..),(0,..),(0.25,..)]
+
+        def _mu0_for(t):
+            # Cassini-era basin (<= +0.25 Gya): linearly interpolate the real
+            # per-anchor mu0 from config (past < lake < present ordering).
+            # Plateau at the near-future mu0 through the solvent-free era, then
+            # ramp to the FUTURE red-giant ocean prior (mu0=0.695) over
+            # +5.0 -> +5.9 Gya after the transient minimum.
+            if t <= _knots[0][0]:
+                return _knots[0][1]
+            if t <= _knots[-1][0]:
+                for (t0, m0), (t1, m1) in zip(_knots, _knots[1:]):
+                    if t <= t1:
+                        return m0 + (m1 - m0) * (t - t0) / (t1 - t0)
+            if t <= 5.0:
+                return _knots[-1][1]
+            if t >= 5.9:
+                return MU0_FUT
+            return _knots[-1][1] + (t - 5.0) / 0.9 * (MU0_FUT - _knots[-1][1])
+
+        def _clip01(x):
+            return min(1.0, max(0.0, x))
+
+        def _region_median(region, t):
+            liq_max, org, ace, cyc, sai, topo, geo, sub = _REGION_BASE[region]
+            s1, s2, s3 = _liquid_scale(t), _organic_scale(t), _acetylene_scale(t)
+            feats = {
+                "liquid_hydrocarbon":      _clip01(liq_max * s1),
+                "organic_abundance":       _clip01(org * s2),
+                "acetylene_energy":        _clip01(ace * s3),
+                "methane_cycle":           _clip01(cyc * (0.2 + 0.8 * s1)),
+                "surface_atm_interaction": sai,
+                "topographic_complexity":  topo,
+                "geomorphologic_diversity": geo,
+                "subsurface_ocean":        sub,
+            }
+            w_sum = sum(WEIGHTS[k] * feats[k] for k in WEIGHTS)
+            return _beta_posterior_mean(w_sum, _mu0_for(t))
+
+        def global_median(t):  return _region_median("Global", t)
+        def npolar_median(t):  return _region_median("N. Polar", t)
+        def equat_median(t):   return _region_median("Equator", t)
+        def crater_median(t):  return _region_median("Crater", t)
 
         region_medians = {
             "Global":                   np.array([global_median(t) for t in epochs]),
@@ -185,7 +259,12 @@ else:
         epochs = np.linspace(-4.0, 6.5, 200)
         region_medians = {}
         for rname in REGIONS:
-            interp = interp1d(t_anchors, anchor_medians[rname], kind="cubic",
+            y = np.array(anchor_medians[rname], dtype=np.float64)
+            valid = np.isfinite(y)
+            if valid.sum() < 2:
+                region_medians[rname] = np.full_like(epochs, np.nan)
+                continue
+            interp = interp1d(t_anchors[valid], y[valid], kind="cubic",
                               bounds_error=False, fill_value="extrapolate")
             region_medians[rname] = np.clip(interp(epochs), 0.1, 1.0)
 

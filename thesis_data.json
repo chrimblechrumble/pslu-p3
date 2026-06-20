@@ -1,65 +1,65 @@
 {
   "epoch_stats": {
     "past": {
-      "mean": 0.458,
-      "std": 0.268,
-      "p90": 0.787,
-      "a_gt_05": 44.1,
-      "median": 0.363
+      "mean": 0.269,
+      "std": 0.048,
+      "p90": 0.328,
+      "a_gt_05": 0.0,
+      "median": 0.271
     },
     "lake_formation": {
-      "mean": 0.467,
-      "std": 0.277,
-      "p90": 0.805,
-      "a_gt_05": 44.2,
-      "median": 0.367
+      "mean": 0.298,
+      "std": 0.054,
+      "p90": 0.365,
+      "a_gt_05": 0.0,
+      "median": 0.302
     },
     "present": {
-      "mean": 0.468,
-      "std": 0.333,
-      "p90": 0.854,
-      "a_gt_05": 46.8,
-      "median": 0.404
+      "mean": 0.314,
+      "std": 0.062,
+      "p90": 0.39,
+      "a_gt_05": 0.4,
+      "median": 0.316
     },
     "near_future": {
-      "mean": 0.467,
-      "std": 0.333,
-      "p90": 0.854,
-      "a_gt_05": 46.7,
-      "median": 0.404
+      "mean": 0.313,
+      "std": 0.062,
+      "p90": 0.389,
+      "a_gt_05": 0.4,
+      "median": 0.315
     },
     "future": {
-      "mean": 0.525,
-      "std": 0.362,
-      "p90": 0.925,
-      "a_gt_05": 51.0,
-      "median": 0.563
+      "mean": 0.53,
+      "std": 0.092,
+      "p90": 0.653,
+      "a_gt_05": 60.0,
+      "median": 0.53
     }
   },
   "site_posteriors": {
-    "Selk": 0.087,
-    "Selk_percentile_present": 0.0,
-    "Kraken_S1": 0.719,
-    "Kraken_S2": 0.338,
-    "Kraken_S3": 0.854,
-    "Ligeia_E1": 0.853,
-    "Ligeia_E2": 0.782,
-    "Huygens": 0.087,
-    "Belet": 0.087,
-    "Xanadu_centre": 0.087,
-    "Menrva": 0.087,
-    "Sinlap": 0.087,
-    "Ksa": 0.087,
-    "Hano": 0.333,
-    "Belet_dune": 0.087,
-    "Selk_ejecta": 0.087,
-    "Selk_floor": 0.087,
-    "Selk_past": 0.186,
-    "Selk_percentile_past": 29.1,
-    "kraken_shore_lo": 0.338,
-    "kraken_shore_hi": 0.854,
-    "ligeia_shore_lo": 0.782,
-    "ligeia_shore_hi": 0.853
+    "Selk": 0.22,
+    "Selk_percentile_present": 5.9,
+    "Kraken_S1": 0.312,
+    "Kraken_S2": 0.285,
+    "Kraken_S3": 0.317,
+    "Ligeia_E1": 0.394,
+    "Ligeia_E2": 0.345,
+    "Huygens": 0.251,
+    "Belet": 0.211,
+    "Xanadu_centre": 0.272,
+    "Menrva": 0.285,
+    "Sinlap": 0.178,
+    "Ksa": 0.247,
+    "Hano": 0.33,
+    "Belet_dune": 0.221,
+    "Selk_ejecta": 0.233,
+    "Selk_floor": 0.207,
+    "Selk_past": 0.254,
+    "Selk_percentile_past": 39.6,
+    "kraken_shore_lo": 0.285,
+    "kraken_shore_hi": 0.317,
+    "ligeia_shore_lo": 0.345,
+    "ligeia_shore_hi": 0.394
   },
   "selk_features": {
     "f1": 0.01,
@@ -84,30 +84,30 @@
   "selk_bayesian": {
     "PH": 0.22,
     "std": 0.12,
-    "hdi_lo": 0.044,
-    "hdi_hi": 0.481,
+    "ci_lo": 0.041,
+    "ci_hi": 0.494,
     "w_sum": 0.1282
   },
   "crater_comparison": {
     "Menrva": {
-      "past": 0.345,
-      "present": 0.087
+      "past": 0.317,
+      "present": 0.285
     },
     "Sinlap": {
-      "past": 0.135,
-      "present": 0.087
+      "past": 0.209,
+      "present": 0.178
     },
     "Ksa": {
-      "past": 0.163,
-      "present": 0.087
+      "past": 0.27,
+      "present": 0.247
     },
     "Selk": {
-      "past": 0.186,
-      "present": 0.087
+      "past": 0.254,
+      "present": 0.22
     },
     "Hano": {
-      "past": 0.325,
-      "present": 0.333
+      "past": 0.318,
+      "present": 0.33
     }
   }
 }

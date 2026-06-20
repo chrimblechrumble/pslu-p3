@@ -1,20 +1,20 @@
 short_name,full_name,lon_W,lat,type,P(H)_past,P(H)_lake_formation,P(H)_present,P(H)_near_future,P(H)_future
-Freeman,Freeman Lacus,210.0,83.0,lake,0.4775,0.5043,0.5581,0.5572,0.7500
-Oib,Oib Lacus,220.0,82.0,lake,0.4396,0.4697,0.5184,0.5175,0.6533
-Koitere,Koitere Lacus,154.0,73.0,lake,0.4276,0.4538,0.5042,0.5033,0.6006
+Freeman,Freeman Lacus,211.1,73.6,lake,0.3992,0.4298,0.4702,0.4693,0.6734
+Muggel,Müggel Lacus,203.5,84.44,lake,0.4653,0.4889,0.5490,0.5481,0.6439
+Koitere,Koitere Lacus,36.14,79.4,lake,0.4093,0.4417,0.4890,0.4881,0.5520
 Ontario,Ontario Lacus,179.0,-72.0,lake,0.3272,0.3684,0.3898,0.3889,0.6631
-Hammar,Hammar Lacus,93.5,70.7,lake,0.3335,0.3690,0.3924,0.3915,0.7026
-Mackay,Mackay Lacus,262.8,77.5,lake,0.3487,0.3796,0.4071,0.4062,0.7082
-Paxsi,Paxsi Lacus,243.0,72.0,lake,0.3836,0.4202,0.4489,0.4480,0.6919
-Neagh,Neagh Lacus,327.0,72.0,lake,0.3301,0.3737,0.3939,0.3930,0.6222
-Bolsena,Bolsena Lacus,12.3,75.4,lake,0.2942,0.3321,0.3511,0.3502,0.5833
-Logtak,Logtak Lacus,197.5,74.0,lake,0.3205,0.3598,0.3792,0.3783,0.7250
-Cardiel,Cardiel Lacus,128.0,78.0,lake,0.3080,0.3475,0.3714,0.3704,0.6559
-Uvs,Uvs Lacus,262.0,74.5,lake,0.3375,0.3744,0.4023,0.4014,0.6900
-Waikare,Waikare Lacus,185.0,75.0,lake,0.3166,0.3546,0.3770,0.3761,0.6789
-Ligeia E,Ligeia E shore,82.0,79.0,lake,0.3159,0.3592,0.3830,0.3821,0.6321
-Selk,Selk crater,199.0,7.0,lander,0.2435,0.2260,0.2093,0.2084,0.4074
-Huygens,Huygens site,192.3,-10.6,lander,0.2280,0.2350,0.2444,0.2435,0.4073
-Belet,Belet dunes,250.0,5.0,other,0.2013,0.2026,0.2113,0.2104,0.4217
-Shangri-La,Shangri-La dunes,155.0,-5.0,other,0.1780,0.1994,0.1920,0.1911,0.3824
-Xanadu,Xanadu,100.0,-5.0,other,0.2128,0.2330,0.2469,0.2459,0.5100
+Rwegura,Rwegura Lacus,105.2,71.5,lake,0.4404,0.4703,0.5230,0.5221,0.6437
+Mackay,Mackay Lacus,97.53,78.32,lake,0.3544,0.3924,0.4200,0.4191,0.5937
+Towada,Towada Lacus,244.2,71.4,lake,0.4905,0.5162,0.5733,0.5724,0.7036
+Neagh,Neagh Lacus,32.16,81.11,lake,0.3937,0.4172,0.4586,0.4577,0.5700
+Bolsena,Bolsena Lacus,10.28,75.75,lake,0.3540,0.3728,0.4168,0.4159,0.4497
+Logtak,Logtak Lacus,226.1,70.8,lake,0.4483,0.4765,0.5295,0.5286,0.6826
+Arala,Arala Lacus,124.9,78.1,lake,0.4130,0.4449,0.4870,0.4861,0.6615
+Uvs,Uvs Lacus,245.7,69.6,lake,0.4371,0.4668,0.5159,0.5150,0.7133
+Waikare,Waikare Lacus,126.0,81.6,lake,0.3443,0.3799,0.4044,0.4035,0.5810
+Ligeia E,Ligeia E shore,82.0,79.0,lake,0.3349,0.3821,0.3983,0.3974,0.6473
+Selk,Selk crater,199.0,7.0,lander,0.2454,0.2263,0.2093,0.2084,0.4074
+Huygens,Huygens site,192.3,-10.6,lander,0.2142,0.2322,0.2444,0.2435,0.4073
+Belet,Belet dunes,250.0,5.0,other,0.1847,0.1993,0.2113,0.2104,0.4217
+Shangri-La,Shangri-La dunes,155.0,-5.0,other,0.1779,0.1994,0.1920,0.1911,0.3824
+Xanadu,Xanadu,100.0,-5.0,other,0.2233,0.2351,0.2468,0.2459,0.5100

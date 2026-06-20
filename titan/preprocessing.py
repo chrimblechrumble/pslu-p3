@@ -1508,8 +1508,10 @@ def normalise_to_0_1(
         return np.full_like(arr, np.nan, dtype=np.float32)
     vmin = float(np.percentile(finite, percentile_lo))
     vmax = float(np.percentile(finite, percentile_hi))
-    if vmax == vmin:
-        return np.zeros_like(arr, dtype=np.float32)
+    if abs(vmax - vmin) < 1e-12:
+        # Degenerate (near-constant) feature: map valid pixels to 0 but
+        # PRESERVE the NaN/missing mask -- do not turn gaps into 0.
+        return np.where(np.isfinite(arr), 0.0, np.nan).astype(np.float32)
     # Compute in float64 to avoid overflow when arr contains large values
     # (e.g. GTIE missing constant ~-3.4e38 or elevation extremes)
     out = (arr.astype(np.float64) - vmin) / (vmax - vmin)
@@ -1541,6 +1543,8 @@ def compute_topographic_roughness(
 
     def _nanstd(values: np.ndarray) -> float:
         v = values[np.isfinite(values)]
+        if len(v) == 0:
+            return np.nan
         return float(np.std(v)) if len(v) > 1 else 0.0
 
     size = 2 * window_radius + 1
@@ -1585,7 +1589,7 @@ def compute_terrain_diversity(
     def _shannon(values: np.ndarray) -> float:
         valid = values[values > 0].astype(int)
         if len(valid) == 0:
-            return 0.0
+            return np.nan
         counts = np.bincount(valid, minlength=n_classes + 1)[1:]
         total  = counts.sum()
         if total == 0:

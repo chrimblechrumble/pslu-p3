@@ -25,6 +25,9 @@ from __future__ import annotations
 import sys, math, numpy as np
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from configs.pipeline_config import PipelineConfig
+
 # ---------------------------------------------------------------------------
 # Reproduce the animation constants
 # ---------------------------------------------------------------------------
@@ -35,7 +38,7 @@ T_BLEND_LO      = +4.0     # start eutectic blend (solar warming ramp)
 T_FUT           = +5.9     # future anchor: last ocean epoch (T=466K; t=6.0 already refrozen)
 T_REFREEZE      = +6.5     # refreezing complete
 EUTECTIC_K      = 176.0
-T_SURFACE_K     = 94.0
+T_SURFACE_K     = 93.65
 
 def solar_luminosity_ratio(t: float) -> float:
     age_now = 4.57; age = age_now + t
@@ -99,7 +102,7 @@ print("=" * 70)
 # SECTION 1: Anchor file integrity
 # ---------------------------------------------------------------------------
 print("\n─── 1. ANCHOR FILE INTEGRITY ───")
-NROWS, NCOLS = 1802, 3603
+NROWS, NCOLS = PipelineConfig().canonical_grid_shape
 anchor_names = ["past","lake_formation","present","near_future","future"]
 anchor_epoch = {"past":-3.5,"lake_formation":-1.0,"present":0.0,
                 "near_future":+0.25,"future":+5.9}

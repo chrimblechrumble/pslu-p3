@@ -17,17 +17,22 @@ from pathlib import Path
 
 import numpy as np
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from configs.pipeline_config import PipelineConfig
+from configs.site_catalogue import get_coords
+
 try:
     import rasterio
 except ImportError:
     sys.exit("rasterio not installed — run: pip install rasterio")
 
 OUTPUTS  = Path("outputs")
-NROWS, NCOLS = 1802, 3603
-PIX_M    = 4490.0   # metres per pixel
+_cfg = PipelineConfig()
+NROWS, NCOLS = _cfg.canonical_grid_shape
+PIX_M    = _cfg.canonical_res_m
 
 # Selk crater  (199°W, 7°N)
-SELK_LON_W, SELK_LAT = 199.0, 7.0
+SELK_LON_W, SELK_LAT = get_coords("Selk")
 SELK_ROW = int((90.0 - SELK_LAT) / 180.0 * NROWS)   # ≈ 830
 SELK_COL = int(SELK_LON_W / 360.0 * NCOLS)            # ≈ 1991
 

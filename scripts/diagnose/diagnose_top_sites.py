@@ -13,7 +13,11 @@ import sys, math
 from pathlib import Path
 import numpy as np
 
-NROWS, NCOLS = 1802, 3603
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from configs.pipeline_config import PipelineConfig
+from configs.site_catalogue import get_site, get_coords, sites_by_type, SITES
+
+NROWS, NCOLS = PipelineConfig().canonical_grid_shape
 DEG_PER_ROW  = 180.0 / NROWS
 DEG_PER_COL  = 360.0 / NCOLS
 MIN_CLUSTER_SEP_DEG = 8.0   # minimum separation between reported sites
@@ -31,55 +35,23 @@ def angular_sep(lat1, lon1, lat2, lon2):
          * math.sin(dlon/2)**2)
     return math.degrees(2 * math.asin(math.sqrt(a)))
 
-NAMED_FEATURES = [
-    # Major polar seas and lakes (north)
-    ("Kraken Mare",      310.0,  68.0),
-    ("Ligeia Mare",       78.0,  79.0),
-    ("Punga Mare",       339.0,  85.5),
-    ("Jingpo Lacus",     336.3,  73.1),
-    ("Hammar Lacus",      93.5,  70.7),
-    ("Bolsena Lacus",     12.3,  75.4),
-    ("Mackay Lacus",     262.8,  77.5),
-    ("Woytchugga Lacus", 218.0,  73.0),
-    ("Neagh Lacus",      180.5,  70.3),
-    ("Cardiel Lacus",    251.5,  71.7),
-    ("Kivu Lacus",       252.0,  68.5),
-    ("Uvs Lacus",        199.0,  68.9),
-    ("Kayangan Lacus",   173.0,  68.5),
-    # South polar lake
-    ("Ontario Lacus",    179.0, -72.0),
-    # Major craters
-    ("Selk Crater",      199.0,   7.0),
-    ("Menrva Crater",     87.3,  19.0),
-    ("Sinlap Crater",     16.0,  11.3),
-    ("Ksa Crater",        65.0,  14.8),
-    ("Afekan Crater",    200.0,  26.3),
-    ("Guabonito Crater", 145.0,  -11.0),
-    ("Nath Crater",      184.0,  -29.0),
-    ("Paxsi Crater",     247.0,  -12.0),
-    ("Forseti Crater",    13.0,  26.0),
-    ("Momoy Crater",     113.0,   6.4),
-    # Dune and organic-rich regions
-    ("Shangri-La",       155.0,  -5.0),
-    ("Belet",            250.0,   5.0),
-    ("Senkyo",           330.0, -15.0),
-    ("Aztlan",           220.0, -20.0),
-    ("Aaru",             338.0,  -8.0),
-    ("Adiri",            210.0,  -7.0),
-    ("Fensal",            30.0,  15.0),
-    ("Ching-Tu",         296.0,  -5.0),
-    # Geologically complex / cryovolcanic candidate regions
-    ("Xanadu",           100.0,  -5.0),
-    ("Hotei Regio",       78.0, -20.0),
-    ("Tui Regio",        126.0, -22.0),
-    ("Sotra Patera",     164.0, -14.0),  # Lopes 2007 cryovolc. candidate
-    ("Doom Mons",        163.0, -14.7),
-    ("Erebor Mons",      172.0, -19.0),
-    ("Tortola Facula",    30.0,   5.0),
-    # Landing / flyby reference sites
-    ("Huygens Landing",  192.3, -10.6),
-    ("Dragonfly Target", 199.0,   7.0),  # Selk region
+# Named features for labelling discovered top-posterior pixels.
+# The catalogue-backed entries are derived from configs.site_catalogue (the
+# single source of truth) so they cannot drift out of sync with the pipeline's
+# site coordinates -- e.g. after the north-polar lake registration fix.  The
+# supplement adds large equatorial albedo/montes regions that are not in the
+# site catalogue (their approximate centres suffice for nearest-feature labels).
+_EXTRA_FEATURES = [
+    ("Senkyo",          330.0, -15.0),
+    ("Aaru",            338.0,  -8.0),
+    ("Adiri",           210.0,  -7.0),
+    ("Ching-Tu",        296.0,  -5.0),
+    ("Tui Regio",       126.0, -22.0),
+    ("Doom Mons",       163.0, -14.7),
+    ("Erebor Mons",     172.0, -19.0),
+    ("Tortola Facula",   30.0,   5.0),
 ]
+NAMED_FEATURES = [(s.full_name, s.lon_W, s.lat) for s in SITES] + _EXTRA_FEATURES
 
 def nearest_feature(lat, lon):
     best_name, best_sep = "unknown", 999.0

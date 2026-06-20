@@ -7,9 +7,9 @@
 \section{Titan as an Astrobiological Target}
 \label{sec:search_context}
 
-The search for habitable environments beyond Earth has increasingly focused on icy ocean worlds in the outer solar system.  Among these, Saturn's moon \titan{} occupies a singular position.
-It is the only moon with a dense atmosphere --- dominated by molecular nitrogen
-at 1.467\,bar surface pressure and 93.65\,K \citep{Fulchignoni2005} (Appendix~\ref{app:constants}) --- and the
+The search for habitable environments beyond Earth has increasingly focused on icy ocean worlds in the outer solar system.  Among these, Saturn's moon \titan{} is unusual in several respects.
+It is the only moon with a dense atmosphere (dominated by molecular nitrogen
+at 1.467\,bar surface pressure and 93.65\,K; \citealt{Fulchignoni2005}, Appendix~\ref{app:constants}) and the
 only known extraterrestrial world to host stable surface liquids
 \citep{Stofan2007}, completing a full precipitation--evaporation--lake cycle
 structurally analogous to Earth's hydrological cycle.  Its atmosphere
@@ -17,10 +17,7 @@ continuously produces complex organic tholins at
 $\sim5\times10^{-14}$\,g\,cm$^{-2}$\,s$^{-1}$ \citep{Lavvas2011}, building
 a global organic sediment layer over $\sim$4\,Gyr \citep{Lorenz2008}.
 At depth, a subsurface water body at $\sim$55--80\,km was inferred from the
-tidal Love number $k_2 = 0.589\pm0.150$ \citep{Iess2012}.  A 2025 reanalysis of the same Cassini radiometric data found interior tidal dissipation of $\sim$3--4\,TW inconsistent with a continuous global ocean, pointing instead to a thick slushy high-pressure ice layer with isolated pockets of liquid water \citep{Petricca2025}.  Tidal heating within this slushy layer maintains liquid water pockets and may generate brine conduits through the ice shell, as investigated by \citet{charlotte}. This convergence of
-cycling solvent, vast organic inventory, and subsurface water makes \titan{} a
-natural laboratory for prebiotic chemistry operating at planetary scale
-across geological time.
+tidal Love number $k_2 = 0.589\pm0.150$ \citep{Iess2012}.  A 2025 reanalysis of the same Cassini radiometric data found interior tidal dissipation of $\sim$3--4\,TW inconsistent with a continuous global ocean, pointing instead to a thick slushy high-pressure ice layer with isolated pockets of liquid water \citep{Petricca2025}.  Tidal heating within this slushy layer maintains liquid water pockets and may generate brine conduits through the ice shell, as investigated by \citet{charlotte}. The subsurface water access precondition used in this thesis (Section~\ref{sec:defining_habitability}) is constructed to be agnostic to this distinction: it depends on tidally-driven conduits reaching the surface, a mechanism both the continuous-ocean and slushy-pocket models support (Section~\ref{sec:features}). Together, the cycling solvent, the large organic inventory, and the subsurface water make \titan{} a site where prebiotic chemistry can be studied at planetary scale over geological time.
 
 \section{The Physical Environment}
 \label{sec:titan_environment}
@@ -29,22 +26,22 @@ The atmosphere ($\sim$94\% \ce{N2}, 5.65\% \ce{CH4}; \citealt{Niemann2005})
 sustains a methane cycle with observed equatorial rainfall \citep{Turtle2011},
 fluvial channel networks \citep{Miller2021channels}, and polar hydrocarbon
 seas (Kraken, Ligeia, and Punga Mare) containing $\sim$70{,}000\,km$^3$ of
-liquid methane--ethane \citep{Mastrogiuseppe2019,Malaska2025}.  The lake distribution is strikingly asymmetric: the north polar region hosts hundreds of filled lakes and seas covering $\sim$1.6\% of the global surface, while equivalent southern latitudes are largely devoid of standing liquid \citep{Aharonson2009}.  This hemispheric imbalance arises from the eccentricity of Saturn's orbit, which makes northern summers longer and milder than southern summers, driving net methane transport from south to north over Milankovitch-like cycles of $\sim$45{,}000\,yr \citep{Aharonson2009}.  The asymmetry is directly relevant to the habitability maps: present-epoch solvent habitability is concentrated in the liquid-rich north, but the orbital forcing implies that the southern hemisphere hosted comparable lake systems in the geologically recent past and will do so again.  The surface is geologically diverse: equatorial dune fields ($\sim$17\% by SAR area), plains
+liquid methane--ethane \citep{Mastrogiuseppe2019,Malaska2025}.  The lake distribution is markedly asymmetric: the north polar region hosts hundreds of filled lakes and seas covering $\sim$1.6\% of the global surface, while equivalent southern latitudes are largely devoid of standing liquid \citep{Aharonson2009}.  This hemispheric imbalance arises from the eccentricity of Saturn's orbit, which makes northern summers longer and milder than southern summers, driving net methane transport from south to north over Milankovitch-like cycles of $\sim$45{,}000\,yr \citep{Aharonson2009}.  The 45{,}000\,yr oscillation is far shorter than the spacing between the epochs modelled in this thesis (Section~\ref{sec:scope}), so the present-epoch north-polar dominance shown in the habitability maps should be read as a snapshot of the current phase of this cycle, not a permanent feature of \titan{}'s surface.  The surface is geologically diverse: equatorial dune fields ($\sim$17\% by SAR area), plains
 ($\sim$65\%), labyrinth terrain, impact craters, and mountains, as classified
-by the Lopes et al.\ \citeyearpar{Lopes2019} global geomorphological map that
+by the \citet{Lopes2019} global geomorphological map that
 provides the terrain classification underpinning this thesis.
 
 \section{Defining Habitability}
 \label{sec:defining_habitability}
 
-Habitability is a term used in diverse and sometimes incompatible ways across the planetary science literature \citep{Cockell2016}.  In its strictest sense it denotes a binary property --- whether an environment can sustain the metabolic activity of at least one known organism --- but in practice astrobiologists use it as a continuous measure of how many prerequisites for life co-occur in a given location \citep{Mendez2021}.  This thesis adopts the continuous usage.  The posterior probability $P(H \mid \featurevec)$ at each pixel quantifies the degree to which the \textit{necessary physical and chemical preconditions} for life are simultaneously present: liquid solvent, organic substrate, chemical energy, solvent cycling, atmosphere--surface exchange, topographic and geomorphological diversity, and subsurface water access.  High $P(H)$ does not imply that life exists at a site, nor that abiogenesis could occur there; it implies that more of the known prerequisites are satisfied, and satisfied more strongly, than at a low-$P(H)$ site.
+Habitability is a term used in diverse and sometimes incompatible ways across the planetary science literature \citep{Cockell2016}.  In its strictest sense it denotes a binary property, whether an environment can sustain the metabolic activity of at least one known organism, but in practice astrobiologists use it as a continuous measure of how many prerequisites for life co-occur in a given location \citep{Mendez2021}.  This thesis adopts the continuous usage.  The posterior probability $P(H \mid \featurevec)$ at each pixel quantifies the degree to which the \textit{necessary physical and chemical preconditions} for life are simultaneously present: liquid solvent, organic substrate, chemical energy, solvent cycling, atmosphere--surface exchange, topographic and geomorphological diversity, and subsurface water access.  High $P(H)$ does not imply that life exists at a site, nor that abiogenesis could occur there; it implies that more of the known prerequisites are satisfied, and satisfied more strongly, than at a low-$P(H)$ site.
 
-Abiogenesis --- the emergence of life from non-living chemistry --- demands conditions beyond those captured by the habitability proxy.  In aqueous systems, the minimum requirements include liquid water, a source of organic monomers, free energy to drive polymerisation, and a mechanism for compartmentalisation \citep{Ruiz-Mirazo2014}.  On \titan{}, two fundamentally different abiogenesis scenarios are conceivable: \textit{aqueous abiogenesis} in transient impact-melt ponds or the future red-giant ocean, where liquid water contacts accumulated organics; and \textit{non-aqueous abiogenesis} in the present-day hydrocarbon lakes, where azotosome membranes \citep{Stevenson2015} could provide compartmentalisation and acetylenotrophy \citep{McKaySmith2005} could provide energy, but where the low temperature (94\,K) severely constrains reaction kinetics.  The habitability maps produced in this thesis therefore represent a \textit{necessary but not sufficient} condition for either form of abiogenesis: they identify where the preconditions are jointly satisfied spatially and temporally, but cannot assess whether the additional requirements for the origin of life --- sustained chemical disequilibrium, information-carrying polymers, or encapsulation --- are met.
+Abiogenesis (the emergence of life from non-living chemistry) requires conditions beyond those captured by the habitability proxy.  In aqueous systems, the minimum requirements include liquid water, a source of organic monomers, free energy to drive polymerisation, and a mechanism for compartmentalisation \citep{Ruiz-Mirazo2014}.  On \titan{}, two fundamentally different abiogenesis scenarios are conceivable: \textit{aqueous abiogenesis} in transient impact-melt ponds or the future red-giant ocean, where liquid water contacts accumulated organics; and \textit{non-aqueous abiogenesis} in the present-day hydrocarbon lakes, where azotosome membranes \citep{Stevenson2015} could provide compartmentalisation and acetylenotrophy \citep{McKaySmith2005} could provide energy, but where the low temperature (94\,K) severely constrains reaction kinetics.  The habitability maps produced in this thesis therefore represent a \textit{necessary but not sufficient} condition for either form of abiogenesis: they identify where the preconditions are jointly satisfied spatially and temporally, but cannot assess whether the additional requirements for the origin of life (sustained chemical disequilibrium, information-carrying polymers, or encapsulation) are met.
 
 \section{Chemical Habitability Scenarios}
 \label{sec:prior_theory}
 
-Four habitability pathways have been proposed for \titan{}'s surface, each with distinct implications for abiogenesis.
+Four habitability pathways have been proposed for \titan{}'s surface, each with distinct implications for abiogenesis. The first two concern the maintenance and compartmentalisation of a hypothetical existing non-aqueous biosphere; the latter two concern the origin of aqueous life at different epochs.
 
 \begin{enumerate}
     \item \textit{Methanogenesis via acetylenotrophy} \citep{McKaySmith2005,Yanez2024}: the hydrogenation of acetylene,
@@ -58,11 +55,11 @@ aqueous chemistry.  Unlike the fatty acid vesicles or coacervate droplets propos
     \item \textit{Impact-melt prebiotic chemistry}: large impacts produce transient
 water--ammonia--organic melt ponds persisting for $10^3$--$10^4$\,yr, during
 which Strecker synthesis yields amino acids from surface aldehydes, ammonia,
-and HCN \citep{Neish2010,Madan2026}.  Of all present-day scenarios, this provides the most direct route to aqueous abiogenesis, since liquid water, organic monomers, and energy are simultaneously available, though the transient duration ($\sim$$10^4$\,yr) may be too short to complete the transition from prebiotic chemistry to self-replicating systems. See \citep{helena} for crater physics modelling quantitative melt-volume research. See \citep{lucca} for research relating to abiogenesis within ammonia-rich brine pockets within Titan’s icy crust. See \citep{imaan} regarding the exogenic–endogenic mixing of surface organics with excavated water-ice at crater sites and its relevance to the prebiotic chemistry.
+and HCN \citep{Neish2010,Madan2026}.  Of all present-day scenarios, this provides the most direct route to satisfying the aqueous-abiogenesis preconditions, since liquid water, organic monomers, and energy are simultaneously available, though the transient duration ($\sim$$10^4$\,yr) may be too short to complete the transition from prebiotic chemistry to self-replicating systems.  Companion studies address the supporting physics: crater melt-volume modelling \citep{helena}, abiogenesis in ammonia-rich brine pockets within \titan{}'s icy crust \citep{lucca}, and the exogenic--endogenic mixing of surface organics with excavated water-ice at crater sites \citep{imaan}.
     \item \textit{Red-giant ocean}: when solar luminosity raises \titan{}'s surface
 above the water--ammonia eutectic (176\,K; \citealt{Grasset2005}), a global
 ocean will form over billions of years of accumulated organics for an
-estimated 200--500\,Myr \citep{Lorenz1997}; the temporal reconstruction in this thesis estimates a longer window of $\sim$0.9\,Gyr ($+5.1$ to $+6.0\gya$; Section~\ref{sec:results_future}).  This is the most favourable abiogenesis scenario modelled in this thesis: warm liquid water in sustained contact with $\sim$10\,Gyr of accumulated organic substrate, persisting for hundreds of millions of years --- conditions broadly analogous to those invoked for early Earth.  
+estimated 200--500\,Myr \citep{Lorenz1997}; the temporal reconstruction in this thesis estimates a longer window of $\sim$0.9\,Gyr ($+5.1$ to $+6.0\gya$; Section~\ref{sec:results_future}).  Of the four scenarios, this is the most favourable for satisfying the abiogenesis preconditions modelled in this thesis. It offers warm liquid water in sustained contact with $\sim$10\,Gyr of accumulated organic substrate, persisting for hundreds of millions of years: conditions broadly analogous to those invoked for early Earth. As with all four scenarios, this thesis quantifies only the preconditions for abiogenesis, not abiogenesis itself (Section~\ref{sec:defining_habitability}).
 
 \end{enumerate}
 
@@ -72,6 +69,8 @@ geological time.
 
 \section{Scope and Research Questions}
 \label{sec:scope}
+
+An independent test of any habitability framework is whether it agrees with judgements made on other grounds. NASA's \dragonfly{} mission, scheduled to land at Selk crater, was selected in part on qualitative habitability grounds; whether the quantitative map produced here independently identifies Selk as a high-$P(H)$ site is therefore a meaningful external check on the framework, distinct from the internal characterisation of habitability addressed by the first three research questions below.
 
 Previous habitability assessments of \titan{} have been predominantly qualitative
 or point-specific: the Earth Similarity Index \citep{Schulze-Makuch2011}
@@ -98,7 +97,7 @@ applied across five temporal epochs from the Late Heavy Bombardment ($-3.5\gya$)
 to the red-giant future ($+5.9\gya$).  The Beta-conjugate approach is preferred
 for its analytical tractability at 6.49 million grid pixels, its naturally
 bounded $[0,1]$ output domain, and the explicit uncertainty quantification
-provided by 95\% highest-density interval credible intervals at every pixel.
+provided by 95\% equal-tailed credible intervals at every pixel.
 
 The specific research questions are:
 \begin{description}

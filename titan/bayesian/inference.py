@@ -43,7 +43,7 @@ Three backend implementations are available:
   pymc
     Full hierarchical Bayesian logistic regression.
     Pixel-wise posterior with MCMC (NUTS sampler).
-    Provides uncertainty quantification (HDI intervals).
+    Provides uncertainty quantification (credible intervals).
     Computationally expensive; best used on region-of-interest subsets.
 
   numpyro
@@ -100,7 +100,7 @@ class HabitabilityResult:
     posterior_std:
         Per-pixel posterior standard deviation.  NaN if unavailable.
     hdi_low, hdi_high:
-        94% highest-density interval bounds.  NaN if unavailable.
+        95% equal-tailed credible interval bounds.  NaN if unavailable.
     feature_importances:
         Relative importance of each feature (sum=1.0).
     backend:
@@ -422,10 +422,9 @@ class PyMCHabitabilityModel:
         """
         try:
             import pymc as pm
-            import arviz as az
         except ImportError:
             raise ImportError(
-                "PyMC backend requires: pip install pymc pytensor arviz"
+                "PyMC backend requires: pip install pymc pytensor"
             )
 
         cfg     = self.prior_config
@@ -495,9 +494,9 @@ class PyMCHabitabilityModel:
 
         p_mean = p_all.mean(axis=1).astype(np.float32)
         p_std  = p_all.std(axis=1).astype(np.float32)
-        hdi    = az.hdi(p_all.T[np.newaxis], hdi_prob=0.94)  # shape workaround
-        hdi_lo = hdi[..., 0].flatten()[:len(p_mean)].astype(np.float32)
-        hdi_hi = hdi[..., 1].flatten()[:len(p_mean)].astype(np.float32)
+        # 95% equal-tailed credible interval (consistent with analytical posterior)
+        hdi_lo = np.percentile(p_all, 2.5, axis=1).astype(np.float32)
+        hdi_hi = np.percentile(p_all, 97.5, axis=1).astype(np.float32)
 
         # Reconstruct full grid
         def _fill(vals: np.ndarray) -> np.ndarray:
@@ -506,9 +505,11 @@ class PyMCHabitabilityModel:
             return out.reshape(nrows, ncols)
 
         importances = {
-            n: float(abs(beta_flat[:, i].mean()))
+            n: float(abs(np.nanmean(beta_flat[:, i])))
             for i, n in enumerate(FEATURE_NAMES)
         }
+        # Guard against NaN importances (from MCMC divergences)
+        importances = {k: (v if np.isfinite(v) else 0.0) for k, v in importances.items()}
         total = sum(importances.values())
         if total > 0:
             importances = {k: v / total for k, v in importances.items()}
@@ -639,14 +640,14 @@ class NumPyroHabitabilityModel:
         beta_np  = np.array(samples["beta"])   # (S, 8)
         alpha_np = np.array(samples["alpha"])  # (S,)
 
-        X_full   = jnp.array(X_valid, dtype=jnp.float32)
         logit_all = alpha_np[:, np.newaxis] + X_valid @ beta_np.T
         p_all     = 1.0 / (1.0 + np.exp(-logit_all))
 
         p_mean = p_all.mean(axis=1).astype(np.float32)
         p_std  = p_all.std(axis=1).astype(np.float32)
-        hdi_lo = np.percentile(p_all, 3.0, axis=1).astype(np.float32)
-        hdi_hi = np.percentile(p_all, 97.0, axis=1).astype(np.float32)
+        # 95% equal-tailed credible interval (consistent with analytical posterior)
+        hdi_lo = np.percentile(p_all, 2.5, axis=1).astype(np.float32)
+        hdi_hi = np.percentile(p_all, 97.5, axis=1).astype(np.float32)
 
         def _fill(vals: np.ndarray) -> np.ndarray:
             out = np.full(nrows * ncols, np.nan, dtype=np.float32)

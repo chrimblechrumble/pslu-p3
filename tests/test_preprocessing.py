@@ -199,15 +199,25 @@ class TestTerrainDiversity:
 
     def test_equal_classes_high_diversity(self) -> None:
         """
-        Checkerboard of two classes -> higher diversity than uniform.
+        Checkerboard of four classes -> higher raw diversity than uniform,
+        but normalise_to_0_1 maps constant arrays to zero.
+        Use a non-uniform class layout so that normalisation produces variation.
         """
-        class_map = np.zeros((20, 20), dtype=np.int32)
-        class_map[::2, ::2]  = 1
-        class_map[1::2, 1::2] = 2
-        class_map[1::2, ::2]  = 3
-        class_map[::2, 1::2]  = 4
+        # Create a grid with diverse region (4 classes) and uniform region (1 class)
+        class_map = np.ones((20, 20), dtype=np.int32)  # uniform background
+        # Top-left quadrant: 4-class checkerboard
+        class_map[:10, :10][::2, ::2]   = 1
+        class_map[:10, :10][1::2, 1::2] = 2
+        class_map[:10, :10][1::2, ::2]  = 3
+        class_map[:10, :10][::2, 1::2]  = 4
         out = compute_terrain_diversity(class_map, n_classes=7, window_radius=3)
-        assert out.mean() > 0.2, "Diverse terrain should yield higher diversity scores."
+        # The diverse quadrant should score higher than the uniform quadrant
+        diverse_mean = out[:10, :10].mean()
+        uniform_mean = out[10:, 10:].mean()
+        assert diverse_mean > uniform_mean, (
+            f"Diverse region ({diverse_mean:.3f}) should score higher "
+            f"than uniform region ({uniform_mean:.3f})"
+        )
 
 
 

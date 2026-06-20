@@ -70,7 +70,7 @@ Bayesian missing-data imputation procedure described in Section~\ref{sec:nan}.
   \label{fig:epoch_timeline}
 \end{figure}
 
-\section[Feature 1: Liquid Hydrocarbon Availability
+\section[Feature 1: Liquid Hydrocarbon Availability 
   ($w_1 = 0.25, \mu_1 = 0.02$)]{Feature 1: Liquid Hydrocarbon Availability \\
   ($\boldsymbol{w_1 = 0.25, \mu_1 = 0.02}$)}
 \label{sec:feat_lhc}
@@ -99,10 +99,10 @@ this feature; its habitability impact is strongly localised to the polar
 regions.
 
 \paragraph{Implementation.}
-The primary source is the Lopes et al.\ (2019) lake polygon class (terrain
+The primary source is the \citet{Lopes2019} lake polygon class (terrain
 class 7), rasterised to the canonical grid as a binary lake mask.  A secondary
 contribution comes from SAR backscatter dark anomalies not otherwise attributed
-to organic material.  Confirmed empty lake basins from the Birch et al.\ (2017)
+to organic material.  Confirmed empty lake basins from the \citet{BirchHayesSAR}
 analysis are explicitly assigned $f_1 = 0$ to reflect the absence of
 present-day liquid even within geomorphologically defined basins.  In the
 absence of SAR coverage, ISS 938\,nm albedo imagery provides a proxy, with
@@ -113,8 +113,8 @@ higher feature values.
 In regions lacking both SAR and ISS coverage, the feature is assigned NaN and
 imputed at the prior mean during inference.
 
-\section[Feature 2: Organic Abundance
-  ($w_2 = 0.20$, $\mu_2 = 0.70$)]{Feature 2: Organic Abundance
+\section[Feature 2: Organic Abundance 
+  ($w_2 = 0.20$, $\mu_2 = 0.70$)]{Feature 2: Organic Abundance 
   ($\boldsymbol{w_2 = 0.20, \mu_2 = 0.70}$)}
 \label{sec:feat_organic}
 
@@ -178,7 +178,7 @@ The Lopes (2019) terrain classification covers $\sim$90\% of the SAR-imaged
 surface ($\sim$67\% of the globe).  In regions outside SAR coverage, terrain
 class is estimated from ISS albedo units with reduced specificity.
 
-\section[Feature 3: Chemical Energy Availability
+\section[Feature 3: Chemical Energy Availability 
   ($w_3 = 0.20$, $\mu_3 = 0.35$)]{Feature 3: Chemical Energy Availability \\
   ($\boldsymbol{w_3 = 0.20, \mu_3 = 0.35}$)}
 \label{sec:feat_energy}
@@ -277,7 +277,7 @@ where $\hat{s}$ is the normalised topographic slope $|\nabla z|$ from the
 GTDE DEM (high slopes drive physical transport and mixing); $\hat{m}$ is a
 binary lake-margin mask extended to $\sim$45\,km from the nearest confirmed
 lake shore; and $\hat{c}$ is the Gaussian-smoothed ($\sigma = 3$ pixels)
-channel density from the Miller et al.\ (2021) dataset, normalised at the
+channel density from the \citet{Miller2021channels} dataset, normalised at the
 2nd--98th percentile range.  The lake-margin component receives the highest
 within-feature weight (40\%) because shorelines concentrate all three relevant
 processes: liquid contact, organic delivery, and thermal/chemical cycling.
@@ -301,7 +301,7 @@ potentially richer reactive diversity.
 Local standard deviation of GTDE elevation computed in a $5\times5$ pixel
 ($\sim$22\,km) sliding window, normalised to $[0,1]$ at the 2nd--98th
 percentile range.  South polar gaps in the primary GTDE are filled with the
-Corlies et al.\ (2017) globally interpolated DEM prior to roughness computation.
+\citet{Corlies2017Titan} globally interpolated DEM prior to roughness computation.
 
 \section[Feature 7: Geomorphological Diversity
   ($w_7 = 0.04$, $\mu_7 = 0.30$)]{Feature 7: Geomorphological Diversity \\

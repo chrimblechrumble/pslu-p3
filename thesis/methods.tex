@@ -478,6 +478,44 @@ At $+5.1\gya$ surface temperature crosses the water--ammonia eutectic (176\,K; \
 
 The reconstruction is validated against three criteria: (i)~at each anchor epoch the PCHIP interpolation reproduces the pipeline posterior exactly (by construction, since the anchor posteriors are the interpolation knots), and between anchors the scale-function model provides physically continuous transitions whose spatial structure is consistent with the bounding anchor maps; (ii)~the global mean rises monotonically through the lake-formation transition ($-1.0$ to $-0.5\gya$), consistent with the physical expectation that the establishment of the polar sea system represents a genuine increase in surface habitability potential; and (iii)~the N-polar/equatorial ratio follows the expected pattern: $\sim$1.42 at the LHB (moderate polar enhancement from VIMS organic abundance, no polar seas), rising to $\sim$1.51 at the present epoch (organic + lake dominance), and declining to $\sim$1.40 at the global ocean (uniform liquid coverage reduces but does not eliminate spatial differentiation, because the organic accumulation advantage of the polar basins persists).  All three criteria are satisfied.  The reconstruction also reproduces the known qualitative transitions: the impact-crater signal fading between $-3.0$ and $-2.0\gya$, the cryovolcanic signal persisting through the mid-Titan epoch, and the abrupt onset of the global ocean at the eutectic crossing.
 
+\subsection{Seasonal Sensitivity Within the Cassini Window}
+\label{sec:seasonal}
+
+The five-epoch reconstruction treats the \textit{Present} as a single
+time-averaged state.  The Cassini dataset, however, spans 2004--2017:
+about 0.44 of a Titan year (the Titan year being 29.46\,yr), running from
+a mid-southern season through the spring equinox in 2009.61 and reaching
+the northern summer solstice only at the very end of the mission.  This
+window is long enough to ask a narrower question: of the eight features,
+which carry a measurable seasonal signal, and how much does the posterior
+move across the observed window?  Only the methane cycle feature ($f_4$)
+does.  It is a weighted composite, $f_4 = 0.50\,(\text{CIRS meridional
+temperature gradient } |\partial T/\partial\,\mathrm{lat}|) + 0.35\,
+(\text{channel density}) + 0.15\,(\text{latitude prior at } \pm 50\textdegree)$,
+of which only the temperature-gradient term varies in time; the channel
+density and latitude prior are static.  The other seven features derive
+from time-averaged mosaics or from quantities (terrain class, topography,
+interior structure) that do not vary on seasonal timescales, so they are
+seasonally invariant here by construction or by physics.
+
+The seasonal temperature field is taken from the model of
+\citet{Jennings2019}, a cosine in latitude whose parameters vary linearly
+in year ($a + bY$, with $Y = \text{year} - 2009.61$ centred on the
+equinox), fit to CIRS observations and stated by its authors to be valid
+only over $Y \in [-4.9, +8.1]$.  Evaluating this term across the mission
+window and propagating it through the Bayesian update changes the posterior
+by $\Delta P(H) = \tfrac{\lambda w_4}{\kappa + \lambda}\,\Delta f_4 =
+0.0818\,\Delta f_4$, so even a large swing in $f_4$ produces only a small
+posterior shift, consistent with the feature's Tier-2 weight ($w_4 = 0.15$).
+The present-epoch maps elsewhere in this thesis are anchored at year 2011,
+within this window.  Two limitations should be stated at the outset: the
+gradient proxy rewards the meridional temperature contrast that drives
+transport (steepest towards winter), not summer convective activity; and
+because the fit is a latitude profile with linearly time-varying parameters
+valid only over the mission window, it captures the observed half-window
+trend rather than a full seasonal cycle (Section~\ref{sec:future_work}
+discusses the periodic alternative).
+
 \section{Scope of This Thesis}
 \label{sec:scope_thesis}
 

@@ -64,6 +64,57 @@ The key finding is robustness.  Towada retains rank 1 in all $3 \times 3 \times 
 
 The three most impactful extensions are: (1)~post-\dragonfly{} recalibration of $f_2$ and $f_8$ weights using DraMS and DraGNS measurements at Selk; (2)~replacing the independence assumption with a full covariance structure estimated from high-resolution SAR patches; and (3)~additional temporal anchors at $-2.0$ to $-0.5\gya$ where the liquid-hydrocarbon ramp most sensitively determines the magnitude and character of the polar lead during the transition from organic-dominated to lake-dominated habitability.
 
+\paragraph{Seasonal variation and a periodic extension.}
+The seasonal modulation recovered here is modest (a posterior change of
+$\leq 0.04$, concentrated in the north), and two features of the model
+explain why it should be read cautiously.  First, the $f_4$ proxy rewards
+the meridional temperature gradient that drives large-scale transport,
+which is steepest towards winter, rather than the convective activity that
+peaks in summer; the seasonal signal it reports is therefore a
+gradient-transport signal, not a direct measure of summer methane activity,
+and it is zonal (latitude-only).  Second, the \citet{Jennings2019} field is
+a cosine in latitude with parameters fit linearly in year, valid only over
+$Y \in [-4.9, +8.1]$: it captures the latitudinal temperature profile and
+its drift across the observed half-window, but its linearly-varying
+parameters cannot represent a full seasonal cycle, and the implied subsolar
+march (about $3.2\textdegree$ per year, or $\sim$94\textdegree{} per Titan
+year) exceeds the physical $26.7\textdegree$ obliquity, so the linear fit
+must not be extrapolated beyond the mission window and cannot reproduce the
+solstice turnover.  Substituting the true astronomical subsolar latitude,
+$26.7\textdegree \cdot \sin\!\big(2\pi(\text{year}-2009.61)/29.46\big)$,
+into the same cosine form (with the amplitude and contrast held at their
+equinox values rather than re-fit) agrees with the \citet{Jennings2019}
+model inside the observed window but rolls over at the 2017 solstice and is
+bounded and periodic (Figure~\ref{fig:seasonal_periodic}), confirming that
+the decline reported above is the pre-solstice flank of a cycle rather than
+an unbounded trend.  This periodic form is illustrative only: it is not
+re-fit to data and has not been validated, and only one of the eight
+features carries any seasonal signal at all.  A full seasonal treatment,
+incorporating time-resolved lake extents for $f_1$, shoreline change for
+$f_5$, and a validated periodic temperature model, is left as future work;
+within the present framework the result is that \titan{}'s surface
+habitability is seasonally robust, with only the methane cycle feature
+showing measurable modulation across half a Titan year (one equinox, with
+the solstice reached only at the mission's end).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{images/seasonal_ph_periodic.png}
+  \caption{Illustrative comparison of the \citet{Jennings2019}
+    linear-in-year temperature model (valid only over the Cassini window
+    $Y \in [-4.9, +8.1]$) with a periodic model that substitutes the true
+    astronomical subsolar latitude $26.7\textdegree \cdot
+    \sin(2\pi(\text{year}-2009.61)/29.46)$ into the same cosine form, with
+    amplitude and contrast held at equinox values.  The two agree inside
+    the observed window; the periodic model rolls over at the 2017 northern
+    summer solstice and repeats with the 29.46\,yr Titan year, whereas the
+    linear fit cannot be extrapolated past the window.  The comparison
+    confirms that the modulation in Figure~\ref{fig:seasonal_ph} is the
+    pre-solstice flank of a bounded seasonal cycle.  The periodic model is
+    illustrative and is not fit to or validated against data.}
+  \label{fig:seasonal_periodic}
+\end{figure}
+
 \section{Additional Datasets}
 \label{sec:additional_datasets}
 

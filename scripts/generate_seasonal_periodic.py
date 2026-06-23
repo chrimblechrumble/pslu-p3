@@ -3,10 +3,12 @@
 generate_seasonal_periodic.py  --  periodic-vs-Jennings comparison figure.
 
 Companion to generate_seasonal_trend.py (which uses the Jennings 2019 fit).
-The Jennings model parameterises the subsolar march as LINEAR in time
-(L_peak = -0.85 + 3.2*Y), so it is a 13-year local fit: extrapolated it diverges
-(L_peak -> 90 deg+) rather than repeating, and it cannot show the solstice
-turnover.  This script adds an ILLUSTRATIVE PERIODIC model that replaces only the
+The Jennings model fits a cosine in LATITUDE with parameters varying LINEARLY in
+year (a+bY); the subsolar march is L_peak = -0.85 + 3.2*Y.  The authors state it
+is valid only over Y in [-4.9, +8.1].  That implied march (3.2 deg/yr ~ 94 deg
+per Titan year) exceeds the physical 26.7 deg obliquity, so the linear fit
+captures the observed half-window trend but must not be extrapolated and cannot
+show the solstice turnover.  This script adds an ILLUSTRATIVE PERIODIC model that replaces only the
 subsolar march with the true astronomical subsolar latitude:
 
     L_sub(t) = 26.7 deg * sin(2*pi*(year - 2009.61) / 29.46)     (obliquity, period)
@@ -77,7 +79,7 @@ axA.legend(fontsize=7, ncol=2, loc="lower left", framealpha=0.9); axA.grid(alpha
 # (b) one Titan year: Jennings vs periodic for the N.Polar band -> divergence vs periodicity
 yrs_e = np.linspace(2002.2, 2031.7, 120)
 axB.plot(yrs_e, ph_curve(T_jennings, 75, npolar_med, yrs_e), color="#c0392b", ls="--", lw=2,
-         label="Jennings 2019 (linear march)")
+         label="Jennings 2019 (linear fit, outside validity)")
 axB.plot(yrs_e, ph_curve(T_periodic, 75, npolar_med, yrs_e), color="#1f4e9c", lw=2,
          label="Periodic (illustrative)")
 axB.axvspan(2004.7, 2017.7, color="0.85", alpha=0.6, label="Cassini data window")
@@ -87,7 +89,7 @@ for yr, lab in [(2002.24, "S-sol"), (2009.61, "equinox"), (2016.98, "N-sol"),
     axB.text(yr, 1.01, lab, color="0.5", fontsize=7, ha="center", transform=axB.get_xaxis_transform())
 axB.set_xlim(2002.2, 2031.7); axB.set_xlabel("Calendar year (~one Titan year)")
 axB.set_ylabel(r"N. Polar median $P(H \mid \mathbf{f})$")
-axB.set_title("(b) Extrapolated: Jennings diverges, periodic repeats", fontsize=10)
+axB.set_title("(b) One Titan year: Jennings linear fit (outside validity) vs periodic", fontsize=10)
 axB.legend(fontsize=8, loc="lower right", framealpha=0.9); axB.grid(alpha=0.3)
 
 fig.tight_layout()

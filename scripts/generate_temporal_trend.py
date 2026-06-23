@@ -144,6 +144,17 @@ if npy_dir.exists() and len(list(npy_dir.glob("*.npy"))) > 0:
     epochs = epochs[order]
     for rname in region_medians:
         region_medians[rname] = np.array(region_medians[rname])[order]
+
+    # Trim pre-anchor extrapolated frames.  The earliest data-constrained
+    # posterior is the Past anchor at -3.5 Gya; frames before it (-3.8, -3.6)
+    # are extrapolated from the impact-flux model ahead of any anchor, overshoot
+    # it by ~0.05, and create a spurious pre-anchor bump with a discontinuous
+    # step down at -3.5.  Start the trend at the Past anchor so the figure
+    # matches the data and the Results text ("0.271 at the LHB").
+    _keep = epochs >= -3.5 - 1e-6
+    epochs = epochs[_keep]
+    for rname in region_medians:
+        region_medians[rname] = region_medians[rname][_keep]
 else:
     # Fallback: use anchor posteriors + linear interpolation
     print("Per-frame posteriors not found. Using anchor posteriors + interpolation.")
@@ -299,7 +310,7 @@ ax.text(5.5, 0.60, "Ocean\nwindow", ha="center", fontsize=8, color="#2255aa", st
 # staggered to two depth levels (-0.06 and -0.14 axis fraction)
 # so they do not overlap each other or the x-tick labels.
 EVENTS = [
-    (-3.8, "#cc3311", "LHB peak −3.8",        0.95),
+    (-3.5, "#cc3311", "LHB / Past −3.5",      0.95),
     (-1.0, "#3355cc", "Lake formation −1.0",  0.98),
     ( 0.0, "#0088aa", "Present 0.0",          0.95),
     ( 0.25,"#226622", "+0.25",                0.90),
@@ -316,7 +327,7 @@ for xv, col, label, yoff in EVENTS:
             ha="center", va="top",
             fontsize=8, color=col, style="italic")
 
-ax.set_xlim(-4.2, 6.7)
+ax.set_xlim(-3.7, 6.7)
 ax.set_ylim(0.10, 0.92)   # raised top so N-polar curve never clips against title
 ax.set_xlabel("Time (Gya from present)", color="black", fontsize=11)
 ax.set_ylabel("Median $P(H \\mid \\mathbf{f})$", color="black", fontsize=11)

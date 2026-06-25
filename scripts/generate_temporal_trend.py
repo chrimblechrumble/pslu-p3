@@ -301,7 +301,7 @@ for rname, vals in region_medians.items():
 
 # Ocean window shading
 ax.axvspan(5.1, 6.0, alpha=0.12, color="#4488ff", zorder=0)
-ax.text(5.5, 0.60, "Ocean\nwindow", ha="center", fontsize=8, color="#2255aa", style="italic")
+ax.text(5.5, 0.60, "Super-\neutectic", ha="center", fontsize=8, color="#2255aa", style="italic")
 
 # Key event verticals – labels placed BELOW the x-axis using the
 # mixed-transform (data-x, axes-fraction-y).  clip_on=False lets

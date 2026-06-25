@@ -137,6 +137,14 @@ GRID_SHAPE: Tuple[int, int] = _pipeline_cfg.canonical_grid_shape
 
 EUTECTIC_K:       float = 176.0    # water-ammonia eutectic melting point (K)
 T_SURFACE_K:      float = 93.65    # present-day Titan surface temperature (K)
+#: Regulated red-giant ocean surface temperature (K).  Bare radiative equilibrium
+#: (T = T_SURFACE_K * L**0.25) gives 400-680 K at the red-giant luminosity peak,
+#: but Lorenz, Lunine & McKay (1997) show Titan's surface temperature is largely
+#: INSENSITIVE to insolation: the haze anti-greenhouse "puffs up" and blocks the
+#: extra sunlight, holding the surface near the water-ammonia liquid range.  We
+#: adopt their result and cap the surface at a regulated value rather than the
+#: bare-radiative one.  This is an adopted boundary condition, not derived here.
+REGULATED_OCEAN_T_K: float = 250.0
 
 # --- Polar visualisation parameters -----------------------------------------
 
@@ -526,8 +534,15 @@ def solar_luminosity_ratio(t: float) -> float:
 
 
 def titan_temp_K(t: float) -> float:
-    """Surface temperature at epoch t."""
-    return T_SURFACE_K * solar_luminosity_ratio(t) ** 0.25
+    """Surface temperature at epoch t.
+
+    Bare radiative equilibrium (T = T_SURFACE_K * L**0.25) below the regulated
+    cap; in the red-giant phase the haze anti-greenhouse regulates the surface
+    (Lorenz, Lunine & McKay 1997), so we cap at REGULATED_OCEAN_T_K rather than
+    let it run to the unphysical 400-680 K bare-radiative value.  The cap is
+    above the 176 K eutectic, so it does not alter when the ocean window opens.
+    """
+    return min(REGULATED_OCEAN_T_K, T_SURFACE_K * solar_luminosity_ratio(t) ** 0.25)
 
 
 # --- Time-scaling functions ---------------------------------------------------

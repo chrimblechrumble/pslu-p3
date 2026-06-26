@@ -317,7 +317,7 @@ EVENTS = [
     ( 4.0, "#996600", "Solar warm +4.0",      0.95),
     ( 5.1, "#cc7700", "Eutectic +5.1",        0.98),
     ( 5.9, "#887700", "Ocean peak +5.9",      0.95),
-    ( 6.0, "#cc2222", "RGB ends +6.0",        0.90),
+    ( 6.0, "#cc2222", "Red Giant\nPhase ends +6.0",        0.90),
 ]
 xfm = ax.get_xaxis_transform()   # x in data coords, y in axes-fraction
 for xv, col, label, yoff in EVENTS:

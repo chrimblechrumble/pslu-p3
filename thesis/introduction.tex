@@ -34,7 +34,7 @@ provides the terrain classification underpinning this report.
 \section{Defining Habitability}
 \label{sec:defining_habitability}
 
-Habitability is a term used in diverse and sometimes incompatible ways across the planetary science literature \citep{Cockell2016}.  In its strictest sense it denotes a binary property, whether an environment can sustain the metabolic activity of at least one known organism, but in practice astrobiologists use it as a continuous measure of how many prerequisites for life co-occur in a given location \citep{Mendez2021}.  This report adopts the continuous usage.  The posterior probability $P(H \mid \featurevec)$ at each pixel quantifies the degree to which the \textit{necessary physical and chemical preconditions} for life are simultaneously present: liquid solvent, organic substrate, chemical energy, solvent cycling, atmosphere--surface exchange, topographic and geomorphological diversity, and subsurface water access.  High $P(H)$ does not imply that life exists at a site, nor that abiogenesis could occur there; it implies that more of the known prerequisites are satisfied, and satisfied more strongly, than at a low-$P(H)$ site.
+Habitability is a term used in diverse and sometimes incompatible ways across the planetary science literature \citep{Cockell2016}.  In its strictest sense it denotes a binary property, whether an environment can sustain the metabolic activity of at least one known organism, but in practice astrobiologists use it as a continuous measure of how many prerequisites for life co-occur in a given location \citep{Mendez2021}.  \textit{This report adopts the continuous measure usage}.  The posterior probability $P(H \mid \featurevec)$ at each pixel quantifies the degree to which the \textit{necessary physical and chemical preconditions} for life are simultaneously present: liquid solvent, organic substrate, chemical energy, solvent cycling, atmosphere--surface exchange, topographic and geomorphological diversity, and subsurface water access.  These preconditions are not observed directly but through Cassini-derived \textit{proxy features} (Section~\ref{sec:features}); $P(H \mid \featurevec)$ is therefore a \textit{habitability proxy}, quantifying the co-occurrence of these preconditions rather than detecting habitability itself.  High $P(H)$ does not imply that life exists at a site, nor that abiogenesis could occur there; it implies that more of the known prerequisites are satisfied, and satisfied more strongly, than at a low-$P(H)$ site.
 
 Abiogenesis (the emergence of life from non-living chemistry) requires conditions beyond those captured by the habitability proxy.  In aqueous systems, the minimum requirements include liquid water, a source of organic monomers, free energy to drive polymerisation, and a mechanism for compartmentalisation \citep{Ruiz-Mirazo2014}.  On \titan{}, two fundamentally different abiogenesis scenarios are conceivable: \textit{aqueous abiogenesis} in transient impact-melt ponds or the future red-giant ocean, where liquid water contacts accumulated organics; and \textit{non-aqueous abiogenesis} in the present-day hydrocarbon lakes, where azotosome membranes \citep{Stevenson2015} could provide compartmentalisation and acetylenotrophy \citep{McKaySmith2005} could provide energy, but where the low temperature (94\,K) severely constrains reaction kinetics.  The habitability maps produced in this report therefore represent a \textit{necessary but not sufficient} condition for either form of abiogenesis: they identify where the preconditions are jointly satisfied spatially and temporally, but cannot assess whether the additional requirements for the origin of life (sustained chemical disequilibrium, information-carrying polymers, or encapsulation) are met.
 
@@ -45,8 +45,7 @@ Four habitability pathways have been proposed for \titan{}'s surface, each with 
 
 \begin{enumerate}
     \item \textit{Methanogenesis via acetylenotrophy} \citep{McKaySmith2005,Yanez2024}: the hydrogenation of acetylene,
-$\ce{C2H2 + 3H2 -> 2CH4}$ ($\Delta G = -334$\,kJ\,mol$^{-1}$), produces methane as the metabolic end product and provides
-energy well above the minimum for terrestrial methanogens.  \citet{McKaySmith2005} proposed this as a basis for methanogenic life on \titan{}; \citet{Yanez2024} refined the thermochemistry under Titan ocean conditions, finding acetylenotrophy energy yields of 69--78\,kJ\,mol$^{-1}$\,C.  Acetylene is supplied by UV
+$\ce{C2H2 + 3H2 -> 2CH4}$ ($\Delta G = -334$\,kJ\,mol$^{-1}$), produces methane as the metabolic end product.  \citet{McKaySmith2005} proposed this as a basis for methanogenic life on \titan{}; \citet{Yanez2024} refined the thermochemistry under Titan ocean conditions, finding acetylenotrophy energy yields of 69--78\,kJ\,(mol\,C)$^{-1}$ (equivalently per mol CH$_4$, since the carbon is conserved as methane), roughly seven times the $\sim$$-10.6$\,kJ\,(mol\,CH$_4$)$^{-1}$ apparent minimum free energy that sustains terrestrial methanogens \citep{Hoehler2001}.  Acetylene is supplied by UV
 photolysis and detected at the surface by GCMS \citep{Niemann2005}.  This pathway could sustain an existing non-aqueous biosphere but does not by itself provide a mechanism for abiogenesis.
     \item \textit{Azotosome membranes} \citep{Stevenson2015}: acrylonitrile (detected by
 ALMA; \citealt{Palmer2017}) spontaneously forms stable vesicle structures in
@@ -56,21 +55,16 @@ aqueous chemistry.  Unlike the fatty acid vesicles or coacervate droplets propos
 water--ammonia--organic melt ponds persisting for $10^3$--$10^4$\,yr, during
 which Strecker synthesis yields amino acids from surface aldehydes, ammonia,
 and HCN \citep{Neish2010,Madan2026}.  Of all present-day scenarios, this provides the most direct route to satisfying the aqueous-abiogenesis preconditions, since liquid water, organic monomers, and energy are simultaneously available, though the transient duration ($\sim$$10^4$\,yr) may be too short to complete the transition from prebiotic chemistry to self-replicating systems.  Companion studies address the supporting physics: crater melt-volume modelling \citep{helena}, abiogenesis in ammonia-rich brine pockets within \titan{}'s icy crust \citep{lucca}, and the exogenic--endogenic mixing of surface organics with excavated water-ice at crater sites \citep{imaan}.
-    \item \textit{Red-giant ocean}: when solar luminosity raises \titan{}'s surface
-above the water--ammonia eutectic (176\,K; \citealt{Grasset2005}), a global
-ocean will form over billions of years of accumulated organics for an
-estimated 200--500\,Myr \citep{Lorenz1997}, which this report adopts: the simplified radiative model places the surface above the water--ammonia eutectic across $+5.1$ to $+6.0\gya$, but the genuinely clement ocean window is bounded to $\sim$400\,Myr by the haze/UV photochemistry of \citet{Lorenz1997} (Section~\ref{sec:results_future}).  Of the four scenarios, this is the most favourable for satisfying the abiogenesis preconditions modelled in this report. It offers warm liquid water in sustained contact with $\sim$10\,Gyr of accumulated organic substrate, persisting for hundreds of millions of years: conditions broadly analogous to those invoked for early Earth. As with all four scenarios, this thesis quantifies only the preconditions for abiogenesis, not abiogenesis itself (Section~\ref{sec:defining_habitability}).
+    \item \textit{Red-giant ocean}: as the Sun evolves into a red giant, rising solar luminosity lifts \titan{}'s surface above the water--ammonia eutectic (176\,K; \citealt{Grasset2005}), melting the surface ice into a global ocean that dissolves the organics accumulated over the preceding billions of years.  \citet{Lorenz1997} estimated the resulting clement window at 200--500\,Myr, which this report adopts.  In the simplified radiative model the surface remains above the eutectic from $+5.1$ to $+6.0\gya$, but the genuinely clement window is bounded to $\sim$400\,Myr by haze/UV photochemistry rather than by this bare luminosity span (Section~\ref{sec:results_future}).  Of the four scenarios, this is the most favourable for satisfying the abiogenesis preconditions modelled in this report. It offers warm liquid water in sustained contact with $\sim$10\,Gyr of accumulated organic substrate, persisting for hundreds of millions of years: conditions broadly analogous to those invoked for early Earth. As with all four scenarios, this report quantifies only the preconditions for abiogenesis, not abiogenesis itself (Section~\ref{sec:defining_habitability}).
 
 \end{enumerate}
 
-This report provides the first
-unified quantitative characterisation of all four scenarios across
-geological time.
+This report provides the first unified quantitative habitability framework spanning the epochs of all four scenarios across geological time.
 
 \section{Scope and Research Questions}
 \label{sec:scope}
 
-An independent test of any habitability framework is whether it agrees with judgements made on other grounds. NASA's \dragonfly{} mission, scheduled to land at Selk crater, was selected in part on qualitative habitability grounds; whether the quantitative map produced here independently identifies Selk as a high-$P(H)$ site is therefore a meaningful external check on the framework, distinct from the internal characterisation of habitability addressed by the first three research questions below.
+An independent test of any habitability framework is whether it agrees with judgements made on other grounds. NASA's \dragonfly{} mission, scheduled to land at Selk crater, was selected in part on qualitative habitability grounds \citep{Lorenz2021Landing}; whether the quantitative map produced here independently identifies Selk as a high-$P(H)$ site is therefore a meaningful independent validation on the framework, distinct from the internal characterisation of habitability addressed by the first three research questions below.
 
 Previous habitability assessments of \titan{} have been predominantly qualitative
 or point-specific: the Earth Similarity Index \citep{Schulze-Makuch2011}
@@ -80,22 +74,21 @@ criteria matrices; \citet{Affholder2021} applied rigorous Bayesian inference
 to Enceladus plume data but at a single spatial point and epoch.  None
 integrates the full suite of Cassini data modalities into a spatially-resolved,
 multi-epoch probabilistic framework.  Three properties in combination distinguish
-this work from all prior assessments: (i)~spatial resolution at $\sim$20\,km per pixel,
+this work from all prior assessments: (i)~spatial resolution at $\sim$4.5\,km per pixel\footnote{The equirectangular grid has $3603$ longitude $\times$ $1802$ latitude cells over \titan{}'s full $360\textdegree\times180\textdegree$ surface; at the equator the pixel size is $2\pi R/3603 = 2\pi(2575\,\mathrm{km})/3603 \approx 4490\,\mathrm{m}$, for mean radius $R = 2575\,\mathrm{km}$ \citep{Archinal2018}.},
 resolving individual lake margins and crater structures rather than producing a
 whole-body scalar; (ii)~the simultaneous use of all eight principal Cassini
 data modalities (SAR, VIMS, CIRS, altimetry, geomorphological map, channel map,
 tidal gravity, crater catalogue) rather than a subset; and (iii)~temporal
-extrapolation across $\sim$10\,Gyr from the LHB to the red-giant ocean,
+reconstruction across $\sim$10\,Gyr from the LHB to the red-giant ocean,
 enabling a unified narrative of how habitability evolves rather than a
 snapshot at a single epoch.  A detailed methodological comparison is
 given in Appendix~\ref{app:lit_review}.
 
 This report develops a Bayesian Beta-conjugate posterior framework combining
 eight observational proxy features from the complete Cassini dataset into a
-habitability probability map at \SI{4490}{\metre\per\text{px}} resolution,
-applied across five temporal epochs from the Late Heavy Bombardment ($-3.5\gya$)
+habitability probability map applied across five temporal epochs from the Late Heavy Bombardment ($-3.5\gya$)
 to the red-giant future ($+5.9\gya$).  The Beta-conjugate approach is preferred
-for its analytical tractability at 6.49 million grid pixels, its naturally
+for its analytical tractability at ($3603$ $\times$ $1802$ $=$) 6.49 million grid pixels, its naturally
 bounded $[0,1]$ output domain, and the explicit uncertainty quantification
 provided by 95\% equal-tailed credible intervals at every pixel.
 
@@ -108,7 +101,7 @@ The specific research questions are:
     Bombardment, when impact-melt ponds provided transient liquid water?}
 
   \item[RQ3] \textit{How does habitability evolve across the temporal sequence
-    from the LHB ($-3.5\gya$) to the red-giant ocean ($+5.9\gya$)?}
+    from the LHB ($\mathit{-3.5\gya}$) to the red-giant ocean ($\mathit{+5.9\gya}$)?}
 
   \item[RQ4] \textit{Does the derived habitability map independently validate
     the \dragonfly{} landing site at Selk crater?}

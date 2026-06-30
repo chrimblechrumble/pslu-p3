@@ -184,8 +184,8 @@ def _sklearn_temporal(
     alpha = 0.8
     proba = np.clip(alpha * proba_raw + (1.0 - alpha) * prior_mean_global, 0, 1)
 
-    # Permutation importances
-    importances = _permutation_importances(cal, X_valid, y_label, names, w_vec)
+    # Mean-replacement importances
+    importances = _mean_replacement_importances(cal, X_valid, y_label, names, w_vec)
 
     posterior = np.full(nrows * ncols, np.nan, dtype=np.float32)
     posterior[valid] = proba.astype(np.float32)
@@ -202,7 +202,7 @@ def _sklearn_temporal(
     )
 
 
-def _permutation_importances(
+def _mean_replacement_importances(
     cal:   "sklearn.calibration.CalibratedClassifierCV",
     X:     np.ndarray,
     y:     np.ndarray,
@@ -210,7 +210,9 @@ def _permutation_importances(
     w_vec: np.ndarray,
 ) -> dict[str, float]:
     """
-    Estimate feature importances via permutation of each feature column.
+    Estimate feature importances by mean-replacement: each feature column is
+    set to its global mean and the change in the mean predicted probability
+    is recorded.
 
     Parameters
     ----------

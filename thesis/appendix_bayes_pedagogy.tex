@@ -28,18 +28,45 @@ indirect evidence about the value of $H$.
 
 The Beta distribution $\mathrm{Beta}(\alpha, \beta)$ is defined on $[0, 1]$
 and characterised by two positive shape parameters $\alpha$ and $\beta$.
-Its probability density function is expressed in terms of the gamma function
-(Eq.~\ref{eq:prior_pdf} in Chapter~\ref{ch:methods}):
-\[
+Its probability density function (PDF) is
+\begin{equation}
   p(h) = \frac{\Gamma(\alpha + \beta)}{\Gamma(\alpha)\,\Gamma(\beta)}\;
   h^{\,\alpha - 1}\,(1 - h)^{\,\beta - 1}, \qquad h \in [0,1]
-\]
-where the gamma function $\Gamma(\cdot)$ generalises the factorial to
-non-integer arguments (Eq.~\ref{eq:gamma_def}).
+  \label{eq:prior_pdf}
+\end{equation}
+where $\Gamma(\cdot)$ is the gamma function, which generalises the factorial to
+non-integer arguments and is defined for all positive reals by
+\begin{equation}
+  \Gamma(x) = \int_0^{\infty} t^{\,x-1}\,e^{-t}\,\mathrm{d}t .
+  \label{eq:gamma_def}
+\end{equation}
+For positive integers it reduces to the factorial, $\Gamma(n) = (n-1)!$, and it
+obeys the recurrence $\Gamma(x+1) = x\,\Gamma(x)$ (the continuous generalisation
+of $n! = n\,(n-1)!$); for non-integer arguments such as $\alpha_0 = 1.655$ it is
+evaluated numerically (here via \texttt{scipy.special.gamma}).  The ratio of
+gamma functions in Eq.~\ref{eq:prior_pdf} is the reciprocal of the Beta function
+$\mathrm{B}(\alpha,\beta) = \Gamma(\alpha)\,\Gamma(\beta)/\Gamma(\alpha+\beta)$,
+the normalising constant that makes $p(h)$ integrate to one.  For the prior
+adopted in Chapter~\ref{ch:methods} ($\alpha_0 = 1.655$, $\beta_0 = 3.345$ from
+$\kappa = 5$, $\mu_0 = 0.331$), this evaluates to
+\begin{equation}
+  p_0(h) = \frac{\Gamma(5)}{\Gamma(1.655)\,\Gamma(3.345)}\;
+  h^{\,0.655}\,(1 - h)^{\,2.345}
+  \approx 9.47\;h^{\,0.655}\,(1 - h)^{\,2.345} .
+  \label{eq:prior_pdf_numeric}
+\end{equation}
 The distribution is unimodal when both $\alpha > 1$ and $\beta > 1$, with mean
-$\alpha/(\alpha + \beta)$ and variance that decreases as $\alpha + \beta$
-grows.  Because it is bounded on $[0,1]$ and can represent any unimodal
-belief over a probability, it is the natural prior for the latent
+$\alpha/(\alpha + \beta)$ (here $\mu_0 = 0.331$) and mode
+$(\alpha-1)/(\alpha+\beta-2) \approx 0.218$.  Its standard deviation follows from
+the Beta variance $\mathrm{Var} = \alpha\beta/[(\alpha+\beta)^2(\alpha+\beta+1)]$
+\citep[p.~581, Table~A.1]{Gelman2013}:
+\begin{equation}
+  \sigma_0 = \sqrt{\frac{\alpha_0\,\beta_0}{(\alpha_0+\beta_0)^2\,(\alpha_0+\beta_0+1)}}
+  = \sqrt{\frac{1.655 \times 3.345}{25 \times 6}} \approx 0.19 .
+  \label{eq:prior_sd}
+\end{equation}
+Because it is bounded on $[0,1]$ and can represent any unimodal belief over a
+probability, the Beta distribution is the natural prior for the latent
 habitability probability $H$.
 
 \section{Bernoulli Trials and the Binomial Likelihood}
@@ -62,10 +89,18 @@ $\mathrm{Beta}(\alpha_0 + k,\; \beta_0 + (n - k))$.
 In the habitability model, this update takes the specific form given in
 Eqs.~\ref{eq:alpha_post}--\ref{eq:beta_post}, where the pseudo-counts
 $k = \lambda\sum_i w_i f_i$ and $n - k = \lambda\sum_i w_i(1-f_i)$ are
-derived from the weighted feature values.  The resulting posterior PDF
-(Eq.~\ref{eq:posterior_pdf}) has the same gamma-function structure as
-the prior PDF (Eq.~\ref{eq:prior_pdf}), with only the shape parameters
-changed: no new functional form is introduced.
+derived from the weighted feature values.  The resulting posterior PDF has
+the same gamma-function structure as the prior PDF (Eq.~\ref{eq:prior_pdf}),
+with only the shape parameters changed:
+\begin{equation}
+  p\bigl(h \mid \featurevec\bigr)
+  = \frac{\Gamma(\alpha_\text{post} + \beta_\text{post})}{\Gamma(\alpha_\text{post})\,\Gamma(\beta_\text{post})}\;
+  h^{\,\alpha_\text{post} - 1}\,(1 - h)^{\,\beta_\text{post} - 1} ,
+  \label{eq:posterior_pdf}
+\end{equation}
+so no new functional form is introduced.  Here $\alpha_\text{post} +
+\beta_\text{post} = \kappa + \lambda = 11$ at every pixel, so the leading
+factor is the constant $\Gamma(11) = 10! = 3{,}628{,}800$.
 This analytical tractability makes the update feasible at 6.49 million
 pixels simultaneously with no numerical integration required.
 

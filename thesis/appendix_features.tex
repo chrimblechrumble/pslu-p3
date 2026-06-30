@@ -190,8 +190,7 @@ primary candidate is acetylenotrophy ($\ce{C2H2 + 3H2 -> 2CH4}$, $\Delta G = -33
 change of the reaction, a negative value indicating spontaneous energy release)
 available from acetylene--hydrogen combination \citep{McKaySmith2005}.  \citet{Yanez2024} recalculated the
 available energy under updated thermochemical conditions at \titan{}'s surface
-as 69--78\,kJ\,mol$^{-1}$\,C, well above the minimum for terrestrial
-methanogens.  Acetylene is produced continuously by UV photolysis of methane
+as 69--78\,kJ\,(mol\,C)$^{-1}$ (equivalently per mol CH$_4$), roughly seven times the $\sim$$-10.6$\,kJ\,(mol\,CH$_4$)$^{-1}$ apparent minimum free energy that sustains terrestrial methanogens \citep{Hoehler2001}.  Acetylene is produced continuously by UV photolysis of methane
 and sediments to the surface where it has been directly detected by GCMS
 \citep{Niemann2005}.  The chemical energy feature is therefore a proxy for
 the co-availability of acetylene and hydrogen at the surface.
@@ -268,18 +267,20 @@ terminates preferentially at polar lake margins, establishing these as zones
 of maximum organic delivery and chemical gradient activity.
 
 \paragraph{Implementation.}
-A weighted sum of three spatial components:
+A weighted sum of four spatial components:
 \begin{equation}
-  f_5 = 0.30\,\hat{s} + 0.40\,\hat{m} + 0.30\,\hat{c}
+  f_5 = 0.25\,\hat{s} + 0.35\,\hat{m} + 0.15\,\hat{p} + 0.25\,\hat{c}
   \label{eq:feat5}
 \end{equation}
 where $\hat{s}$ is the normalised topographic slope $|\nabla z|$ from the
 GTDE DEM (high slopes drive physical transport and mixing); $\hat{m}$ is a
-binary lake-margin mask extended to $\sim$45\,km from the nearest confirmed
-lake shore; and $\hat{c}$ is the Gaussian-smoothed ($\sigma = 3$ pixels)
+lake-margin mask formed by a 3-pixel ($\sim$13\,km) dilation of the
+confirmed-liquid (Birch+2017) shoreline, combined with labyrinth terrain
+(weighted 0.7); $\hat{p}$ is a paleo-lake indicator marking Birch+2017 empty
+basins (former shorelines); and $\hat{c}$ is the Gaussian-smoothed ($\sigma = 3$ pixels)
 channel density from the \citet{Miller2021channels} dataset, normalised at the
 2nd--98th percentile range.  The lake-margin component receives the highest
-within-feature weight (40\%) because shorelines concentrate all three relevant
+within-feature weight (35\%) because shorelines concentrate all three relevant
 processes: liquid contact, organic delivery, and thermal/chemical cycling.
 
 \section[Feature 6: Topographic Complexity
@@ -348,7 +349,7 @@ gradients rather than a direct measurement.
 
 \paragraph{Implementation.}
 The Shannon entropy of the terrain class distribution in a sliding window
-of radius 10 pixels ($\sim$45\,km), normalised by the theoretical maximum
+of radius 7 pixels ($\sim$31\,km), normalised by the theoretical maximum
 entropy for the number of classes present:
 \begin{equation}
   f_7(r,c) = \frac{H(r,c)}{H_\text{max}}, \qquad

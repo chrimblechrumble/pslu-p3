@@ -44,28 +44,36 @@ first use.
 \section{Notation}
 \label{sec:notation}
 
-Two quantities appear throughout this chapter and are defined here to avoid
-repetition.  Each habitability-proxy feature $f_i$ ($i = 1,\ldots,8$) is
-assigned:
+The principal symbols used throughout this report are collected here for
+reference; each is defined in full where it is introduced (final column).
 
-\begin{itemize}
-  \item A \textbf{weight} $w_i \in [0,1]$, where $\sum_i w_i = 1$.  The weight
-    encodes the relative astrobiological importance of feature $i$ as a
-    habitability indicator.  A feature with a higher weight exerts a larger
-    influence on the posterior probability of habitability, all else being
-    equal.  Weights are assigned from physical reasoning and validated against
-    data-derived importances (Section~\ref{sec:importances}).
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{2.6cm}p{7.0cm}p{3.3cm}}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{Value / defined in} \\
+\midrule
+$f_i$ & Habitability-proxy feature $i$ ($i = 1,\ldots,8$), normalised to $[0,1]$ & Section~\ref{sec:features} \\[2pt]
+$w_i$ & Feature weight (relative astrobiological importance); $\sum_i w_i = 1$ & Table~\ref{tab:feature_summary} \\[2pt]
+$\mu_i$ & Feature prior mean: expected spatial average before data & Table~\ref{tab:feature_summary} \\[2pt]
+$\mu_0$ & Global prior mean, $\mu_0 = \sum_i w_i \mu_i$ & 0.331 (present); 0.695 (future) \\[2pt]
+$\kappa$ & Prior concentration (effective sample size, in virtual observations) & 5 \\[2pt]
+$\lambda$ & Likelihood weight (data virtual observations) & 6 \\[2pt]
+$\alpha_0,\,\beta_0$ & Beta prior shape parameters: $\alpha_0 = \mu_0\kappa$, $\beta_0 = (1-\mu_0)\kappa$ & 1.655,\; 3.345 (present) \\[2pt]
+$\alpha_\text{post},\,\beta_\text{post}$ & Beta posterior shape parameters & Eqs.~\ref{eq:alpha_post}--\ref{eq:beta_post} \\[2pt]
+$P(H \mid \featurevec)$ & Posterior mean habitability probability at a pixel & Eq.~\ref{eq:posterior_mean} \\[2pt]
+$s_i(t)$ & Temporal scale multiplier for feature $i$ at epoch $t$ & Table~\ref{tab:scale_funcs} \\
+\bottomrule
+\end{tabular}
+\caption{Principal notation used in this report.}
+\label{tab:notation}
+\end{table}
 
-  \item A \textbf{prior mean} $\mu_i \in [0,1]$.  This is the expected
-    spatially-averaged value of feature $i$ before any observational data
-    are considered: a statement of our prior knowledge about how common or
-    widespread the habitability-relevant condition is on \titan{}.  For
-    example, liquid hydrocarbon covers $\sim$2\% of \titan{}'s surface
-    \citep{Hayes2008}, so its prior mean is $\mu_1 = 0.02$.  The weighted
-    sum of all prior means defines the global prior mean habitability:
-    $\mu_0 = \sum_i w_i \mu_i = 0.331$.  Note that the value $\mu_0 = 0.331$ does not appear in the prior literature as a global habitability estimate for \titan{}; it emerges from the component prior means in Table~\ref{tab:priors} and should be interpreted as encoding the observation that \titan{}'s surface is globally organic-rich whilst simultaneously recognising that liquid solvent is present at only $\sim$2\% of the surface. The resulting moderate prior is intentionally revisionable: the weak concentration parameter $\kappa = 5$ ensures that the data, not the prior, determine the posterior at any pixel where observational coverage is good. Full values are tabulated in
-    Appendix~\ref{app:priors}.
-\end{itemize}
+The global prior mean $\mu_0$ is not an independent literature estimate; it is
+derived from the component prior means (Appendix~\ref{app:priors}) and is
+deliberately weak ($\kappa = 5$) so that observations, not the prior, determine
+the posterior wherever coverage is good.
 
 This notation first appears in a practical context in Section~\ref{sec:features},
 where the eight features are described individually.  Their role in the
@@ -123,7 +131,7 @@ producing the formula:
   \label{eq:jennings}
 \end{equation}
 where $\phi$ is latitude in degrees and $Y = t_\text{CE} - 2009.61$ is years
-from the northern spring equinox (22 May 2009).  This formula reproduces the
+from the northern spring equinox (11 August 2009).  This formula reproduces the
 observed zonal surface temperatures to within $\pm0.4$\,K (rms) across the
 full Cassini epoch and provides 100\% global coverage, grounded in CIRS
 focal-plane-1 limb and nadir observations across the full 2004--2017 mission.
@@ -216,4 +224,4 @@ The polar inset maps in the animation frames and temporal reconstruction figures
   \lambda = \arctan2(x,\, y)
   \label{eq:polar_stereo}
 \end{equation}
-where $\phi$ is latitude, $\lambda$ is west longitude, and $k_{\mathrm{PS}} = \tan\bigl((90\textdegree - \phi_{\mathrm{edge}})/2\bigr)$ is a pre-computed scale factor that maps the disc edge ($r=1$) to the desired polar cap boundary $\phi_{\mathrm{edge}}$ (55\textdegree{} by default), $\arctan$ is the single-argument inverse tangent and $\arctan2$ is the two-argument (quadrant-aware) inverse tangent.  For the south polar disc, $\phi$ is negated.  Pixel values are obtained by bilinear interpolation from the equirectangular grid using the inverse-projected latitude and longitude at each disc pixel.  This hand-coded implementation avoids introducing a dependency on cartographic projection libraries for what is purely a visualisation transformation.
+where $\phi$ is latitude, $\lambda$ is west longitude, and $k_{\mathrm{PS}} = \tan\bigl((90\textdegree - \phi_{\mathrm{edge}})/2\bigr)$ is a pre-computed scale factor that maps the disc edge ($r=1$) to the desired polar cap boundary $\phi_{\mathrm{edge}}$ (50\textdegree{} by default), $\arctan$ is the single-argument inverse tangent and $\arctan2$ is the two-argument (quadrant-aware) inverse tangent.  For the south polar disc, $\phi$ is negated.  Pixel values are obtained by bilinear interpolation from the equirectangular grid using the inverse-projected latitude and longitude at each disc pixel.  This hand-coded implementation avoids introducing a dependency on cartographic projection libraries for what is purely a visualisation transformation.

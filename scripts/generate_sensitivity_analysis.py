@@ -73,6 +73,13 @@ SITES = {
         },
         "colour": "#8B5000",
     },
+    # TODO(validation): this hardcoded Selk feature vector is inconsistent with the
+    # canonical Selk values in tab:selk_features / RANKINGS.csv -- e.g. acetylene
+    # 0.454 vs 0.229, liquid_hc 0.050 vs 0.010, organic 0.168 vs 0.232, ocean 0.070
+    # vs 0.030 -- giving a sensitivity baseline P(H) ~= 0.239 rather than the
+    # ranking's 0.210.  Reconcile with the canonical (45-km median) values, then
+    # regenerate sensitivity_analysis.png and update the Selk deltas (-0.027 / +0.029)
+    # quoted in discussion.tex (sec:sensitivity).
     "Selk Crater": {
         "features": {
             "liquid_hc": 0.050, "organic": 0.168, "acetylene": 0.454,

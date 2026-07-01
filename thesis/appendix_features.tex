@@ -6,7 +6,7 @@
 The eight habitability-proxy features are extracted from the Cassini data
 sources described in Appendix~\ref{app:notation}.  Each subsection gives the
 scientific basis, prior mean justification, implementation procedure, and
-missing-data backfill strategy.  Features derived from SAR backscatter ($f_1$, $f_3$, $f_5$, $f_7$, $f_8$) are affected by the $\sim$35\% coverage gap of the Cassini RADAR SAR imaging mode (which images $\sim$65\% of the globe); in unmapped regions, the pipeline assigns physically motivated floor values rather than interpolated estimates.  No published method exists for interpolating SAR backscatter intensity on Titan: unlike topography, which varies smoothly and can be splined from sparse profiles \citep{Lorenz2013,Corlies2017Titan}, backscatter depends on local roughness, composition, and viewing geometry and lacks the spatial autocorrelation needed for meaningful gap-filling.
+missing-data backfill strategy.  Features built directly on SAR backscatter ($f_1$, $f_3$, $f_8$) are affected by the $\sim$33\% coverage gap of the Cassini RADAR SAR imaging mode (which images $\sim$67\% of the globe); in unmapped regions, the pipeline assigns physically motivated floor values rather than interpolated estimates.  No published method exists for interpolating SAR backscatter intensity on Titan: unlike topography, which varies smoothly and can be splined from sparse profiles \citep{Lorenz2013,Corlies2017Titan}, backscatter depends on local roughness, composition, and viewing geometry and lacks the spatial autocorrelation needed for meaningful gap-filling.
 
 Figure~\ref{fig:feature_panel} shows all eight feature maps at the present
 epoch, illustrating their distinct spatial patterns.  Figure~\ref{fig:epoch_timeline}
@@ -41,7 +41,7 @@ Bayesian missing-data imputation procedure described in Section~\ref{sec:nan}.
     combined posterior is derived from all eight simultaneously via the
     Bayesian update described in Section~\ref{sec:bayes}.  Prior weight $w_i$
     and prior mean $\mu_i$ are shown for each panel.  In the Cassini SAR
-    coverage gaps ($\sim$35\% of the globe), the SAR-primary features
+    coverage gaps ($\sim$33\% of the globe), the SAR-primary features
     ($f_1$, $f_3$, $f_8$) lose direct coverage; there the pipeline substitutes
     the geomorphological ($f_7$) and topographic ($f_6$) proxies, or assigns
     the feature prior mean $\mu_i$ where no proxy is available
@@ -224,30 +224,30 @@ experiencing the most active methane cycling receive fresh organic inputs
 most regularly and maintain the most dynamic chemical environments.
 
 \paragraph{Implementation.}
-The methane cycle intensity is a weighted composite of three independently
-computed components:
+The methane cycle intensity is a weighted composite of up to three
+independently computed components; where a component's source layer is
+unavailable, its weight is redistributed proportionally among those present:
 \begin{enumerate}
-  \item \textbf{VIMS observation density} (50\%): the number of VIMS
-    spectral footprints per grid cell, smoothed with a 5-pixel Gaussian
-    kernel.  Cassini's VIMS observation targeting was scientifically
-    motivated, prioritising regions of active methane-cycle interest;
-    higher coverage density therefore correlates with active methane
-    cycling zones \citep{LeMouelic2019}.
   \item \textbf{Meridional temperature gradient} $|\partial T/\partial\phi|$
-    (25\%): derived from the Jennings (2019) model (Eq.~\ref{eq:jennings}),
-    evaluated at $Y = +1.39$ (year 2011.0, the approximate mission midpoint).
-    Regions where the surface temperature gradient is steepest experience
-    the strongest differential evaporation and precipitation, driving the
-    most vigorous methane transport.
-  \item \textbf{Latitude prior} (25\%): the function
-    $\exp[-(\phi \pm 45\textdegree)^2/(25\textdegree)^2]$, following
-    \citet{MitchellLora2016}'s general circulation modelling result that
-    the mid-latitude regions host the primary methane cycle activity
-    during the Cassini epoch.
+    (weight 0.50): the magnitude of the latitudinal gradient of the CIRS
+    surface-temperature field (Eq.~\ref{eq:jennings}).  Regions where the
+    surface temperature gradient is steepest experience the strongest
+    differential evaporation and precipitation, driving the most vigorous
+    methane transport.  This component is included only where the temperature
+    field carries meaningful spatial variance.
+  \item \textbf{Fluvial channel density} (weight 0.35): the
+    \citet{Miller2021channels} channel network, rasterised and smoothed over
+    $\sim$50\,km (an 11-pixel box filter), a direct record of where methane
+    runoff and erosion occur.
+  \item \textbf{Latitude prior} (weight 0.15): the function
+    $\exp[-(|\phi| - 50\textdegree)^2/(25\textdegree)^2]$, a Gaussian centred
+    on $\pm 50\textdegree$ following the general-circulation-modelling result
+    that the storm-track latitudes host the primary methane-cycle activity
+    during the Cassini epoch \citep{MitchellLora2016}.
 \end{enumerate}
 
-This feature has 100\% global coverage by construction and requires no
-backfill.
+The latitude prior is always available, so this feature has 100\% global
+coverage by construction and requires no backfill.
 
 \section[Feature 5: Surface--Atmosphere Interaction Intensity
   ($w_5 = 0.08$, $\mu_5 = 0.35$)]{Feature 5: Surface--Atmosphere Interaction Intensity \\
@@ -289,7 +289,7 @@ processes: liquid contact, organic delivery, and thermal/chemical cycling.
 \label{sec:feat_topo}
 
 \paragraph{Scientific basis.}
-Local topographic roughness at $\sim$20\,km scale correlates with the
+Local topographic roughness at $\sim$50\,km scale correlates with the
 dissected terrain types that most frequently expose water-ice-bearing crustal
 material \citep{Lopes2019}.  On Earth, topographic heterogeneity at ecologically
 relevant scales creates micro-environmental diversity (variations in
@@ -299,8 +299,8 @@ is that varied topography produces diverse chemical micro-environments with
 potentially richer reactive diversity.
 
 \paragraph{Implementation.}
-Local standard deviation of GTDE elevation computed in a $5\times5$ pixel
-($\sim$22\,km) sliding window, normalised to $[0,1]$ at the 2nd--98th
+Local standard deviation of GTDE elevation computed in an $11\times11$ pixel
+(radius 5, $\sim$49\,km) sliding window, normalised to $[0,1]$ at the 2nd--98th
 percentile range.  South polar gaps in the primary GTDE are filled with the
 \citet{Corlies2017Titan} globally interpolated DEM prior to roughness computation.
 
@@ -396,23 +396,21 @@ water is a global structure and that the possibility of subsurface--surface exch
 be excluded at any location, even if no surface expression is visible.
 
 Second, localised enhancements above the floor are applied at SAR-bright
-annular structures identified in the Cassini RADAR mosaic.  These annuli
-are selected by their backscatter ($\sigma^0 > 0$\,dB, indicating rough
-or water-ice-rich material), their plan-view morphology (roughly circular
-or lobate, distinct from the linear patterns of mountain ridges or the
-radar-dark texture of dunes), and their association with confirmed or
-probable impact structures in the \citet{Hedgepeth2020} catalogue.  At each
-such structure, a two-dimensional Gaussian kernel of half-width $\sigma
-\approx 200$\,km centred on the crater creates a smooth spatial enhancement.
-The 200\,km scale is set to approximate the spatial extent of the ancient
-melt-water or cryolava deposit that the annulus represents: for a 90\,km
-diameter crater (Selk), melt-front runout distances of $\sim$200--500\,km
-are consistent with the low-viscosity water--ammonia melt and the
-low-gravity environment \citep{OBrien2005}.
+annular structures in the Cassini RADAR mosaic, interpreted as ancient
+impact-melt rims or cryolava flow fronts \citep{Wood2010}.  Rather than
+placing kernels at catalogued craters, the annuli are detected
+morphologically: each pixel's mean backscatter in a small (5-pixel) window
+is compared with its mean in a larger (25-pixel, $\sim$110\,km) window, and
+pixels forming a bright ring around a relatively dark interior (small-window
+mean exceeding the large-window mean, with the surroundings below the global
+median) receive a positive annular score.  This first-order ring detector
+captures the qualitative annular signature without geometric circle fitting;
+it has not been validated against the \citet{Hedgepeth2020} crater catalogue,
+so the enhancement is deliberately conservative.
 
-The feature is the normalised sum of the global floor and all Gaussian
-kernels, clipped to $[0, 1]$.  Because the global floor is already low
-($\mu_8 = 0.03$) and only a small number of confirmed annuli exist in the
-SAR mosaic, the spatial variance of $f_8$ is very low: it is 0.03 everywhere
-except within $\sim$500\,km of a confirmed annular structure, where it reaches
-values of 0.15--0.25.
+The annular score is normalised to $[0,1]$ and added to the floor with a
+maximum boost of $+0.30$, the sum clipped to $[0, 1]$.  Because the floor is
+low ($\mu_8 = 0.03$) and only a small number of pixels register a strong
+annular signature, the spatial variance of $f_8$ is very low: it is 0.03
+almost everywhere, rising towards $\sim$0.33 only at the strongest annular
+structures.

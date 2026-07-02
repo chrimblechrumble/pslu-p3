@@ -26,6 +26,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root importable
 from titan.atmospheric_profiles import jennings_surface_temperature
 
 EQUINOX, PRESENT_YEAR = 2009.61, 2011.0

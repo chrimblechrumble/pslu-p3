@@ -23,6 +23,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root importable
 from titan.atmospheric_profiles import jennings_surface_temperature
 
 EQUINOX, PRESENT_YEAR = 2009.61, 2011.0
@@ -73,7 +76,9 @@ for k, r in enumerate(top10):
     axA.plot(years, ph_curve(float(r["lat"]), float(r["P(H)_present"])), lw=1.8, color=cmap[k],
              label=f"#{k+1} {r['short_name']}")
 _decorate(axA)
-axA.text(EQUINOX, 1.005, "equinox", color="0.4", fontsize=8, ha="center", transform=axA.get_xaxis_transform())
+_y0, _y1 = axA.get_ylim(); axA.set_ylim(_y0, _y1 + 0.15 * (_y1 - _y0))  # headroom: keep top labels clear of curves + title
+axA.text(EQUINOX, 0.98, "equinox", color="0.4", fontsize=8, ha="center", va="top", transform=axA.get_xaxis_transform())
+axA.text(PRESENT_YEAR + 0.1, 0.98, "present (2011)", color="0.4", fontsize=8, ha="left", va="top", transform=axA.get_xaxis_transform())
 axA.set_ylabel(r"$P(H \mid \mathbf{f})$")
 axA.set_title("(a) Top-10 present sites (all north-polar lakes)", fontsize=10)
 axA.legend(fontsize=7, ncol=2, loc="upper right", framealpha=0.9)
@@ -83,7 +88,9 @@ for (name, (mask, rep)), col in zip(bands.items(), band_cols):
     sub = post[mask, :]; med = float(np.nanmedian(sub[np.isfinite(sub)]))
     axB.plot(years, ph_curve(rep, med), lw=2, color=col, label=name)
 _decorate(axB)
-axB.text(EQUINOX, 1.005, "equinox", color="0.4", fontsize=8, ha="center", transform=axB.get_xaxis_transform())
+_y0, _y1 = axB.get_ylim(); axB.set_ylim(_y0, _y1 + 0.15 * (_y1 - _y0))  # headroom: keep top labels clear of curves + title
+axB.text(EQUINOX, 0.98, "equinox", color="0.4", fontsize=8, ha="center", va="top", transform=axB.get_xaxis_transform())
+axB.text(PRESENT_YEAR + 0.1, 0.98, "present (2011)", color="0.4", fontsize=8, ha="left", va="top", transform=axB.get_xaxis_transform())
 axB.set_ylabel(r"Median $P(H \mid \mathbf{f})$")
 axB.set_title("(b) Latitude bands: modest northern decline toward summer", fontsize=10)
 axB.legend(fontsize=8, loc="center right", framealpha=0.9)

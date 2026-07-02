@@ -29,6 +29,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root importable
 from titan.atmospheric_profiles import jennings_surface_temperature as T_jennings
 
 EQ, PRESENT_YEAR, PERIOD, OBLIQ = 2009.61, 2011.0, 29.46, 26.7
@@ -70,9 +73,10 @@ cmap = plt.cm.viridis(np.linspace(0, 0.9, 10))
 for k, r in enumerate(top10):
     axA.plot(yrs_m, ph_curve(T_periodic, float(r["lat"]), float(r["P(H)_present"]), yrs_m),
              lw=1.8, color=cmap[k], label=f"#{k+1} {r['short_name']}")
+_y0, _y1 = axA.get_ylim(); axA.set_ylim(_y0, _y1 + 0.15 * (_y1 - _y0))  # headroom: keep top labels clear of curves + title
 axA.axvline(EQ, color="0.4", ls=":", lw=1.1); axA.axvline(2016.98, color="0.4", ls="-.", lw=1)
-axA.text(EQ, 1.005, "equinox", color="0.4", fontsize=8, ha="center", transform=axA.get_xaxis_transform())
-axA.text(2016.98, 1.005, "N-solstice", color="0.4", fontsize=8, ha="center", transform=axA.get_xaxis_transform())
+axA.text(EQ, 0.98, "equinox", color="0.4", fontsize=8, ha="center", va="top", transform=axA.get_xaxis_transform())
+axA.text(2016.98, 0.98, "N-solstice", color="0.4", fontsize=8, ha="center", va="top", transform=axA.get_xaxis_transform())
 axA.set_xlim(2004.7, 2017.7); axA.set_xlabel("Calendar year"); axA.set_ylabel(r"$P(H \mid \mathbf{f})$")
 axA.set_title("(a) Periodic model, Cassini window: rollover at the solstice", fontsize=10)
 axA.legend(fontsize=7, ncol=2, loc="lower left", framealpha=0.9); axA.grid(alpha=0.3)
@@ -83,11 +87,12 @@ axB.plot(yrs_e, ph_curve(T_jennings, 75, npolar_med, yrs_e), color="#c0392b", ls
          label="Jennings 2019 (linear fit, outside validity)")
 axB.plot(yrs_e, ph_curve(T_periodic, 75, npolar_med, yrs_e), color="#1f4e9c", lw=2,
          label="Periodic (illustrative)")
+_y0, _y1 = axB.get_ylim(); axB.set_ylim(_y0, _y1 + 0.15 * (_y1 - _y0))  # headroom: keep top labels clear of curves + title
 axB.axvspan(2004.7, 2017.7, color="0.85", alpha=0.6, label="Cassini data window")
 for yr, lab in [(2002.24, "S-sol"), (2009.61, "equinox"), (2016.98, "N-sol"),
                 (2024.34, "equinox"), (2031.71, "S-sol")]:
     axB.axvline(yr, color="0.6", ls=":", lw=0.8)
-    axB.text(yr, 1.01, lab, color="0.5", fontsize=7, ha="center", transform=axB.get_xaxis_transform())
+    axB.text(yr, 0.98, lab, color="0.5", fontsize=7, ha="center", va="top", transform=axB.get_xaxis_transform())
 axB.set_xlim(2002.2, 2031.7); axB.set_xlabel("Calendar year (~one Titan year)")
 axB.set_ylabel(r"N. Polar median $P(H \mid \mathbf{f})$")
 axB.set_title("(b) One Titan year: Jennings linear fit (outside validity) vs periodic", fontsize=10)

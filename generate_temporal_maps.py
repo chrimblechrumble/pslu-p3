@@ -2311,6 +2311,81 @@ def render_frame(
 
 # --- Thesis frame -------------------------------------------------------------
 
+def _deoverlap_labels(fig, ax, anns, pad_px: float = 1.5,
+                      max_iter: int = 200, max_shift_px: float = 42.0) -> None:
+    """Vertically separate overlapping site labels on a single map axis.
+
+    Each annotation keeps its anchor point (``xy``, the marker) fixed; only the
+    text position (``xytext``) is moved, so the existing leader lines follow the
+    label automatically.  Overlap is measured from the rendered text boxes in
+    display (pixel) space, which makes the routine work identically for the
+    equirectangular panel and the polar discs (whichever ``ax`` is passed).
+
+    Label travel is strictly bounded: a label never moves more than
+    ``max_shift_px`` from where it was first placed, and is always clamped to
+    the interior of ``ax``.  A crowded cluster therefore ends up with at most a
+    small residual overlap rather than a label cascading off the panel on a
+    long leader line.
+
+    Best-effort: if a renderer is unavailable, or anything else goes wrong, the
+    labels are left exactly as placed rather than raising, so figure generation
+    never fails on account of label tidying.
+    """
+    if len(anns) < 2:
+        return
+    try:
+        fig.canvas.draw()                       # realise layout + font metrics
+        renderer = fig.canvas.get_renderer()
+        trans = ax.transData
+        inv = trans.inverted()
+
+        # Axis interior (display px) and each label's starting y (travel budget)
+        ax_bb = ax.get_window_extent(renderer)
+        y_lo, y_hi = ax_bb.y0 + 2.0, ax_bb.y1 - 2.0
+        y_start = [float(trans.transform(a.xyann)[1]) for a in anns]
+
+        def _box(a):
+            return a.get_window_extent(renderer).padded(pad_px)
+
+        def _disp_y(a):
+            return float(trans.transform(a.xyann)[1])
+
+        def _set_y(a, y_target, k):
+            # An Annotation's text position lives in ``xyann`` (textcoords are
+            # 'data' here); set_position() would be overwritten at draw time.
+            # Clamp to the travel budget from the start, then to the axis.
+            y = min(max(y_target, y_start[k] - max_shift_px),
+                    y_start[k] + max_shift_px)
+            y = min(max(y, y_lo), y_hi)
+            x_disp = float(trans.transform(a.xyann)[0])
+            a.xyann = tuple(inv.transform((x_disp, y)))
+
+        for _ in range(max_iter):
+            boxes = [_box(a) for a in anns]
+            moved = False
+            for i in range(len(anns)):
+                for j in range(i + 1, len(anns)):
+                    bi, bj = boxes[i], boxes[j]
+                    if not bi.overlaps(bj):
+                        continue
+                    overlap = min(bi.y1, bj.y1) - max(bi.y0, bj.y0)
+                    if overlap <= 0:
+                        continue
+                    shift = overlap / 2.0 + 0.5
+                    ci = 0.5 * (bi.y0 + bi.y1)
+                    cj = 0.5 * (bj.y0 + bj.y1)
+                    up, down = (i, j) if ci >= cj else (j, i)
+                    _set_y(anns[up],   _disp_y(anns[up])   + shift, up)
+                    _set_y(anns[down], _disp_y(anns[down]) - shift, down)
+                    boxes[i] = _box(anns[i])
+                    boxes[j] = _box(anns[j])
+                    moved = True
+            if not moved:
+                break
+    except Exception:                           # best-effort; never break render
+        pass
+
+
 def render_thesis_frame(
     posterior:  "np.ndarray",
     t:          float,
@@ -2455,6 +2530,7 @@ def render_thesis_frame(
                   fontsize=FSIZE_THESIS_MAP_TITLE, pad=5)
 
     # Top-10 markers on equirectangular
+    eq_anns: List = []
     for lon_W, lat, label, rank, _ in TOP10:
         _stype  = SITE_TYPE.get(label, "land")
         _mshape = MARKER_SHAPE[_stype]
@@ -2462,7 +2538,7 @@ def render_thesis_frame(
         ax1.plot(lon_W, lat, _mshape, color=COLOUR_MARKER,
                  ms=_msize, mew=1.2, markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
         dx, dy = _label_offset(lon_W, lat)
-        ax1.annotate(
+        eq_anns.append(ax1.annotate(
             f"#{rank} {label}",
             xy=(lon_W, lat), xytext=(lon_W + dx, lat + dy),
             color=COLOUR_TEXT, fontsize=TH_TEXT,
@@ -2470,21 +2546,26 @@ def render_thesis_frame(
             zorder=11,
             bbox=dict(boxstyle="round,pad=0.15",
                       fc=COLOUR_ANNOT_BOX, ec="none"),
-        )
+        ))
     for lon_W, lat, label, rank, _ in ALWAYS_EXTRA:
         _stype  = SITE_TYPE.get(label, "lander")
         ax1.plot(lon_W, lat, MARKER_SHAPE[_stype], color=COLOUR_MARKER,
                  ms=MARKER_SIZE_BY_TYPE[_stype], mew=1.2,
                  markeredgecolor=COLOUR_MARKER_EDGE, zorder=10)
         dx, dy = _label_offset(lon_W, lat)
-        ax1.annotate(
+        eq_anns.append(ax1.annotate(
             label,
             xy=(lon_W, lat), xytext=(lon_W + dx, lat + dy),
             color=COLOUR_TEXT, fontsize=TH_TEXT,
             arrowprops=dict(arrowstyle="-", color=COLOUR_LEADER, lw=0.8),
             zorder=11,
             bbox=dict(boxstyle="round,pad=0.15", fc=COLOUR_ANNOT_BOX, ec="none"),
-        )
+        ))
+
+    # Push apart any labels that collide (clustered polar lakes especially);
+    # markers stay put and the leader lines follow the moved text.  The wide
+    # equirectangular panel has room, so allow a generous travel budget.
+    _deoverlap_labels(fig, ax1, eq_anns, max_shift_px=80.0)
 
     # -- Polar-cap helper -----------------------------------------------------
     def _draw_polar_panel(ax: "matplotlib.axes.Axes", north: bool,
@@ -2504,6 +2585,7 @@ def render_thesis_frame(
                      fontsize=FSIZE_THESIS_MAP_TITLE, pad=5)
         _draw_polar_graticule(ax)
 
+        pol_anns: List = []
         for lon_W, lat, label, rank, _ in TOP10:
             xs, ys = _loc_to_stereo(lon_W, lat, north=north)
             if xs is None:
@@ -2516,7 +2598,7 @@ def render_thesis_frame(
             scale_out = min(1.15 / max(0.05, mag), 4.0)
             tx = max(-0.90, min(0.90, xs * scale_out))
             ty = max(-0.90, min(0.90, ys * scale_out))
-            ax.annotate(
+            pol_anns.append(ax.annotate(
                 (f"#{rank} {label}" if rank > 0 else label),
                 xy=(xs, ys), xytext=(tx, ty),
                 color=COLOUR_TEXT, fontsize=TH_TEXT_POL,
@@ -2525,7 +2607,7 @@ def render_thesis_frame(
                 zorder=11,
                 bbox=dict(boxstyle="round,pad=0.15",
                           fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
-            )
+            ))
         for lon_W, lat, label, rank, _ in ALWAYS_EXTRA:
             xs, ys = _loc_to_stereo(lon_W, lat, north=north)
             if xs is None:
@@ -2538,7 +2620,7 @@ def render_thesis_frame(
             scale_out = min(1.15 / max(0.05, mag), 4.0)
             tx = max(-0.90, min(0.90, xs * scale_out))
             ty = max(-0.90, min(0.90, ys * scale_out))
-            ax.annotate(
+            pol_anns.append(ax.annotate(
                 label,
                 xy=(xs, ys), xytext=(tx, ty),
                 color=COLOUR_TEXT, fontsize=TH_TEXT_POL,
@@ -2547,7 +2629,12 @@ def render_thesis_frame(
                 zorder=11,
                 bbox=dict(boxstyle="round,pad=0.15",
                           fc=COLOUR_ANNOT_BOX_POLAR, ec="none"),
-            )
+            ))
+
+        # Separate overlapping labels within this polar disc.  The disc is
+        # small, so keep the travel budget tight: labels only nudge slightly
+        # away from their radial positions rather than wandering across it.
+        _deoverlap_labels(fig, ax, pol_anns, max_shift_px=26.0)
 
     # Polar panels: explicit placement so both are identical in size and
     # the three inter-panel gaps (left / centre / right) are exactly equal.

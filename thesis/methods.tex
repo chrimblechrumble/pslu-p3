@@ -37,24 +37,23 @@ Eight Cassini data products spanning SAR imaging, near-infrared spectroscopy, th
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{p{3.4cm}p{6.2cm}p{2.6cm}}
+\begin{tabular}{p{3.5cm}p{6.2cm}p{3.3cm}}
 \toprule
 \textbf{Feature} & \textbf{Cassini data source(s)} & \textbf{Coverage} \\
 \midrule
 $f_1$ liquid hydrocarbon         & Cassini SAR mosaic (lake mapping) & $\sim$67\% \\
-$f_2$ organic abundance          & VIMS 1.59/1.27\,\textmu{}m (+ Lopes terrain scores) & $\sim$50\% (global blend) \\
+$f_2$ organic abundance          & \makecell[tl]{VIMS 1.59/1.27\,\textmu{}m \\ (+ Lopes terrain scores)} & $\sim$50\% (global blend) \\
 $f_3$ chemical energy            & Cassini SAR backscatter & $\sim$67\% \\
 $f_4$ methane cycle              & CIRS thermal mosaic & Global ($\sim$10\textdegree{}) \\
 $f_5$ surface--atmosphere        & GTDE DEM (slope); lake-margin mask; Miller (2021) channels & Global / SAR \\
 $f_6$ topographic complexity     & GTDE/GTDR DEM & $\sim$90\% (interp.) \\
-$f_7$ geomorphological diversity & Cassini SAR mosaic; Lopes (2019) geomorph.\ map & $\sim$67--90\% \\
+\makecell[tl]{$f_7$ geomorphological \\ diversity} & \makecell[tl]{ Cassini SAR mosaic \\ Lopes (2019) geomorphological\ map} & $\sim$67--90\% \\
 $f_8$ subsurface ocean           & Tidal $k_2$ (gravity); Cassini SAR (annuli) & Global + SAR \\
 \bottomrule
 \end{tabular}
 \caption{Cassini data source(s) for each habitability feature.}
 \label{tab:data_sources}
 \end{table}
-
 \section{Feature Extraction}
 \label{sec:features}
 

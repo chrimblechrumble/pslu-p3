@@ -50,14 +50,14 @@ reference; each is defined in full where it is introduced (final column).
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{p{2.6cm}p{7.0cm}p{3.3cm}}
+\begin{tabular}{p{2.6cm}p{7.0cm}p{3.4cm}}
 \toprule
 \textbf{Symbol} & \textbf{Meaning} & \textbf{Value / defined in} \\
 \midrule
 $f_i$ & Habitability-proxy feature $i$ ($i = 1,\ldots,8$), normalised to $[0,1]$ & Section~\ref{sec:features} \\[2pt]
 $w_i$ & Feature weight (relative astrobiological importance); $\sum_i w_i = 1$ & Table~\ref{tab:feature_summary} \\[2pt]
 $\mu_i$ & Feature prior mean: expected spatial average before data & Table~\ref{tab:feature_summary} \\[2pt]
-$\mu_0$ & Global prior mean, $\mu_0 = \sum_i w_i \mu_i$ & 0.331 (present); 0.695 (future) \\[2pt]
+$\mu_0$ & Global prior mean, $\mu_0 = \sum_i w_i \mu_i$ & \makecell[tl]{0.331 (present)\\ 0.695 (future)} \\[2pt]
 $\kappa$ & Prior concentration (effective sample size, in virtual observations) & 5 \\[2pt]
 $\lambda$ & Likelihood weight (data virtual observations) & 6 \\[2pt]
 $\alpha_0,\,\beta_0$ & Beta prior shape parameters: $\alpha_0 = \mu_0\kappa$, $\beta_0 = (1-\mu_0)\kappa$ & 1.655,\; 3.345 (present) \\[2pt]

@@ -158,7 +158,7 @@ def write_rankings_md(
         "# Source : run_pipeline.py --all-temporal-modes",
         "#          -> posterior_analytical.npy sampled at site coordinates",
         "# Script : scripts/generate_rankings.py",
-        f"# Grid   : {GRID_SHAPE[0]} x {GRID_SHAPE[1]}  (equirectangular, 5x5 pixel neighbourhood mean)",
+        f"# Grid   : {GRID_SHAPE[0]} x {GRID_SHAPE[1]}  (equirectangular, 3x3 pixel neighbourhood mean)",
         "# DO NOT EDIT BY HAND.  Re-run the script to update.",
         "",
     ]
@@ -224,7 +224,7 @@ def write_rankings_md(
     lines.append("# Rankings are of lake/lacus sites only (type=lake).")
     lines.append("# Lander sites (Selk, Huygens) appear below midrule in thesis tables.")
     lines.append("# 'other' sites (dunes, plains) are excluded from tables.")
-    lines.append("# P(H) values are posterior means sampled over a 5×5 pixel patch.")
+    lines.append("# P(H) values are posterior means sampled over a 3×3 pixel patch.")
 
     out_path.write_text("\n".join(lines) + "\n")
     print(f"  Written: {out_path}")

@@ -45,10 +45,10 @@ $f_1$ liquid hydrocarbon         & Cassini SAR mosaic (lake mapping) & $\sim$67\
 $f_2$ organic abundance          & VIMS 1.59/1.27\,\textmu{}m (+ Lopes terrain scores) & $\sim$50\% (global blend) \\
 $f_3$ chemical energy            & Cassini SAR backscatter & $\sim$67\% \\
 $f_4$ methane cycle              & CIRS thermal mosaic & Global ($\sim$10\textdegree{}) \\
-$f_5$ surface--atmosphere        & CIRS thermal mosaic; Miller (2021) channel map & Global / SAR \\
+$f_5$ surface--atmosphere        & GTDE DEM (slope); lake-margin mask; Miller (2021) channels & Global / SAR \\
 $f_6$ topographic complexity     & GTDE/GTDR DEM & $\sim$90\% (interp.) \\
-$f_7$ geomorphological diversity & Cassini SAR mosaic; Lopes (2019) geomorph.\ map; Hedgepeth (2020) craters & $\sim$67--90\% \\
-$f_8$ subsurface ocean           & Tidal $k_2$ (gravity) & Global scalar \\
+$f_7$ geomorphological diversity & Cassini SAR mosaic; Lopes (2019) geomorph.\ map & $\sim$67--90\% \\
+$f_8$ subsurface ocean           & Tidal $k_2$ (gravity); Cassini SAR (annuli) & Global + SAR \\
 \bottomrule
 \end{tabular}
 \caption{Cassini data source(s) for each habitability feature.}
@@ -152,10 +152,9 @@ The methane cycle is the dominant agent of chemical transport on \titan{}, deliv
 \textit{Prior mean justification:} $\mu_4 = 0.40$ because the methane cycle is active across a broad latitudinal range ($\gtrsim$30\textdegree{} in both hemispheres; \citealt{MitchellLora2016}), with confirmed precipitation events at tropical latitudes \citep{Turtle2011} indicating that even equatorial sites experience some methane-cycle activity.
 
 \paragraph{$f_5$: Surface--atmosphere interaction ($w_5 = 0.08$, $\mu_5 = 0.35$).}
-The physical interface between surface and atmosphere is where gas-phase photochemical products encounter liquid solvents and organic substrates.  Lake margins and fluvial channel termini are the primary loci of this exchange \citep{Hayes2016,Miller2021channels}.  The feature combines topographic slope (30\%; steep slopes drive physical transport), a lake-margin proximity mask (40\%; evaporation zones), and the Miller et al.\ (\citeyear{Miller2021channels}) global channel density map (30\%). The lake-margin component receives the highest within-feature weight
+The physical interface between surface and atmosphere is where gas-phase photochemical products encounter liquid solvents and organic substrates.  Lake margins and fluvial channel termini are the primary loci of this exchange \citep{Hayes2016,Miller2021channels}.  The feature combines a lake-margin proximity mask (35\%; evaporation zones), topographic slope (25\%; steep slopes drive physical transport), the Miller et al.\ (\citeyear{Miller2021channels}) global channel density map (25\%), and a paleo-lake (empty-basin) indicator (15\%; former shorelines). The lake-margin component receives the highest within-feature weight
 because shorelines are where atmospheric products, surface liquids, and
-organic substrates are simultaneously accessible; the remaining weight is split equally between
-the two transport-mechanism proxies.  The posterior is insensitive to
+organic substrates are simultaneously accessible; the slope and channel transport-mechanism proxies carry equal weight.  The posterior is insensitive to
 this internal split given the 8\% overall feature weight.
 
 \textit{Weight justification:} $w_5 = 0.08$ (Tier~2, lower) because this feature captures the \textit{mechanism} of organic delivery rather than its chemical significance: it is subordinate to the methane cycle ($w_4 = 0.15$) that drives the delivery process.  The distinction is analogous to that between precipitation (the driver, $f_4$) and slope runoff (the delivery mechanism, $f_5$) in terrestrial hydrology.
@@ -317,7 +316,7 @@ The habitability framework is applied at five distinct temporal configurations, 
 The specific epoch dates are determined by physical events.  In the descriptions below, $s_i$ is the epoch-specific multiplier scaling feature $i$ relative to its present value ($s_i = 1$ at the present; formally defined in Section~\ref{sec:multi_epoch}, Table~\ref{tab:scale_funcs}):
 
 \paragraph{\textit{Past} ($-3.5\gya$).}
-LHB peak.  No polar seas ($s_1{=}0.10$); organic inventory at $\sim$40\% of present ($s_2{=}0.125$) after only $\sim$0.5\,Gyr of UV photolysis; subsurface ocean $2.5\times$ closer to the surface ($s_8{=}2.5$) due to reduced ice-shell thickness \citep{Tobie2005}; acetylene energy $\sim$$2\times$ present ($s_3{\approx}2.1$) from the young Sun's higher UV output \citep{Bahcall2001}.  The impactor flux during the LHB was 100--1000$\times$ the present background rate \citep{OBrien2005}, producing transient water--ammonia melt ponds persisting for $10^3$--$10^4$\,yr at crater sites: the sole source of liquid water on \titan{}'s surface at this epoch.
+LHB peak.  No polar seas ($s_1{=}0.10$); organic inventory at $\sim$40\% of present after only $\sim$0.5\,Gyr of UV photolysis ($s_2{=}0.125$, which the non-uniform percentile normalisation maps to $\sim$40\% of present absolute abundance rather than to $12.5\%$); subsurface ocean $2.5\times$ closer to the surface ($s_8{=}2.5$) due to reduced ice-shell thickness \citep{Tobie2005}; acetylene energy $\sim$$2\times$ present ($s_3{\approx}2.1$) from the young Sun's higher UV output \citep{Bahcall2001}.  The impactor flux during the LHB was 100--1000$\times$ the present background rate \citep{OBrien2005}, producing transient water--ammonia melt ponds persisting for $10^3$--$10^4$\,yr at crater sites: the sole source of liquid water on \titan{}'s surface at this epoch.
 
 \paragraph{\textit{Lake Formation} ($-1.0\gya$).}
 Polar lake consolidation epoch.  Liquid hydrocarbon at the onset of sustained pooling ($s_1{=}0.10$, beginning the ramp towards present-day coverage); organic accumulation at $\sim$75\% of present ($s_2{=}0.75$); methane rain cycle strengthening but not yet at full intensity ($s_4{=}0.80$).  The impact-melt proximity feature has largely faded as the LHB ended $\sim$2.5\,Gyr earlier.  This is the period of most rapid change in the global habitability structure: the polar lake system transitions from partial to near-present coverage.

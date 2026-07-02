@@ -78,6 +78,10 @@ titan_pipeline/
 │   ├── generate_feature_panel.py         # 8-panel feature map (Fig. A.1)
 │   ├── generate_temporal_trend.py        # Median P(H) vs time (Fig. 3.7)
 │   ├── generate_epoch_timeline.py        # Feature scale factors (Fig. 2.6)
+│   ├── generate_seasonal_trend.py        # Seasonal P(H), Cassini window (Fig. I.1)
+│   ├── generate_seasonal_periodic.py     # Periodic vs Jennings comparison (Fig. I.2)
+│   ├── prototype_seasonal_ph.py          # Exploratory seasonal P(H) prototype
+│   ├── prototype_f4_seasonal.py          # Exploratory f4 seasonal-driver check
 │   └── diagnose/                         # Diagnostic and validation scripts
 │
 ├── tests/                           # pytest test suite
@@ -152,6 +156,8 @@ python scripts/generate_beta_update_figure.py
 python scripts/generate_hdi_comparison.py
 python scripts/generate_feature_panel.py
 python scripts/generate_temporal_trend.py
+python scripts/generate_seasonal_trend.py       # Appendix I, Fig. I.1
+python scripts/generate_seasonal_periodic.py    # Appendix I, Fig. I.2
 python scripts/analyse_location_habitability.py
 ```
 

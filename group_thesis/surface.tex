@@ -1,0 +1,51 @@
+% ---- Chris: Bayesian surface habitability mapping ----
+\subsection{Surface habitability mapping (Chris)}
+
+My study asks a spatial question that the other four do not: \emph{where} is Titan's surface most likely
+to be habitable, and how has that pattern changed through time? Working at the outermost layer of
+Figure~\ref{fig:crosssection}, I cast this as Bayesian inference, computing a posterior habitability
+probability $P(H)$ for every pixel of a global equirectangular grid ($\sim$$6.5\times10^{6}$ pixels at
+4490\,m per pixel, for Titan's radius of 2575\,km). Eight geomorphological and compositional features
+-- including liquid-hydrocarbon coverage, organic (VIMS) spectral signatures, geomorphological
+diversity, and a methane-cycle proxy -- update a beta-conjugate prior, so that each map carries a
+calibrated uncertainty rather than a single score \citep{Meadows2026}; surface temperatures follow
+\citet{Jennings2019}.
+
+The framework is applied at five epochs, from the Late Heavy Bombardment ($-3.5$\,Gya) to a red-giant
+future ($+5.9$\,Gya), turning a static map into a trajectory. At present the north-polar lake shores
+dominate the ranking: the liquid-hydrocarbon feature raises both the maximum and the spread of $P(H)$,
+and the north-polar-to-equatorial contrast is the largest of any epoch (Figure~\ref{fig:habmap}). Selk
+crater -- the Dragonfly landing site -- in fact scores only modestly ($P(H)\approx0.21$, against
+$\sim0.55$ for the leading polar lakes), because the map measures present-day \emph{solvent}
+habitability whereas Dragonfly targets \emph{past} liquid-water chemistry; the framework instead
+endorses the mission through Selk's geomorphological diversity, the highest of any equatorial site and a
+proxy for the organic--water-ice contact terrain it will sample \citep{Lorenz2021}. The global median
+$P(H)$ climbs from $0.27$ at the LHB to $0.32$ at present, holds through the near-future plateau
+($r>0.999$), then -- after a $\sim$1\,Gyr solvent-free minimum around $+5$\,Gya, once the hydrocarbon
+seas evaporate -- rises to its maximum of $0.53$ under a red-giant water--ammonia ocean. Habitability is
+therefore episodic in time; spatially, the lowest scores fall on the water-ice-rich cores of Xanadu and
+the mountain ranges.
+
+A deliberate strength is that the map is \emph{ocean-agnostic}: it scores the surface on its own
+evidence, and so remains valid whether or not Titan retains the contested subsurface ocean
+\citep{Petricca2025}, making it a robust anchor for the group's argument. It also indexes the other
+studies: my top sites are polar lake shores, where present-day solvent and organics coincide, whereas
+the impact melt pools of Nicolaides \citep{Nicolaides2026} and the brine pockets of Castlevetro
+\citep{Castlevetro2026} form a complementary, largely equatorial class of liquid-water habitat that the
+map flags through geomorphological diversity (as at Selk). The organic and methane-cycle features
+driving the scores are supplied by the atmosphere Islam Rahim \citep{IslamRahim2026} shows to be
+variable, while the deep energy budget is set by the interior Crick \citep{Crick2026} models. The
+surface map thus points to \emph{where} the processes described by the rest of the group are most likely
+to matter.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{habitability_map.png}
+  \caption{Present-epoch (Cassini era) posterior mean surface habitability map, $P(H)$, from the
+    Bayesian framework of \citet{Meadows2026}. North-polar lake shores (top) attain the highest
+    habitability probability; the radar-bright, water-ice-rich terrain of Xanadu and the mountain
+    ranges score lowest. Selk crater (equatorial), the Dragonfly landing site, scores only
+    modestly on this present-day solvent metric; the map instead endorses the mission's choice via
+    Selk's high geomorphological-diversity feature.}
+  \label{fig:habmap}
+\end{figure}

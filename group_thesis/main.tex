@@ -1,0 +1,67 @@
+% =====================================================================
+%  P3 GROUP REPORT -- "On the Habitability of Titan"
+%  Cross-disciplinary synthesis of five individual reports.
+%
+%  Formatting per brief: >= 11pt Arial, 1.5 line spacing, <= 3000 words
+%  (main text, excluding the abstract, captions, and bibliography).
+%
+%  PARENT DOCUMENT. Section content lives in the child files:
+%    abstract.tex, subsurface.tex (Charlotte), craters.tex (Helena),
+%    brine.tex (Lucca), surface.tex (Chris), atmosphere.tex (Imaan).
+%  Each group member edits their own file; the Introduction and Outlook
+%  live here and are shared.
+% =====================================================================
+\documentclass[11pt,a4paper]{article}
+
+% ---- Arial substitute: Helvetica via helvet, set as the default family
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing                     % 1.5 line spacing
+\usepackage{graphicx}
+\graphicspath{{images/}}
+\usepackage[labelfont=bf,font=small]{caption}
+\usepackage[round]{natbib}
+\bibliographystyle{plainnat}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,allcolors=blue!55!black]{hyperref}
+
+% Visual marker for content still to be supplied by a group member.
+\newcommand{\placeholder}[1]{\par\medskip\noindent\textcolor{gray}{\itshape [#1]}\par\medskip}
+
+\setlength{\parskip}{0.4em}
+\setlength{\parindent}{0pt}
+
+\title{\textbf{On the Habitability of Titan:\\ A Cross-Disciplinary Synthesis}}
+\author{L.\ M.\ Castlevetro, C.\ Crick, C.\ Meadows, H.\ R.\ Nicolaides, I.\ S.\ Islam Rahim\\[2pt]
+\normalsize MPhil in Planetary Science and Life in the Universe, University of Cambridge}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+% ---- Abstract (does not count towards the 3000-word limit) ----
+\input{abstract}
+
+% =====================================================================
+\input{introduction}
+
+% =====================================================================
+\section{Summary of the key insights from individual reports}
+
+\input{subsurface}   % Charlotte -- interior / subsurface ocean
+\input{craters}      % Helena    -- ice-shell impact melt
+\input{brine}        % Lucca     -- brine-pocket chemistry
+\input{atmosphere}   % Imaan     -- atmosphere
+\input{surface}      % Chris     -- surface habitability map
+
+% =====================================================================
+\include{outlook}    % joint synthesis and forward look
+
+% =====================================================================
+\bibliography{references}
+
+\end{document}

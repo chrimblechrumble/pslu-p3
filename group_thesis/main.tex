@@ -1,67 +1,133 @@
-% =====================================================================
-%  P3 GROUP REPORT -- "On the Habitability of Titan"
-%  Cross-disciplinary synthesis of five individual reports.
-%
-%  Formatting per brief: >= 11pt Arial, 1.5 line spacing, <= 3000 words
-%  (main text, excluding the abstract, captions, and bibliography).
-%
-%  PARENT DOCUMENT. Section content lives in the child files:
-%    abstract.tex, subsurface.tex (Charlotte), craters.tex (Helena),
-%    brine.tex (Lucca), surface.tex (Chris), atmosphere.tex (Imaan).
-%  Each group member edits their own file; the Introduction and Outlook
-%  live here and are shared.
-% =====================================================================
 \documentclass[11pt,a4paper]{article}
+\raggedbottom
 
-% ---- Arial substitute: Helvetica via helvet, set as the default family
+\usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage{helvet}
-\renewcommand{\familydefault}{\sfdefault}
-
-\usepackage[a4paper,margin=2.5cm]{geometry}
+% lmodern fonts not in this TeX installation; using CM
+\usepackage[margin=2.5cm,inner=3.2cm]{geometry}
 \usepackage{setspace}
-\onehalfspacing                     % 1.5 line spacing
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{tabular}{\singlespacing} % single space for tables 
+% microtype disabled (requires scalable fonts)
+% \usepackage{microtype}
+\usepackage{emptypage}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage[version=4]{mhchem}
+\usepackage{textcomp}   % provides \textdegree; do NOT redefine \degree
+\usepackage{bm}
 \usepackage{graphicx}
-\graphicspath{{images/}}
+\usepackage{float}
 \usepackage[labelfont=bf,font=small]{caption}
-\usepackage[round]{natbib}
-\bibliographystyle{plainnat}
-\usepackage{xcolor}
-\usepackage[colorlinks=true,allcolors=blue!55!black]{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{makecell}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[
+  colorlinks=true,
+  linkcolor=MidnightBlue,
+  citecolor=ForestGreen,
+  urlcolor=Maroon,
+  pdfauthor={Chris Meadows},
+  pdftitle={On the Habitability of Titan},
+]{hyperref}
+\usepackage{doi}           % renders doi fields as clickable hyperlinks
+\usepackage{cleveref}
+\usepackage[round,authoryear,sort&compress]{natbib}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{siunitx}
+\sisetup{separate-uncertainty=true,per-mode=symbol}
+
+\usepackage{titlesec}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape On the Habitability of Titan}
+\fancyhead[R]{\small\itshape\nouppercase{\rightmark}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Custom commands
+\newcommand{\titan}{Titan}
+\newcommand{\cassini}{\textit{Cassini}}
+\newcommand{\huygens}{\textit{Huygens}}
+\newcommand{\dragonfly}{\textit{Dragonfly}}
+\newcommand{\featurevec}{\mathbf{f}}
+\newcommand{\gya}{\,\text{Gya}}
+\newcommand{\myr}{\,\text{Myr}}
+\DeclareMathOperator{\Beta}{Beta}
+
+\input{version}
+
+\begin{document}
+\onehalfspacing
 
 % Visual marker for content still to be supplied by a group member.
 \newcommand{\placeholder}[1]{\par\medskip\noindent\textcolor{gray}{\itshape [#1]}\par\medskip}
 
-\setlength{\parskip}{0.4em}
-\setlength{\parindent}{0pt}
 
-\title{\textbf{On the Habitability of Titan:\\ A Cross-Disciplinary Synthesis}}
-\author{L.\ M.\ Castlevetro, C.\ Crick, C.\ Meadows, H.\ R.\ Nicolaides, I.\ S.\ Islam Rahim\\[2pt]
-\normalsize MPhil in Planetary Science and Life in the Universe, University of Cambridge}
-\date{July 2026}
+%% ----- Title page -------------------------------------------------------
+\begin{titlepage}
+\centering
+\includegraphics[width=7cm]{CollegeShields/Official-logo_IoA-University.png}
 
-\begin{document}
-\maketitle
+\vspace*{1.8cm}
+{\LARGE\bfseries On the Habitability of Titan}\\[0.7em]
+\vspace{1.5cm}
 
-% ---- Abstract (does not count towards the 3000-word limit) ----
+{\normalsize A report submitted for the degree of}\\[0.4em]
+{\large\bfseries Master of Philosophy}\\[0.2em]
+{\large Planetary Science and Life in the Universe}
+\vspace{1.0cm}
+
+{\large\itshape Lucca Castlevetro, Charlotte Crick, Chris Meadows, \\ Helena Nicolaides, Imaan S. I. Rahim}\\[0.4em]
+\vspace*{1cm}
+\centering
+\vspace*{1cm}
+
+
+{\large Easter Term 2026}
+\vfill
+\rule{0.5\textwidth}{0.4pt}\\[0.4em]
+{\footnotesize \thesisversion{} --- \thesisdate}
+\end{titlepage}
+
+
+%% ----- Abstract ---------------------------------------------------------
 \input{abstract}
 
-% =====================================================================
+%% ----- Sections ---------------------------------------------------------
 \input{introduction}
+\input{subsurface}
+\input{craters}
+\input{brine}
+\input{atmosphere}
+\input{surface}
+\input{conclusions}
 
-% =====================================================================
-\section{Summary of the key insights from individual reports}
-
-\input{subsurface}   % Charlotte -- interior / subsurface ocean
-\input{craters}      % Helena    -- ice-shell impact melt
-\input{brine}        % Lucca     -- brine-pocket chemistry
-\input{atmosphere}   % Imaan     -- atmosphere
-\input{surface}      % Chris     -- surface habitability map
-
-% =====================================================================
-\include{outlook}    % joint synthesis and forward look
-
-% =====================================================================
+%% ----- Bibliography -----------------------------------------------------
+\addcontentsline{toc}{section}{References}
+\bibliographystyle{apalike-doi}
 \bibliography{references}
+
+
+
+
+%% ----- Appendices -------------------------------------------------------
+\appendix
+
+% \input{appendix_constants}
+% \input{appendix_priors}
+% \input{appendix_bayes_pedagogy}
+% \input{appendix_geo_scores}
+% \input{appendix_assumptions}
+% \input{appendix_notation}
+% \input{appendix_features}
+% \input{appendix_dragonfly}
+% \input{appendix_seasonal}
+% \input{appendix_lit_review}
 
 \end{document}

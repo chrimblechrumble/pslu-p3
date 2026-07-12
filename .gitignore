@@ -28,6 +28,8 @@
 **/data
 **/outputs
 **/outputs-old
+**/team
+**/group_thesis
 programming/p3/titan_pipeline/tests/fixtures/shapefiles
 programming/p3/titan_pipeline/tests/fixtures/vims
 programming/p3/titan_pipeline/tests/fixtures/gtdr
